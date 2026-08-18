@@ -19,9 +19,26 @@ const mockUser = {
 
 // TODO: replace with a real query (profileService.getHistory(0, 3)) once wired up.
 const mockRecentMatches = [
-  { id: '1', opponentName: 'Riya', outcome: 'win' as const, category: 'Movies' },
-  { id: '2', opponentName: 'Kabir', outcome: 'loss' as const, category: 'Cities' },
-  { id: '3', opponentName: 'Zara', outcome: 'win' as const, category: 'Fruits' },
+  { id: 'm1', opponentName: 'Cipher99', outcome: 'win' as const, category: 'Geography' },
+  { id: 'm2', opponentName: 'NeonKnight', outcome: 'loss' as const, category: 'Pop Culture' },
+];
+
+// TODO: this simplified icon+label list doesn't exist anywhere yet — it's a
+// distinct data shape from both constants/categories.ts (10 categories, no
+// icons-only cards) and CategorySelectionScreen's local AVAILABLE_CATEGORIES
+// (has item counts + lock icon). Reconcile all three into one source of
+// truth (ideally a `categories` table) once backend confirms the real set.
+const mockCategories = [
+  { id: 'geography', icon: '🌍', label: 'Geography' },
+  { id: 'pop_culture', icon: '🎬', label: 'Pop Culture' },
+  { id: 'science', icon: '🧪', label: 'Science' },
+  { id: 'sports', icon: '🏅', label: 'Sports' },
+];
+
+const mockComingSoon = [
+  { id: 'global_matchmaking', icon: '🌍', label: 'Global Matchmaking' },
+  { id: 'ranked_games', icon: '🏆', label: 'Ranked Games' },
+  { id: 'daily_challenges', icon: '📅', label: 'Daily Challenges' },
 ];
 
 const JOIN_CODE_REGEX = /^[A-Z0-9]{2,5}-?[A-Z0-9]{2,5}$/i;
@@ -38,12 +55,25 @@ export default function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>)
   };
 
   const handleCreateRoom = () => {
-    navigation.navigate('CreateMatch', {matchId: 'new-match-id'}); // Replace 'new-match-id' with actual match ID logic
+    navigation.navigate('CreateMatch');
   };
 
   const handleJoinRoom = () => {
     if (!roomCode.trim()) return;
     navigation.navigate('JoinMatch', { inviteCode: roomCode.trim().toUpperCase() });
+  };
+
+  const handleReviewMatch = (matchId: string) => {
+    (navigation.getParent() as any)?.navigate('MatchFlow', {
+      screen: 'Replay',
+      params: { matchId },
+    });
+  };
+
+  const handleCategoryPress = (categoryId: string) => {
+    // TODO: once matchService.createMatch supports a pre-selected category,
+    // pass it through here instead of just landing on the generic picker.
+    navigation.navigate('CreateMatch');
   };
 
   const isCodeValid = JOIN_CODE_REGEX.test(roomCode.trim());
@@ -125,28 +155,65 @@ export default function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>)
         {/* Recent Matches */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Recent Matches</Text>
-          <Pressable onPress={() => navigation.getParent()?.navigate('ProfileTab' as never, { screen: 'History' } as never)}>
+          <Pressable
+            onPress={() =>
+              navigation.getParent()?.navigate('ProfileTab' as never, { screen: 'History' } as never)
+            }
+          >
             <Text style={styles.viewAllLink}>View All</Text>
           </Pressable>
         </View>
 
-        {mockRecentMatches.map((match) => (
-          <View key={match.id} style={styles.matchRow}>
-            <Text style={styles.matchAvatar}>🕵️</Text>
-            <View style={styles.matchInfo}>
-              <Text style={styles.matchOpponent}>{match.opponentName}</Text>
-              <Text style={styles.matchCategory}>{match.category}</Text>
+        {mockRecentMatches.map((match) => {
+          const won = match.outcome === 'win';
+          return (
+            <View key={match.id} style={styles.matchCard}>
+              <View style={styles.matchAvatarWrap}>
+                <Text style={styles.matchAvatar}>🕵️</Text>
+              </View>
+              <View style={styles.matchInfo}>
+                <Text style={[styles.matchOutcome, won ? styles.matchOutcomeWin : styles.matchOutcomeLoss]}>
+                  {won ? 'Won' : 'Lost'}
+                </Text>
+                <Text style={styles.matchMeta}>
+                  {match.category} • vs {match.opponentName}
+                </Text>
+              </View>
+              <Pressable style={styles.reviewButton} onPress={() => handleReviewMatch(match.id)}>
+                <Text style={styles.reviewButtonText}>Review</Text>
+              </Pressable>
             </View>
-            <View
-              style={[
-                styles.outcomeBadge,
-                { backgroundColor: match.outcome === 'win' ? colors.state.success : colors.state.error },
-              ]}
+          );
+        })}
+
+        {/* Categories */}
+        <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>Categories</Text>
+        <View style={styles.categoryGrid}>
+          {mockCategories.map((cat) => (
+            <Pressable
+              key={cat.id}
+              style={styles.categoryCard}
+              onPress={() => handleCategoryPress(cat.id)}
             >
-              <Text style={styles.outcomeBadgeText}>{match.outcome === 'win' ? 'W' : 'L'}</Text>
+              <Text style={styles.categoryIcon}>{cat.icon}</Text>
+              <Text style={styles.categoryLabel}>{cat.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Coming Soon */}
+        <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>Coming Soon</Text>
+        <View style={styles.comingSoonCard}>
+          {mockComingSoon.map((item, i) => (
+            <View
+              key={item.id}
+              style={[styles.comingSoonRow, i < mockComingSoon.length - 1 && styles.comingSoonRowBorder]}
+            >
+              <Text style={styles.comingSoonIcon}>{item.icon}</Text>
+              <Text style={styles.comingSoonLabel}>{item.label}</Text>
             </View>
-          </View>
-        ))}
+          ))}
+        </View>
       </ScrollView>
     </ScreenContainer>
   );
@@ -164,9 +231,13 @@ function StatItem({ icon, value, label }: { icon: string; value: string | number
   );
 }
 
+// Best-guess hex values sampled visually from the screenshots — flag anything
+// that looks off and I'll adjust against the real design file/tokens.
 const LAVENDER = '#C7D2FE';
 const LAVENDER_TEXT = '#161726';
 const ICON_TINT_BG = 'rgba(108, 92, 231, 0.16)';
+const OUTCOME_WIN = '#4ADE80';
+const OUTCOME_LOSS = '#F97066';
 
 const styles = StyleSheet.create({
   scroll: {
@@ -326,36 +397,99 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.text.primary,
   },
+  sectionTitleSpaced: {
+    marginTop: spacing.sm,
+  },
   viewAllLink: {
     ...textStyles.small,
     color: LAVENDER,
   },
-  matchRow: {
+
+  // Recent match cards
+  matchCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.sm,
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
   },
-  matchAvatar: { fontSize: 24 },
-  matchInfo: { flex: 1 },
-  matchOpponent: {
-    ...textStyles.bodyMedium,
-    color: colors.text.primary,
-  },
-  matchCategory: {
-    ...textStyles.caption,
-    color: colors.text.secondary,
-  },
-  outcomeBadge: {
-    width: 26,
-    height: 26,
+  matchAvatarWrap: {
+    width: 40,
+    height: 40,
     borderRadius: radius.pill,
+    backgroundColor: colors.bg.surfaceRaised,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  outcomeBadgeText: {
-    ...textStyles.caption,
+  matchAvatar: { fontSize: 18 },
+  matchInfo: { flex: 1 },
+  matchOutcome: {
+    ...textStyles.bodyLarge,
     fontWeight: '700',
+  },
+  matchOutcomeWin: { color: OUTCOME_WIN },
+  matchOutcomeLoss: { color: OUTCOME_LOSS },
+  matchMeta: {
+    ...textStyles.small,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  reviewButton: {
+    backgroundColor: colors.bg.surfaceRaised,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  reviewButtonText: {
+    ...textStyles.small,
+    fontWeight: '600',
     color: colors.text.primary,
+  },
+
+  // Categories grid
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  categoryCard: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  categoryIcon: { fontSize: 18 },
+  categoryLabel: {
+    ...textStyles.bodyMedium,
+    color: colors.text.primary,
+    flexShrink: 1,
+  },
+
+  // Coming soon list card
+  comingSoonCard: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+  },
+  comingSoonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  comingSoonRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+  },
+  comingSoonIcon: { fontSize: 16 },
+  comingSoonLabel: {
+    ...textStyles.bodyMedium,
+    color: colors.text.secondary,
   },
 });
