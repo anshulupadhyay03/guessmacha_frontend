@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { NavigationProp } from '@react-navigation/native';
 import { colors } from '../../constants/colors';
 import { textStyles } from '../../constants/typography';
 import { spacing, radius } from '../../constants/tokens';
 import { dimensions } from '../../constants/dimensions';
 import ScreenContainer from '../../components/common/ScreenContainer';
-import type { HomeStackScreenProps } from '../../navigation/types';
+import type { HomeStackScreenProps, RootStackParamList } from '../../navigation/types';
 
 // TODO: replace with real Redux selectors once userSlice/matchSlice exist:
 // const profile = useAppSelector(selectProfile);
@@ -38,12 +39,20 @@ export default function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>)
   };
 
   const handleCreateRoom = () => {
-    navigation.navigate('CreateMatch', {matchId: 'new-match-id'}); // Replace 'new-match-id' with actual match ID logic
+    const rootNavigation = navigation.getParent()?.getParent() as NavigationProp<RootStackParamList> | undefined;
+    rootNavigation?.navigate('MatchFlow', {
+      screen: 'CreateMatch',
+      params: { matchId: 'new-match-id' }, // Replace with the ID returned when a match is created.
+    });
   };
 
   const handleJoinRoom = () => {
     if (!roomCode.trim()) return;
-    navigation.navigate('JoinMatch', { inviteCode: roomCode.trim().toUpperCase() });
+    const rootNavigation = navigation.getParent()?.getParent() as NavigationProp<RootStackParamList> | undefined;
+    rootNavigation?.navigate('MatchFlow', {
+      screen: 'JoinMatch',
+      params: { inviteCode: roomCode.trim().toUpperCase() },
+    });
   };
 
   const isCodeValid = JOIN_CODE_REGEX.test(roomCode.trim());
@@ -125,7 +134,7 @@ export default function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>)
         {/* Recent Matches */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Recent Matches</Text>
-          <Pressable onPress={() => navigation.getParent()?.navigate('ProfileTab' as never, { screen: 'History' } as never)}>
+          <Pressable onPress={() => navigation.getParent()?.navigate('ProfileTab', { screen: 'History' })}>
             <Text style={styles.viewAllLink}>View All</Text>
           </Pressable>
         </View>
