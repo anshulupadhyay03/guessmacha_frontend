@@ -9,6 +9,7 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
     return null
   }
 
+   
   try {
     await FBInstant.initializeAsync()
 
@@ -20,7 +21,7 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
     // This is the most important diagnostic for the current issue. Meta can
     // expose the FBInstant.player object while selectively disabling player
     // APIs for the current app/user/session.
-    try {
+    /* try {
       const supportedApis = FBInstant.getSupportedAPIs()
       console.log('Supported FBInstant APIs:', supportedApis)
       console.log('Player APIs supported:', {
@@ -31,13 +32,17 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
       })
     } catch (error) {
       console.error('getSupportedAPIs failed:', error)
-    }
+    } */
 
     FBInstant.setLoadingProgress(100)
 
     console.log('Starting Facebook Instant Game...')
     await FBInstant.startGameAsync()
     console.log('Facebook Instant Game started')
+
+    const roomCode = getFacebookGameRoomCode()
+    console.log('Facebook invite room code:', roomCode)
+
 
     const player = FBInstant.player
     console.log('FBInstant player object:', player)
@@ -104,9 +109,9 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
     }
 
     const platformPlayer: PlatformPlayer = {
-      id,
-      name,
-      photo,
+      id: id || '', // Ensure id is a string, fallback to empty string if null
+      name: name || '', // Ensure name is a string, fallback to empty string if null
+      photo: photo || undefined, // Ensure photo is a string or undefined, convert null to undefined
     }
 
     console.log('Facebook player:', platformPlayer)
@@ -116,4 +121,26 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
     console.error('Facebook Instant Games initialization failed:', error)
     return null
   }
+}
+
+export function getFacebookGameRoomCode(): string | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const params = new URLSearchParams(window.location.search)
+  const candidates = [
+    params.get('room'),
+    params.get('roomCode'),
+    params.get('gameCode'),
+  ]
+
+  for (const candidate of candidates) {
+    const value = candidate?.trim()
+    if (value) {
+      return value.toUpperCase()
+    }
+  }
+
+  return null
 }

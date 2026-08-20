@@ -1,0 +1,21 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "types": ["jest"],
+    "baseUrl": ".",
+    "paths": {
+      "@mobile/*": ["src/*"],
+      "@shared/*": ["../shared/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../shared/**/*.ts",
+    "../shared/**/*.tsx"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/Pods"
+  ]
+}

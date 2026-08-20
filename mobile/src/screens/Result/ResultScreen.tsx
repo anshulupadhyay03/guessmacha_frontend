@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Share, StyleSheet, Text, View } from 'react-native';
+import { StackActions } from '@react-navigation/native';
 import { colors } from '../../constants/colors';
 import { textStyles } from '../../constants/typography';
 import { spacing, radius, elevation } from '../../constants/tokens';
@@ -42,7 +43,7 @@ export default function ResultScreen({ navigation, route }: MatchStackScreenProp
   }, [revealAnim]);
 
   const handleRematch = () => {
-    navigation.replace('CreateMatch');
+    navigation.dispatch(StackActions.replace('CreateMatch', { matchId }));
   };
 
   const handleShare = async () => {

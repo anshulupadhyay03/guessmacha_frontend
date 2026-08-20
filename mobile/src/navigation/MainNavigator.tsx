@@ -14,9 +14,6 @@ import { dimensions } from '../constants/dimensions';
 
 // Screens
 import HomeScreen from '../screens/Home/HomeScreen';
-import CreateMatchScreen from '../screens/Match/CreateMatchScreen';
-import JoinMatchScreen from '../screens/Match/JoinMatchScreen';
-import FriendInviteScreen from '../screens/Match/FriendInviteScreen';
 import NotificationsScreen from '../screens/Notifications/NotificationsScreen';
 
 import LeaderboardScreen from '../screens/Leaderboard/LeaderboardScreen';
@@ -51,9 +48,6 @@ function HomeStackNavigator() {
       screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg.base } }}
     >
       <HomeStack.Screen name={ROUTES.HOME} component={HomeScreen} />
-      <HomeStack.Screen name={ROUTES.CREATE_MATCH} component={CreateMatchScreen} />
-      <HomeStack.Screen name={ROUTES.JOIN_MATCH} component={JoinMatchScreen} />
-      <HomeStack.Screen name={ROUTES.FRIEND_INVITE} component={FriendInviteScreen} />
       <HomeStack.Screen
         name={ROUTES.NOTIFICATIONS}
         component={NotificationsScreen}
@@ -138,7 +132,10 @@ export default function MainNavigator() {
           tabPress: (e) => {
             // Prevent default tab navigation — open the full-screen Match modal instead.
             e.preventDefault();
-            (navigation.getParent() as any)?.navigate('MatchFlow', { screen: 'CreateMatch' });
+            (navigation.getParent() as any)?.navigate('MatchFlow', {
+              screen: 'CreateMatch',
+              params: { matchId: 'new-match-id' },
+            });
           },
         })}
       />

@@ -16,9 +16,6 @@ export type AuthStackParamList = {
 // ---------------------------------------------------------------------------
 export type HomeStackParamList = {
   Home: undefined;
-  CreateMatch: undefined;
-  JoinMatch: { inviteCode?: string } | undefined;
-  FriendInvite: undefined;
   Notifications: undefined;
 };
 
@@ -58,7 +55,7 @@ export type MainTabParamList = {
 // Match flow — full-screen modal stack, own back-button rules
 // ---------------------------------------------------------------------------
 export type MatchStackParamList = {
-  CreateMatch: undefined;
+  CreateMatch: { matchId: string };
   JoinMatch: { inviteCode?: string } | undefined;
   FriendInvite: undefined;
   CategorySelection: { matchId: string };

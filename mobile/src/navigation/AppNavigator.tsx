@@ -43,6 +43,11 @@ export default function AppNavigator() {
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainFlow" component={MainNavigator} />
+        <Stack.Screen
+          name="MatchFlow"
+          component={MatchNavigator}
+          options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+        />
         {/* {!session ? (
           <Stack.Screen name="AuthFlow" component={AuthNavigator} />
         ) : !hasCompletedInterests ? (

@@ -38,7 +38,7 @@ const COMING_SOON_CATEGORIES: CategoryDisplay[] = [
 export default function CategorySelectionScreen({
   navigation,
   route,
-}: MatchStackScreenProps<'CategorySelection'>) {
+}: MatchStackScreenProps<'CreateMatch'>) {
   const { matchId } = route.params;
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
