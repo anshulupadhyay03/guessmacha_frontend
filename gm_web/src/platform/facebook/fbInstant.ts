@@ -16,7 +16,7 @@ export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlaye
   const player = FBInstant.player
 
   type SignedPlayerInfoRuntime = {
-    getPlayerID(): string
+    getPlayerId(): string
     getSignature(): string
   }
 
@@ -36,7 +36,7 @@ export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlaye
   try {
     const signedInfo = await playerWithSignedInfo.getSignedPlayerInfoAsync()
 
-    const playerId = signedInfo.getPlayerID()
+    const playerId = signedInfo.getPlayerId()
     const signature = signedInfo.getSignature()
 
     if (!playerId || !signature) {
@@ -68,13 +68,12 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
 
     await FBInstant.startGameAsync()
 
-    console.log('Facebook Instant Game initialized successfully')
+ /*    console.log('Facebook Instant Game initialized successfully')
     console.log('SDK Version:', FBInstant.getSDKVersion())
     console.log('Platform:', FBInstant.getPlatform())
-    console.log('Locale:', FBInstant.getLocale())
+    console.log('Locale:', FBInstant.getLocale()) */
 
     const player = FBInstant.player
-    console.log('FBInstant player object:', player)
 
     let id = ''
 
@@ -85,31 +84,106 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
       console.error('getID failed:', error)
     }
 
-    // SDK 8 does not expose player.getName() or player.getPhoto().
-    // Do not call these removed APIs. The supported player identity API
-    // gives us the player ID; signed player info is used separately for
-    // backend authentication.
-        // Facebook Instant Games exposes the current player's profile as
-    // `player.name` and `player.photo` properties. These are properties,
-    // not getName()/getPhoto() methods.
-    const playerProfile = player as typeof player & {
-      name?: string
-      photo?: string
-    }
-
+    // Zero Permissions: Meta does NOT expose the current player's name or
+    // profile-photo URL to game JavaScript. Those values are resolved by Meta
+    // only when an Overlay View is rendered inside Meta's controlled iframe.
+    // Therefore, never read player.name/player.photo and never send them to
+    // the Supabase backend as if they were directly available to the game.
     const platformPlayer: PlatformPlayer = {
       id,
-      name: playerProfile.name || '',
-      photo: playerProfile.photo || undefined,
+      name: '',
+      photo: undefined,
     }
 
-    console.log('Direct player name:', playerProfile.name)
-    console.log('Direct player photo:', playerProfile.photo)
+    console.log('Platform player identity:', platformPlayer)
+    console.log(
+      'Player profile display: use FBInstant Overlay Views (Meta-rendered name/photo)',
+    )
 
     return platformPlayer
   } catch (error) {
     console.error('Failed to initialize Instant Game:', error)
     return null
+  }
+}
+
+export async function showFacebookPlayerProfileOverlay(
+  container: HTMLElement,
+): Promise<void> {
+  if (!isFacebookInstantGames()) {
+    console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
+    return
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews) {
+      console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
+      return
+    }
+
+    // Overlay XML/CSS files are Meta overlay assets, not normal Vite public files.
+    // The paths must resolve inside the Instant Game bundle that Meta serves.
+    const xmlPath = 'overlays/profile_card.xml'
+    const cssPath = 'overlays/styles.css'
+
+    console.log('Creating Facebook profile overlay:', { xmlPath, cssPath })
+
+    const overlay = await overlayViews.createOverlayViewAsync(
+      xmlPath,
+      container,
+      'width: 100%; height: 180px; border: none;',
+      cssPath,
+    )
+
+    await overlay.showAsync()
+  } catch (error) {
+    console.error('Failed to show Facebook player profile overlay:', error)
+  }
+}
+
+export async function showFacebookOpponentProfileOverlay(
+  container: HTMLElement,
+  opponentPlayerId: string,
+): Promise<void> {
+  if (!isFacebookInstantGames()) {
+    console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
+    return
+  }
+
+  const playerId = opponentPlayerId.trim()
+
+  if (!playerId) {
+    console.warn('Cannot show opponent profile overlay without a player ID')
+    return
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews) {
+      console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
+      return
+    }
+
+    const xmlPath = 'overlays/opponent_profile.xml'
+    const cssPath = 'overlays/styles.css'
+
+    console.log('Creating Facebook opponent profile overlay:', {
+      xmlPath,
+      cssPath,
+      opponentPlayerId: playerId,
+    })
+
+    const overlay = await overlayViews.createOverlayViewAsync(
+      xmlPath,
+      container,
+      'width: 100%; height: 180px; border: none;',
+      cssPath,
+    )
+
+    await overlay.showAsync()
+  } catch (error) {
+    console.error('Failed to show Facebook opponent profile overlay:', error)
   }
 }
 
