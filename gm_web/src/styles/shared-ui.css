@@ -1,0 +1,97 @@
+.game-card {
+  width: min(100%, 520px);
+  box-sizing: border-box;
+  padding: 40px 32px;
+  border: 1px solid #e4e6ee;
+  border-radius: 24px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(31, 35, 48, 0.08);
+}
+
+.loading-card {
+  padding: 48px 32px;
+}
+
+.brand-mark {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: #1f2330;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #777d8d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.game-card h1 {
+  margin: 0;
+  color: #1f2330;
+  font-size: clamp(30px, 7vw, 42px);
+  line-height: 1.1;
+}
+
+.subtitle {
+  max-width: 420px;
+  margin: 16px auto 28px;
+  color: #666d7d;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.primary-button {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 14px;
+  background: #1f2330;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.primary-button:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.primary-button:active {
+  transform: translateY(0);
+}
+
+.primary-button:focus-visible {
+  outline: 3px solid #b8bdca;
+  outline-offset: 3px;
+}
+
+.error-message {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff1f1;
+  color: #b42318;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 520px) {
+  .game-card {
+    padding: 32px 20px;
+    border-radius: 20px;
+  }
+}

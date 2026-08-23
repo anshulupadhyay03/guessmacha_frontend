@@ -1,46 +1,29 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import './styles/shared-ui.css'
 import {
   initializeFacebookInstant,
   isFacebookInstantGames,
   showFacebookPlayerProfileOverlay,
 } from './platform/facebook/fbInstant'
+import Dashboard from './screens/dashbaord'
+import CreateGameScreen from './screens/CreateGameScreen'
 
 function App() {
-  const [isInitializing, setIsInitializing] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [screen, setScreen] = useState<'dashboard' | 'create-game'>('dashboard')
 
   useEffect(() => {
-    let cancelled = false
-
     async function initializeGame() {
       try {
         if (isFacebookInstantGames()) {
           await initializeFacebookInstant()
         }
-
-        if (!cancelled) {
-          setIsInitializing(false)
-        }
       } catch (initializationError) {
         console.error('Game initialization failed:', initializationError)
-
-        if (!cancelled) {
-          setError(
-            initializationError instanceof Error
-              ? initializationError.message
-              : 'Unable to initialize GuessMacha.',
-          )
-          setIsInitializing(false)
-        }
       }
     }
 
     void initializeGame()
-
-    return () => {
-      cancelled = true
-    }
   }, [])
 
   async function handleProfileClick() {
@@ -53,37 +36,34 @@ function App() {
     await showFacebookPlayerProfileOverlay(container)
   }
 
-  if (isInitializing) {
-    return (
-      <main className="game-shell">
-        <section className="game-card loading-card">
-          <div className="brand-mark">GM</div>
-          <h1>GuessMacha</h1>
-          <p>Getting the game ready...</p>
-        </section>
-      </main>
-    )
-  }
-
   return (
     <main className="game-shell">
+      {screen === 'create-game' ? (
+        <CreateGameScreen onBack={() => setScreen('dashboard')} />
+      ) : (
       <section className="game-card">
         <div className="brand-mark">GM</div>
-        <p className="eyebrow">GUESSMACHА</p>
+        <p className="eyebrow">GUESSMACHA</p>
         <h1>Ready to play?</h1>
         <p className="subtitle">
           Challenge a friend, choose a category, and see who can guess the
           secret first.
         </p>
-
-        {error && <p className="error-message">{error}</p>}
+        <Dashboard onCreateGame={() => setScreen('create-game')} />
 
         {isFacebookInstantGames() && (
           <>
-            <button type="button" className="primary-button" onClick={handleProfileClick}>
-              View Facebook Profile
+            <button
+              type="button"
+              className="profile-test-button"
+              onClick={handleProfileClick}
+            >
+              Test Facebook Profile
             </button>
-            <div id="profile-overlay-container" className="profile-overlay-container" />
+            <div
+              id="profile-overlay-container"
+              className="profile-overlay-container"
+            />
           </>
         )}
 
@@ -94,6 +74,7 @@ function App() {
           </p>
         )}
       </section>
+      )}
     </main>
   )
 }
