@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import './CreateGameScreen.css';
 import type { Category } from '../../../shared/types/category';
+import type { CreateGameResponse } from '../../../shared/types/game';
 import { useCategories } from '../hooks/useCategories';
 import { useCreateGame } from '../hooks/useCreateGame';
 
 interface CreateGameScreenProps {
   onBack: () => void;
+  onGameCreated: (game: CreateGameResponse) => void;
 }
 
 const categoryIcons: Record<string, string> = {
@@ -24,34 +26,24 @@ function categoryIcon(category: Category): string {
   return categoryIcons[category.iconKey?.toLowerCase() ?? ''] ?? '🎯';
 }
 
-export default function CreateGameScreen({ onBack }: CreateGameScreenProps) {
+export default function CreateGameScreen({
+  onBack,
+  onGameCreated,
+}: CreateGameScreenProps) {
   const { categories, error, loading, reload } = useCategories();
-  const { createGame, data: game, error: createError, loading: creating } =
-    useCreateGame();
+  const { createGame, error: createError, loading: creating } = useCreateGame();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
-  async function handleCategorySelect(categoryId: string) {
-    if (creating) {
+  async function handleConfirm() {
+    if (!selectedCategoryId || creating) {
       return;
     }
 
-    setSelectedCategoryId(categoryId);
-    await createGame(categoryId);
-  }
+    const game = await createGame(selectedCategoryId);
 
-  if (game) {
-    return (
-      <section className="game-card category-card" aria-live="polite">
-        <div className="brand-mark">GM</div>
-        <p className="eyebrow">ROOM CREATED</p>
-        <h1>Your game is ready</h1>
-        <p className="subtitle">Share this room code with your friends to start playing.</p>
-        <output className="room-code" aria-label="Room code">{game.roomCode}</output>
-        <button type="button" className="primary-button" onClick={onBack}>
-          Back to home
-        </button>
-      </section>
-    );
+    if (game) {
+      onGameCreated(game);
+    }
   }
 
   return (
@@ -79,28 +71,40 @@ export default function CreateGameScreen({ onBack }: CreateGameScreenProps) {
         <p className="category-status">No categories are available right now.</p>
       )}
 
-      <div className="category-grid" aria-label="Available categories">
+      <fieldset className="category-grid" disabled={creating}>
+        <legend className="visually-hidden">Available categories</legend>
         {categories.map((category) => (
-          <button
-            type="button"
-            className="category-option"
+          <label
+            className={`category-option${selectedCategoryId === category.id ? ' category-option--selected' : ''}`}
             key={category.id}
-            onClick={() => void handleCategorySelect(category.id)}
-            disabled={creating}
-            aria-pressed={selectedCategoryId === category.id}
           >
+            <input
+              className="category-radio"
+              type="radio"
+              name="category"
+              value={category.id}
+              checked={selectedCategoryId === category.id}
+              onChange={() => setSelectedCategoryId(category.id)}
+            />
             <span className="category-icon" aria-hidden="true">{categoryIcon(category)}</span>
             <span className="category-copy">
               <strong>{category.name}</strong>
               {category.description && <small>{category.description}</small>}
             </span>
-            <span className="category-arrow" aria-hidden="true">›</span>
-          </button>
+          </label>
         ))}
-      </div>
+      </fieldset>
 
       {creating && <p className="category-status">Creating your room…</p>}
       {createError && <p className="error-message" role="alert">{createError.message}</p>}
+      <button
+        type="button"
+        className="primary-button confirm-button"
+        onClick={() => void handleConfirm()}
+        disabled={!selectedCategoryId || creating}
+      >
+        {creating ? 'Creating room…' : 'Confirm'}
+      </button>
     </section>
   );
 }

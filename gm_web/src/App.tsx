@@ -8,9 +8,12 @@ import {
 } from './platform/facebook/fbInstant'
 import Dashboard from './screens/dashbaord'
 import CreateGameScreen from './screens/CreateGameScreen'
+import MatchLobbyScreen from './screens/MatchLobbyScreen'
+import type { CreateGameResponse } from '../../shared/types/game'
 
 function App() {
-  const [screen, setScreen] = useState<'dashboard' | 'create-game'>('dashboard')
+  const [screen, setScreen] = useState<'dashboard' | 'create-game' | 'match-lobby'>('dashboard')
+  const [game, setGame] = useState<CreateGameResponse | null>(null)
 
   useEffect(() => {
     async function initializeGame() {
@@ -36,10 +39,23 @@ function App() {
     await showFacebookPlayerProfileOverlay(container)
   }
 
+  function handleGameCreated(createdGame: CreateGameResponse) {
+    setGame(createdGame)
+    setScreen('match-lobby')
+  }
+
   return (
     <main className="game-shell">
       {screen === 'create-game' ? (
-        <CreateGameScreen onBack={() => setScreen('dashboard')} />
+        <CreateGameScreen
+          onBack={() => setScreen('dashboard')}
+          onGameCreated={handleGameCreated}
+        />
+      ) : screen === 'match-lobby' && game ? (
+        <MatchLobbyScreen
+          roomCode={game.roomCode}
+          onStartGame={() => console.info('Start game selected:', game.gameId)}
+        />
       ) : (
       <section className="game-card">
         <div className="brand-mark">GM</div>

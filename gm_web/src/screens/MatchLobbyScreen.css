@@ -1,0 +1,36 @@
+.match-lobby {
+  text-align: center;
+}
+
+.room-code-field {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.room-code-field .room-code {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.copy-button {
+  min-height: 44px;
+  border: 1px solid #cdd2dc;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1f2330;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.copy-status {
+  margin: -12px 0 20px;
+  color: #357a38;
+  font-size: 14px;
+}
+
+.lobby-start-button {
+  margin-top: 24px;
+}
