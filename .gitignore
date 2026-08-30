@@ -73,3 +73,5 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+gm_web/package-lock.json
+gm_web/package-lock.json

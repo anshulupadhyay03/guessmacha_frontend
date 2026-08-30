@@ -1,0 +1,155 @@
+.category-card {
+  position: relative;
+  text-align: left;
+}
+
+.category-card .brand-mark,
+.category-card .eyebrow,
+.category-card h1,
+.category-card .subtitle {
+  text-align: center;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  border: 0;
+  background: transparent;
+  color: #5d6475;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.category-grid {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.category-option {
+  width: 100%;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid #e4e6ee;
+  border-radius: 16px;
+  background: #fff;
+  color: #1f2330;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.category-option:hover {
+  border-color: #1f2330;
+  box-shadow: 0 6px 18px rgba(31, 35, 48, 0.1);
+  transform: translateY(-1px);
+}
+
+.category-option--selected {
+  border-color: #1f2330;
+  box-shadow: 0 0 0 2px rgba(31, 35, 48, 0.12);
+}
+
+.category-grid:disabled .category-option {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.category-radio {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: #1f2330;
+}
+
+.category-radio:focus-visible {
+  outline: 3px solid #b8bdca;
+  outline-offset: 3px;
+}
+
+.category-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 13px;
+  background: #f1f3f8;
+  font-size: 23px;
+}
+
+.category-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.category-copy strong {
+  font-size: 16px;
+}
+
+.category-copy small {
+  overflow: hidden;
+  color: #737a8a;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-status {
+  margin: 24px 0;
+  color: #666d7d;
+  text-align: center;
+}
+
+.category-error {
+  margin: 20px 0;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff1f1;
+  color: #b42318;
+  text-align: center;
+}
+
+.retry-button {
+  margin-top: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.confirm-button {
+  margin-top: 24px;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
