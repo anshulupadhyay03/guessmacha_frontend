@@ -6,14 +6,117 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: #f6f7fb;
+  background: radial-gradient(circle at top, #2d2c39, #130f17 42%, #0d0b12 100%);
+}
+
+.screen-shell {
+  width: min(100%, 420px);
+  min-height: 760px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(29, 27, 33, 0.98), rgba(18, 16, 22, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 30px;
+  box-shadow: 0 30px 60px rgba(2, 2, 5, 0.4);
+  overflow: hidden;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 8px;
+}
+
+.app-brand {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #c7d6db, #e7f0f5);
+  color: #121319;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.settings-button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #edf5ff;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.settings-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.settings-button svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.screen-content {
+  flex: 1;
+}
+
+.bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 16, 22, 0.96);
+}
+
+.nav-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 76px;
+  border: 0;
+  background: transparent;
+  color: #a9afbc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.nav-button.is-active {
+  color: #f6f9ff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 1.2rem;
 }
 
 .development-note {
   margin: 24px 0 0;
-  color: #777d8d;
+  color: #c6ccdc;
   font-size: 13px;
   line-height: 1.5;
+  text-align: center;
 }
 
 .profile-overlay-container {
@@ -23,8 +126,20 @@
   position: relative;
 }
 
+.profile-test-button {
+  margin-top: 18px;
+}
+
 @media (max-width: 520px) {
   .game-shell {
-    padding: 16px;
+    padding: 0;
+  }
+
+  .screen-shell {
+    min-height: 100svh;
+    width: 100%;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
   }
 }
