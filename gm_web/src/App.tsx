@@ -115,6 +115,7 @@ function App() {
     if (screen === 'match-lobby' && game) {
       return (
         <MatchLobbyScreen
+          gameId={game.gameId}
           roomCode={game.roomCode}
           onStartGame={() => console.info('Start game selected:', game.gameId)}
         />

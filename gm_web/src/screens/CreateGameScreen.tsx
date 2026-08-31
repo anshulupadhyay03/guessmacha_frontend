@@ -21,6 +21,8 @@ const categoryIcons: Record<string, string> = {
   general: '✨',
 };
 
+const questionLimitOptions = [5, 10, 15, 20, 25];
+
 function categoryIcon(category: Category): string {
   return categoryIcons[category.iconKey?.toLowerCase() ?? ''] ?? '🎯';
 }
@@ -32,13 +34,14 @@ export default function CreateGameScreen({
   const { categories, error, loading, reload } = useCategories();
   const { createGame, error: createError, loading: creating } = useCreateGame();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [questionLimit, setQuestionLimit] = useState(25);
 
   async function handleConfirm() {
     if (!selectedCategoryId || creating) {
       return;
     }
 
-    const game = await createGame(selectedCategoryId);
+    const game = await createGame(selectedCategoryId, questionLimit);
 
     if (game) {
       onGameCreated(game);
@@ -68,6 +71,25 @@ export default function CreateGameScreen({
       {!loading && !error && categories.length === 0 && (
         <p className="my-6 text-center text-[#ccd5e3]">No categories are available right now.</p>
       )}
+
+      <div className="mt-5">
+        <label className="mb-2 block text-xs font-bold tracking-[0.12em] text-[#dce6ef] uppercase" htmlFor="question-limit">
+          Questions Limit for each Player
+        </label>
+        <select
+          id="question-limit"
+          value={questionLimit}
+          onChange={(event) => setQuestionLimit(Number(event.target.value))}
+          disabled={creating}
+          className="w-full cursor-pointer appearance-none rounded-xl border border-white/12 bg-white/5 px-4 py-3 text-base font-semibold text-[#f2f5fc] outline-none transition focus:border-[#70ede5]/70 focus:ring-3 focus:ring-[#70ede5]/18 disabled:cursor-wait disabled:opacity-65"
+        >
+          {questionLimitOptions.map((limit) => (
+            <option key={limit} value={limit} className="bg-[#1d1b21] text-[#f2f5fc]">
+              {limit} questions
+            </option>
+          ))}
+        </select>
+      </div>
 
       <fieldset className="mt-5 grid min-w-0 gap-2.5 border-0 p-0 disabled:cursor-wait disabled:opacity-65" disabled={creating}>
         <legend className="sr-only">Available categories</legend>

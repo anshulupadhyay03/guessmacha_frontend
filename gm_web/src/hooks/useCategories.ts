@@ -32,7 +32,7 @@ export function useCategories(): UseCategoriesResult {
   }, []);
 
   useEffect(() => {
-    void reload();
+    void Promise.resolve().then(reload);
   }, [reload]);
 
   return { categories, error, loading, reload };
