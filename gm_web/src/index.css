@@ -4,7 +4,7 @@
 @theme {
   --font-lobby-display: 'Manrope', 'Segoe UI', sans-serif;
   --font-lobby-body: 'Inter', 'Segoe UI', sans-serif;
-  --color-lobby-background: #1d1010;
+  --color-lobby-background: #100d13;
 }
 
 @layer base {

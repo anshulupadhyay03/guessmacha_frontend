@@ -63,3 +63,65 @@ export async function getGame(gameId: string): Promise<GameDetails> {
 
   return payload.data;
 }
+
+export interface PuzzleItem {
+  id: string;
+  name: string;
+}
+
+export interface CategoryDetails {
+  id: string;
+  name: string;
+  iconKey?: string;
+}
+
+export interface GetPuzzlesResponse {
+  success: boolean;
+  data?: {
+    category: CategoryDetails;
+    puzzles: PuzzleItem[];
+  };
+  message?: string;
+}
+
+export async function getPuzzles(
+  categoryId: string,
+): Promise<{ category: CategoryDetails; puzzles: PuzzleItem[] }> {
+  const payload = await apiClient.get<GetPuzzlesResponse>('get_puzzles', {
+    categoryId,
+  });
+
+  if (!payload?.success || !payload.data) {
+    throw new Error(payload?.message ?? 'Unable to load puzzles for category');
+  }
+
+  return payload.data;
+}
+
+export interface SubmitSecretResult {
+  gameStatus: string;
+  waitingForOpponent: boolean;
+}
+
+export interface SubmitSecretResponse {
+  success: boolean;
+  data?: SubmitSecretResult;
+  message?: string;
+}
+
+export async function submitSecret(
+  gameId: string,
+  secretPuzzleId: string,
+): Promise<SubmitSecretResult> {
+  const payload = await apiClient.post<SubmitSecretResponse>('submit_secret', {
+    gameId,
+    secretPuzzleId,
+  });
+
+  if (!payload?.success || !payload.data) {
+    throw new Error(payload?.message ?? 'Unable to submit secret');
+  }
+
+  return payload.data;
+}
+

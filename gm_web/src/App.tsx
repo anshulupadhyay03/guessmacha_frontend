@@ -5,11 +5,12 @@ import {
   showFacebookPlayerProfileOverlay,
 } from './platform/facebook/fbInstant'
 import CreateGameScreen from './screens/CreateGameScreen'
+import GameZoneScreen from './screens/GameZoneScreen'
 import HomeScreen from './screens/HomeScreen'
 import MatchLobbyScreen from './screens/MatchLobbyScreen'
 import type { CreateGameResponse } from '../../shared/types/game'
 
-type Screen = 'home' | 'create-game' | 'match-lobby'
+type Screen = 'home' | 'create-game' | 'match-lobby' | 'game-zone'
 type NavKey = 'home' | 'matches' | 'history' | 'profile'
 
 const navigationItems: Array<{ key: NavKey; label: string; icon: string }> = [
@@ -117,7 +118,18 @@ function App() {
         <MatchLobbyScreen
           gameId={game.gameId}
           roomCode={game.roomCode}
-          onStartGame={() => console.info('Start game selected:', game.gameId)}
+          onStartGame={() => setScreen('game-zone')}
+          onNavigateToGameZone={() => setScreen('game-zone')}
+        />
+      )
+    }
+
+    if (screen === 'game-zone' && game) {
+      return (
+        <GameZoneScreen
+          gameId={game.gameId}
+          roomCode={game.roomCode}
+          onBackToLobby={() => setScreen('match-lobby')}
         />
       )
     }
