@@ -1,6 +1,17 @@
-
-
 import { useState } from 'react'
+import type {
+  CreateGameRequest,
+  CreateGameResponse,
+  JoinGameRequest,
+  JoinGameResponse,
+} from '../features/dashboard/types'
+
+export type {
+  CreateGameRequest,
+  CreateGameResponse,
+  JoinGameRequest,
+  JoinGameResponse,
+}
 
 interface DashboardProps {
   onCreateGame: () => void

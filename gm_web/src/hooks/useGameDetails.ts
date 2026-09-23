@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getGame, type GameDetails } from '../platform/api/gameApi'
+import { getGame } from '../platform/api/gameApi'
+import type { GameDetails } from '../features/matchLobby/types'
 
 interface UseGameDetailsResult {
   game: GameDetails | null

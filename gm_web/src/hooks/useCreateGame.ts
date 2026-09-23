@@ -1,9 +1,7 @@
 
 
 import { useCallback, useState } from 'react';
-import type {
-  CreateGameResponse,
-} from '../../../shared/types/game';
+import type { CreateGameResponse } from '../features/dashboard/types';
 import { gameService } from '../platform/api/gameApi';
 
 interface UseCreateGameResult {

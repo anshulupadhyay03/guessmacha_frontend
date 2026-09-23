@@ -1,6 +1,24 @@
 import { useMemo, useState } from 'react';
 import { usePuzzles } from '../hooks/usePuzzles';
-import type { PuzzleItem } from '../platform/api/gameApi';
+import type {
+  PuzzleItem,
+  CategoryDetails,
+  GetPuzzlesRequest,
+  GetPuzzlesResponse,
+  SubmitSecretRequest,
+  SubmitSecretResult,
+  SubmitSecretResponse,
+} from '../features/chooseSecret/types';
+
+export type {
+  PuzzleItem,
+  CategoryDetails,
+  GetPuzzlesRequest,
+  GetPuzzlesResponse,
+  SubmitSecretRequest,
+  SubmitSecretResult,
+  SubmitSecretResponse,
+};
 
 interface ChooseSecretModalProps {
   isOpen: boolean;

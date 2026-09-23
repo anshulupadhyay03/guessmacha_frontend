@@ -1,4 +1,4 @@
-import type { PuzzleItem } from '../platform/api/gameApi';
+import type { PuzzleItem } from '../features/chooseSecret/types';
 
 interface ConfirmSecretDialogProps {
   isOpen: boolean;

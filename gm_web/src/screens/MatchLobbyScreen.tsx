@@ -1,9 +1,25 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useGameDetails } from '../hooks/useGameDetails'
-import { submitSecret, type PuzzleItem } from '../platform/api/gameApi'
+import { submitSecret } from '../platform/api/gameApi'
+import type { PuzzleItem } from '../features/chooseSecret/types'
+import type {
+  GameDetails,
+  GetGameRequest,
+  GetGameResponse,
+  LobbyPlayer,
+  LobbyCategory,
+} from '../features/matchLobby/types'
 import ChooseSecretModal from '../components/ChooseSecretModal'
 import ConfirmSecretDialog from '../components/ConfirmSecretDialog'
+
+export type {
+  GameDetails,
+  GetGameRequest,
+  GetGameResponse,
+  LobbyPlayer,
+  LobbyCategory,
+}
 
 interface MatchLobbyScreenProps {
   gameId: string

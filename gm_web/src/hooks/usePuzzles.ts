@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  getPuzzles,
-  type CategoryDetails,
-  type PuzzleItem,
-} from '../platform/api/gameApi';
+import { getPuzzles } from '../platform/api/gameApi';
+import type { CategoryDetails, PuzzleItem } from '../features/chooseSecret/types';
 
 interface UsePuzzlesResult {
   category: CategoryDetails | null;

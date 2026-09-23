@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Category } from '../../../shared/types/category';
-import type { CreateGameResponse } from '../../../shared/types/game';
+import type { CreateGameResponse } from '../features/dashboard/types';
 import { useCategories } from '../hooks/useCategories';
 import { useCreateGame } from '../hooks/useCreateGame';
 
