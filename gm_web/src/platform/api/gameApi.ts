@@ -2,13 +2,22 @@ import { createApiClient } from '../../../../shared/api/client';
 import { createGameRepository } from '../../../../shared/repositories/gameRepository';
 import { createGameService } from '../../../../shared/services/gameService';
 import { authProvider } from '../supabase/authProvider';
+import {
+  BASE_URL,
+  SUPABASE_ANON_KEY,
+  SUPABASE_FUNCTIONS_BASE_URL,
+} from '../supabase/client';
 
-const apiClient = createApiClient(authProvider);
+export const FUNCTIONS_URL = SUPABASE_FUNCTIONS_BASE_URL;
+export { BASE_URL };
+
+export const apiClient = createApiClient(authProvider, {
+  baseUrl: BASE_URL,
+  apiKey: SUPABASE_ANON_KEY,
+});
 const gameRepository = createGameRepository(apiClient);
 
 export const gameService = createGameService(gameRepository);
-
-const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
 export interface GameDetails {
   gameId: string;
@@ -46,19 +55,9 @@ interface GetGameResponse {
 }
 
 export async function getGame(gameId: string): Promise<GameDetails> {
-  const accessToken = await authProvider.getAccessToken();
+  const payload = await apiClient.get<GetGameResponse>('get_game', { gameId });
 
-  if (!accessToken) {
-    throw new Error('Authentication required');
-  }
-
-  const response = await fetch(
-    `${FUNCTIONS_URL}/get_game?${new URLSearchParams({ gameId })}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
-  const payload = await response.json().catch(() => null) as GetGameResponse | null;
-
-  if (!response.ok || !payload?.success || !payload.data) {
+  if (!payload?.success || !payload.data) {
     throw new Error(payload?.message ?? 'Unable to load the latest game status');
   }
 
