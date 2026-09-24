@@ -33,6 +33,13 @@ import type {
   SubmitSecretResponse,
 } from '../../features/chooseSecret/types';
 
+import type {
+  MatchPlayer,
+  MatchItem,
+  GetMatchesData,
+  GetMatchesResponse,
+} from '../../features/matches/types';
+
 // Re-export feature request and response types for backward compatibility
 export type {
   GameDetails,
@@ -51,6 +58,10 @@ export type {
   SubmitSecretRequest,
   SubmitSecretResult,
   SubmitSecretResponse,
+  MatchPlayer,
+  MatchItem,
+  GetMatchesData,
+  GetMatchesResponse,
 };
 
 export const FUNCTIONS_URL = SUPABASE_FUNCTIONS_BASE_URL;
@@ -99,6 +110,16 @@ export async function submitSecret(
 
   if (!payload?.success || !payload.data) {
     throw new Error(payload?.message ?? 'Unable to submit secret');
+  }
+
+  return payload.data;
+}
+
+export async function getMatches(): Promise<GetMatchesData> {
+  const payload = await apiClient.get<GetMatchesResponse>('get_matches');
+
+  if (!payload?.success || !payload.data) {
+    throw new Error(payload?.message ?? 'Unable to load matches');
   }
 
   return payload.data;

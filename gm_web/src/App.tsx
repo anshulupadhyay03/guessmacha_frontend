@@ -7,17 +7,65 @@ import {
 import CreateGameScreen from './screens/CreateGameScreen'
 import GameZoneScreen from './screens/GameZoneScreen'
 import HomeScreen from './screens/HomeScreen'
+import MatchesScreen from './screens/MatchesScreen'
 import MatchLobbyScreen from './screens/MatchLobbyScreen'
 import type { CreateGameResponse } from '../../shared/types/game'
+import type { MatchItem } from './features/matches/types'
 
-type Screen = 'home' | 'create-game' | 'match-lobby' | 'game-zone'
+type Screen = 'home' | 'matches' | 'create-game' | 'match-lobby' | 'game-zone'
 type NavKey = 'home' | 'matches' | 'history' | 'profile'
 
-const navigationItems: Array<{ key: NavKey; label: string; icon: string }> = [
-  { key: 'home', label: 'Home', icon: '⌂' },
-  { key: 'matches', label: 'Matches', icon: '▤' },
-  { key: 'history', label: 'History', icon: '◔' },
-  { key: 'profile', label: 'Profile', icon: '◉' },
+interface NavigationItem {
+  key: NavKey
+  label: string
+  renderIcon: (active: boolean) => ReactNode
+}
+
+const navigationItems: NavigationItem[] = [
+  {
+    key: 'home',
+    label: 'Home',
+    renderIcon: () => (
+      <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    ),
+  },
+  {
+    key: 'matches',
+    label: 'Matches',
+    renderIcon: () => (
+      <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="6" y1="12" x2="10" y2="12" />
+        <line x1="8" y1="10" x2="8" y2="14" />
+        <line x1="15" y1="13" x2="15.01" y2="13" />
+        <line x1="18" y1="11" x2="18.01" y2="11" />
+        <rect x="2" y="6" width="20" height="12" rx="6" />
+      </svg>
+    ),
+  },
+  {
+    key: 'history',
+    label: 'History',
+    renderIcon: () => (
+      <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+        <path d="M12 7v5l4 2" />
+      </svg>
+    ),
+  },
+  {
+    key: 'profile',
+    label: 'Profile',
+    renderIcon: () => (
+      <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
+  },
 ]
 
 function AppShell({
@@ -33,37 +81,47 @@ function AppShell({
 }) {
   return (
     <div className="flex min-h-screen w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#1d1b21,#121016)]">
-      <header className="flex items-center justify-between px-[22px] pt-[18px] pb-2">
-        <div className="grid size-[46px] place-items-center rounded-[14px] bg-gradient-to-br from-[#c7d6db] to-[#e7f0f5] text-[0.95rem] font-extrabold tracking-[0.08em] text-[#121319]" aria-label="GuessMacha app icon">
-          <span>GM</span>
-        </div>
+      {/* Top Header shown on Home tab */}
+      {activeTab !== 'matches' && (
+        <header className="flex items-center justify-between px-[22px] pt-[18px] pb-2">
+          <div className="grid size-[46px] place-items-center rounded-[14px] bg-gradient-to-br from-[#c7d6db] to-[#e7f0f5] text-[0.95rem] font-extrabold tracking-[0.08em] text-[#121319]" aria-label="GuessMacha app icon">
+            <span>GM</span>
+          </div>
 
-        <button type="button" className="grid size-10 place-items-center rounded-xl bg-white/4 text-[#edf5ff] transition hover:-translate-y-px hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200" aria-label="Open settings">
-          <svg className="size-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 3.5v2.1m0 14.8v2.1m8.5-8.5h-2.1M5.6 12H3.5m15.9-5.3L16.7 8.8M7.3 15.2 5.6 16.9m0-9.8 1.7 1.7m9.4 9.4 1.7 1.7M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
-          </svg>
-        </button>
-      </header>
+          <button type="button" className="grid size-10 place-items-center rounded-xl bg-white/4 text-[#edf5ff] transition hover:-translate-y-px hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200" aria-label="Open settings">
+            <svg className="size-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3.5v2.1m0 14.8v2.1m8.5-8.5h-2.1M5.6 12H3.5m15.9-5.3L16.7 8.8M7.3 15.2 5.6 16.9m0-9.8 1.7 1.7m9.4 9.4 1.7 1.7M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
+            </svg>
+          </button>
+        </header>
+      )}
 
       <div className="flex-1 overflow-y-auto">{children}</div>
 
       {footer && <div className="px-[22px] pb-4 text-center max-[520px]:px-[18px]">{footer}</div>}
 
       <nav className="grid grid-cols-4 border-t border-white/8 bg-[rgba(18,16,22,0.96)]" aria-label="Main navigation">
-        {navigationItems.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            className={`flex min-h-[76px] cursor-pointer flex-col items-center justify-center gap-1.5 bg-transparent text-[0.8rem] font-semibold text-[#a9afbc] transition hover:text-[#f6f9ff] ${activeTab === item.key ? 'bg-white/3 text-[#f6f9ff]' : ''}`}
-            onClick={() => onTabChange(item.key)}
-            aria-pressed={activeTab === item.key}
-          >
-            <span className="inline-flex size-6 items-center justify-center text-[1.2rem]" aria-hidden="true">
-              {item.icon}
-            </span>
-            <span>{item.label}</span>
-          </button>
-        ))}
+        {navigationItems.map((item) => {
+          const isActive = activeTab === item.key
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={`flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition ${
+                isActive
+                  ? 'text-[#63d6ea]'
+                  : 'text-[#a9afbc] hover:text-[#f6f9ff]'
+              }`}
+              onClick={() => onTabChange(item.key)}
+              aria-pressed={isActive}
+            >
+              <span className="inline-flex size-6 items-center justify-center" aria-hidden="true">
+                {item.renderIcon(isActive)}
+              </span>
+              <span>{item.label}</span>
+            </button>
+          )
+        })}
       </nav>
     </div>
   )
@@ -103,11 +161,34 @@ function App() {
     setScreen('match-lobby')
   }
 
+  function handleSelectMatch(match: MatchItem) {
+    if (match.matchStatus === 'expired') {
+      return
+    }
+
+    setGame({
+      gameId: match.gameId,
+      roomCode: match.roomCode,
+    })
+
+    if (match.status === 'in_progress') {
+      setScreen('game-zone')
+    } else {
+      setScreen('match-lobby')
+    }
+  }
+
   function renderScreen() {
     if (screen === 'create-game') {
       return (
         <CreateGameScreen
-          onBack={() => setScreen('home')}
+          onBack={() => {
+            if (activeTab === 'matches') {
+              setScreen('matches')
+            } else {
+              setScreen('home')
+            }
+          }}
           onGameCreated={handleGameCreated}
         />
       )
@@ -134,6 +215,15 @@ function App() {
       )
     }
 
+    if (activeTab === 'matches' || screen === 'matches') {
+      return (
+        <MatchesScreen
+          onCreateGame={() => setScreen('create-game')}
+          onSelectMatch={handleSelectMatch}
+        />
+      )
+    }
+
     return <HomeScreen onCreateGame={() => setScreen('create-game')} />
   }
 
@@ -143,7 +233,9 @@ function App() {
         activeTab={activeTab}
         onTabChange={(tab) => {
           setActiveTab(tab)
-          if (tab === 'home') {
+          if (tab === 'matches') {
+            setScreen('matches')
+          } else if (tab === 'home') {
             setScreen('home')
           }
         }}
