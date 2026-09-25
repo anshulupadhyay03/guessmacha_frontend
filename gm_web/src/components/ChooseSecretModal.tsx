@@ -24,6 +24,10 @@ interface ChooseSecretModalProps {
   isOpen: boolean;
   categoryId?: string;
   categoryName?: string;
+  title?: string;
+  subtitle?: string;
+  confirmButtonText?: string;
+  helperText?: string;
   onClose: () => void;
   onConfirmSelection: (secret: PuzzleItem) => void;
 }
@@ -32,6 +36,10 @@ export default function ChooseSecretModal({
   isOpen,
   categoryId,
   categoryName,
+  title,
+  subtitle,
+  confirmButtonText,
+  helperText,
   onClose,
   onConfirmSelection,
 }: ChooseSecretModalProps) {
@@ -78,10 +86,10 @@ export default function ChooseSecretModal({
         <div className="flex items-start justify-between px-6 pt-4 pb-2">
           <div>
             <h2 id="choose-secret-title" className="font-lobby-display text-2xl font-bold text-white">
-              Choose Secret
+              {title ?? 'Choose Secret'}
             </h2>
             <p className="text-sm text-[#c4c7d0] mt-0.5">
-              Select an item for your opponent to deduce
+              {subtitle ?? 'Select an item for your opponent to deduce'}
             </p>
           </div>
           <button
@@ -204,10 +212,10 @@ export default function ChooseSecretModal({
             disabled={!selectedPuzzle || loading}
             className="w-full h-13 rounded-xl bg-[#63d6ea] text-[#00363e] font-extrabold text-base sm:text-lg transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_16px_rgba(99,214,234,0.2)]"
           >
-            Confirm Secret
+            {confirmButtonText ?? 'Confirm Secret'}
           </button>
           <p className="text-xs text-[#c4c7d0] text-center mt-2.5">
-            You cannot change your secret once confirmed.
+            {helperText ?? 'You cannot change your secret once confirmed.'}
           </p>
         </div>
       </div>

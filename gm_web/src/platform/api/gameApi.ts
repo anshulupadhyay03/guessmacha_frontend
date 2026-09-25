@@ -40,6 +40,22 @@ import type {
   GetMatchesResponse,
 } from '../../features/matches/types';
 
+import type {
+  GameStatePlayer,
+  GameStateQuestion,
+  GameStateData,
+  GetGameStateResponse,
+  AskQuestionRequest,
+  AskQuestionResponse,
+  AnswerQuestionRequest,
+  AnswerQuestionResponse,
+  GuessSecretRequest,
+  GuessSecretData,
+  GuessSecretResponse,
+  LeaveGameRequest,
+  LeaveGameResponse,
+} from '../../features/gameZone/types';
+
 // Re-export feature request and response types for backward compatibility
 export type {
   GameDetails,
@@ -62,6 +78,19 @@ export type {
   MatchItem,
   GetMatchesData,
   GetMatchesResponse,
+  GameStatePlayer,
+  GameStateQuestion,
+  GameStateData,
+  GetGameStateResponse,
+  AskQuestionRequest,
+  AskQuestionResponse,
+  AnswerQuestionRequest,
+  AnswerQuestionResponse,
+  GuessSecretRequest,
+  GuessSecretData,
+  GuessSecretResponse,
+  LeaveGameRequest,
+  LeaveGameResponse,
 };
 
 export const FUNCTIONS_URL = SUPABASE_FUNCTIONS_BASE_URL;
@@ -123,4 +152,80 @@ export async function getMatches(): Promise<GetMatchesData> {
   }
 
   return payload.data;
+}
+
+export async function getGameState(gameId: string): Promise<GameStateData> {
+  const payload = await apiClient.get<GetGameStateResponse>('game_state', { gameId });
+
+  if (!payload?.success || !payload.data) {
+    throw new Error(payload?.message ?? 'Unable to load game state');
+  }
+
+  return payload.data;
+}
+
+export async function askQuestion(
+  gameId: string,
+  questionText: string,
+  clientRequestId?: string,
+): Promise<AskQuestionResponse> {
+  const payload = await apiClient.post<AskQuestionResponse>('ask_question', {
+    gameId,
+    questionText,
+    clientRequestId: clientRequestId ?? crypto.randomUUID(),
+  });
+
+  if (!payload?.success) {
+    throw new Error(payload?.message ?? 'Failed to submit question');
+  }
+
+  return payload;
+}
+
+export async function answerQuestion(
+  gameId: string,
+  answerText: string,
+  clientRequestId?: string,
+): Promise<AnswerQuestionResponse> {
+  const payload = await apiClient.post<AnswerQuestionResponse>('answer_question', {
+    gameId,
+    answerText,
+    clientRequestId: clientRequestId ?? crypto.randomUUID(),
+  });
+
+  if (!payload?.success) {
+    throw new Error(payload?.message ?? 'Failed to submit answer');
+  }
+
+  return payload;
+}
+
+export async function guessSecret(
+  gameId: string,
+  guessedPuzzleId: string,
+  clientRequestId?: string,
+): Promise<GuessSecretData> {
+  const payload = await apiClient.post<GuessSecretResponse>('guess_secret', {
+    gameId,
+    guessedPuzzleId,
+    clientRequestId: clientRequestId ?? crypto.randomUUID(),
+  });
+
+  if (!payload?.success || !payload.data) {
+    throw new Error(payload?.message ?? 'Failed to guess secret');
+  }
+
+  return payload.data;
+}
+
+export async function leaveGame(
+  gameId: string,
+  clientRequestId?: string,
+): Promise<LeaveGameResponse> {
+  const payload = await apiClient.post<LeaveGameResponse>('leave_game', {
+    gameId,
+    clientRequestId: clientRequestId ?? crypto.randomUUID(),
+  });
+
+  return payload;
 }

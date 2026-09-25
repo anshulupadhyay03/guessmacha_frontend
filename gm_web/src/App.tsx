@@ -127,10 +127,17 @@ function AppShell({
   )
 }
 
+interface ActiveGameContext {
+  gameId: string
+  roomCode: string
+  categoryId?: string
+  categoryName?: string
+}
+
 function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [activeTab, setActiveTab] = useState<NavKey>('home')
-  const [game, setGame] = useState<CreateGameResponse | null>(null)
+  const [game, setGame] = useState<ActiveGameContext | null>(null)
 
   useEffect(() => {
     async function initializeGame() {
@@ -169,6 +176,8 @@ function App() {
     setGame({
       gameId: match.gameId,
       roomCode: match.roomCode,
+      categoryId: match.categoryId,
+      categoryName: match.categoryName,
     })
 
     if (match.status === 'in_progress') {
@@ -210,7 +219,13 @@ function App() {
         <GameZoneScreen
           gameId={game.gameId}
           roomCode={game.roomCode}
+          categoryId={game.categoryId}
+          categoryName={game.categoryName}
           onBackToLobby={() => setScreen('match-lobby')}
+          onLeave={() => {
+            setGame(null)
+            setScreen(activeTab === 'matches' ? 'matches' : 'home')
+          }}
         />
       )
     }
