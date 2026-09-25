@@ -9,7 +9,7 @@ import GameZoneScreen from './screens/GameZoneScreen'
 import HomeScreen from './screens/HomeScreen'
 import MatchesScreen from './screens/MatchesScreen'
 import MatchLobbyScreen from './screens/MatchLobbyScreen'
-import type { CreateGameResponse } from '../../shared/types/game'
+import type { CreateGameResponse, JoinGameData } from './features/dashboard/types'
 import type { MatchItem } from './features/matches/types'
 
 type Screen = 'home' | 'matches' | 'create-game' | 'match-lobby' | 'game-zone'
@@ -73,17 +73,21 @@ function AppShell({
   footer,
   activeTab,
   onTabChange,
+  screen,
 }: {
   children: ReactNode
   footer?: ReactNode
   activeTab: NavKey
   onTabChange: (tab: NavKey) => void
+  screen?: Screen
 }) {
+  const isGameZone = screen === 'game-zone'
+
   return (
-    <div className="flex min-h-screen w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#1d1b21,#121016)]">
+    <div className={`flex w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#1d1b21,#121016)] ${isGameZone ? 'h-screen h-[100dvh] max-h-screen' : 'min-h-screen'}`}>
       {/* Top Header shown on Home tab */}
-      {activeTab !== 'matches' && (
-        <header className="flex items-center justify-between px-5.5 pt-4.5 pb-2">
+      {activeTab !== 'matches' && !isGameZone && (
+        <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
           <div className="grid size-11.5 place-items-center rounded-[14px] bg-linear-to-br from-[#c7d6db] to-[#e7f0f5] text-[0.95rem] font-extrabold tracking-[0.08em] text-[#121319]" aria-label="GuessMacha app icon">
             <span>GM</span>
           </div>
@@ -96,33 +100,35 @@ function AppShell({
         </header>
       )}
 
-      <div className="flex-1 overflow-y-auto">{children}</div>
+      <div className={`flex-1 ${isGameZone ? 'overflow-hidden flex flex-col min-h-0 h-full' : 'overflow-y-auto'}`}>{children}</div>
 
-      {footer && <div className="px-5.5 pb-4 text-center max-[520px]:px-4.5">{footer}</div>}
+      {footer && !isGameZone && <div className="shrink-0 px-5.5 pb-4 text-center max-[520px]:px-4.5">{footer}</div>}
 
-      <nav className="grid grid-cols-4 border-t border-white/8 bg-[rgba(18,16,22,0.96)]" aria-label="Main navigation">
-        {navigationItems.map((item) => {
-          const isActive = activeTab === item.key
-          return (
-            <button
-              key={item.key}
-              type="button"
-              className={`flex min-h-18 cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition ${
-                isActive
-                  ? 'text-[#63d6ea]'
-                  : 'text-[#a9afbc] hover:text-[#f6f9ff]'
-              }`}
-              onClick={() => onTabChange(item.key)}
-              aria-pressed={isActive}
-            >
-              <span className="inline-flex size-6 items-center justify-center" aria-hidden="true">
-                {item.renderIcon(isActive)}
-              </span>
-              <span>{item.label}</span>
-            </button>
-          )
-        })}
-      </nav>
+      {!isGameZone && (
+        <nav className="grid shrink-0 grid-cols-4 border-t border-white/8 bg-[rgba(18,16,22,0.96)]" aria-label="Main navigation">
+          {navigationItems.map((item) => {
+            const isActive = activeTab === item.key
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`flex min-h-18 cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition ${
+                  isActive
+                    ? 'text-[#63d6ea]'
+                    : 'text-[#a9afbc] hover:text-[#f6f9ff]'
+                }`}
+                onClick={() => onTabChange(item.key)}
+                aria-pressed={isActive}
+              >
+                <span className="inline-flex size-6 items-center justify-center" aria-hidden="true">
+                  {item.renderIcon(isActive)}
+                </span>
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
+        </nav>
+      )}
     </div>
   )
 }
@@ -239,12 +245,27 @@ function App() {
       )
     }
 
-    return <HomeScreen onCreateGame={() => setScreen('create-game')} />
+    function handleGameJoined(joinedGame: JoinGameData) {
+      setGame({
+        gameId: joinedGame.gameId,
+        roomCode: joinedGame.roomCode,
+        categoryId: joinedGame.categoryId,
+      })
+      setScreen('match-lobby')
+    }
+
+    return (
+      <HomeScreen
+        onCreateGame={() => setScreen('create-game')}
+        onGameJoined={handleGameJoined}
+      />
+    )
   }
 
   return (
-    <main className="min-h-screen w-full bg-[#121016]">
+    <main className={`w-full bg-[#121016] ${screen === 'game-zone' ? 'h-screen h-[100dvh] overflow-hidden' : 'min-h-screen'}`}>
       <AppShell
+        screen={screen}
         activeTab={activeTab}
         onTabChange={(tab) => {
           setActiveTab(tab)

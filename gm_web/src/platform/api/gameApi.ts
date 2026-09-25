@@ -20,6 +20,7 @@ import type {
   CreateGameRequest,
   CreateGameResponse,
   JoinGameRequest,
+  JoinGameData,
   JoinGameResponse,
 } from '../../features/dashboard/types';
 
@@ -66,6 +67,7 @@ export type {
   CreateGameRequest,
   CreateGameResponse,
   JoinGameRequest,
+  JoinGameData,
   JoinGameResponse,
   PuzzleItem,
   CategoryDetails,
@@ -228,4 +230,16 @@ export async function leaveGame(
   });
 
   return payload;
+}
+
+export async function joinGame(roomCode: string): Promise<JoinGameData> {
+  const payload = await apiClient.post<JoinGameResponse>('join_game', {
+    roomCode,
+  });
+
+  if (!payload?.success || !payload.data) {
+    throw new Error(payload?.message ?? 'Failed to join game');
+  }
+
+  return payload.data;
 }
