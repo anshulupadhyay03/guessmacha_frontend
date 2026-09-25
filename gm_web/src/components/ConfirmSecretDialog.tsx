@@ -23,7 +23,7 @@ export default function ConfirmSecretDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150"
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
@@ -45,13 +45,13 @@ export default function ConfirmSecretDialog({
 
         {/* Secret Display Box */}
         <div className="w-full bg-white/4 border border-white/10 rounded-xl py-5 px-6 my-4 flex items-center justify-center shadow-inner">
-          <span className="text-3xl sm:text-4xl font-extrabold text-[#63d6ea] tracking-wide break-words">
+          <span className="text-3xl sm:text-4xl font-extrabold text-[#63d6ea] tracking-wide wrap-break-word">
             {secret.name}
           </span>
         </div>
 
         {/* Disclaimer */}
-        <p id="confirm-dialog-description" className="text-xs sm:text-sm text-[#c4c7d0] leading-relaxed mb-6 max-w-[280px]">
+        <p id="confirm-dialog-description" className="text-xs sm:text-sm text-[#c4c7d0] leading-relaxed mb-6 max-w-70">
           Only you can see this choice. You won't be able to change it once confirmed.
         </p>
 

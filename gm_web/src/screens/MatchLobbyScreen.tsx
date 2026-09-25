@@ -254,7 +254,7 @@ export default function MatchLobbyScreen({
   }
 
   return (
-    <section className="min-h-full bg-[#100d13] font-lobby-body text-[#f4f1f7]" aria-live="polite">
+    <section className="min-h-full bg-lobby-background font-lobby-body text-[#f4f1f7]" aria-live="polite">
       <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-28 sm:px-6">
         <div className="mb-6 text-center">
           <h1 className="font-lobby-display text-[28px] leading-9 font-bold text-[#63d6ea]">Match Lobby</h1>

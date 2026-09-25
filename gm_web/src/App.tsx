@@ -83,13 +83,13 @@ function AppShell({
     <div className="flex min-h-screen w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#1d1b21,#121016)]">
       {/* Top Header shown on Home tab */}
       {activeTab !== 'matches' && (
-        <header className="flex items-center justify-between px-[22px] pt-[18px] pb-2">
-          <div className="grid size-[46px] place-items-center rounded-[14px] bg-gradient-to-br from-[#c7d6db] to-[#e7f0f5] text-[0.95rem] font-extrabold tracking-[0.08em] text-[#121319]" aria-label="GuessMacha app icon">
+        <header className="flex items-center justify-between px-5.5 pt-4.5 pb-2">
+          <div className="grid size-11.5 place-items-center rounded-[14px] bg-linear-to-br from-[#c7d6db] to-[#e7f0f5] text-[0.95rem] font-extrabold tracking-[0.08em] text-[#121319]" aria-label="GuessMacha app icon">
             <span>GM</span>
           </div>
 
           <button type="button" className="grid size-10 place-items-center rounded-xl bg-white/4 text-[#edf5ff] transition hover:-translate-y-px hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200" aria-label="Open settings">
-            <svg className="size-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="size-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] stroke-[1.8]" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 3.5v2.1m0 14.8v2.1m8.5-8.5h-2.1M5.6 12H3.5m15.9-5.3L16.7 8.8M7.3 15.2 5.6 16.9m0-9.8 1.7 1.7m9.4 9.4 1.7 1.7M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
             </svg>
           </button>
@@ -98,7 +98,7 @@ function AppShell({
 
       <div className="flex-1 overflow-y-auto">{children}</div>
 
-      {footer && <div className="px-[22px] pb-4 text-center max-[520px]:px-[18px]">{footer}</div>}
+      {footer && <div className="px-5.5 pb-4 text-center max-[520px]:px-4.5">{footer}</div>}
 
       <nav className="grid grid-cols-4 border-t border-white/8 bg-[rgba(18,16,22,0.96)]" aria-label="Main navigation">
         {navigationItems.map((item) => {
@@ -107,7 +107,7 @@ function AppShell({
             <button
               key={item.key}
               type="button"
-              className={`flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition ${
+              className={`flex min-h-18 cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition ${
                 isActive
                   ? 'text-[#63d6ea]'
                   : 'text-[#a9afbc] hover:text-[#f6f9ff]'
@@ -263,7 +263,7 @@ function App() {
             >
               Test Facebook Profile
             </button>
-            <div id="profile-overlay-container" className="relative mx-auto mt-3 h-[60px] w-[200px]" />
+            <div id="profile-overlay-container" className="relative mx-auto mt-3 h-15 w-50" />
           </>
         ) : (
           <p className="text-[13px] leading-5 text-[#c6ccdc]">

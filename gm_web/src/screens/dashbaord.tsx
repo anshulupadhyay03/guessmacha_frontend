@@ -40,12 +40,12 @@ export default function Dashboard({ onCreateGame }: DashboardProps) {
 
   return (
     <div className="w-full max-w-md rounded-2xl border border-white/8 bg-white/3 p-5 text-[#f4f1f7]">
-      {error && <p className="mb-5 rounded-xl bg-red-500/15 p-[14px] text-sm leading-5 text-[#ffd9d9]">{error}</p>}
+      {error && <p className="mb-5 rounded-xl bg-red-500/15 p-3.5xt-sm leading-5 text-[#ffd9d9]">{error}</p>}
 
       <div className="grid gap-5">
         <button
           type="button"
-          className="w-full cursor-pointer rounded-xl bg-gradient-to-br from-[#7fe4dc] to-[#6cccff] px-[18px] py-4 text-[1.15rem] font-extrabold text-[#0f1723] transition hover:-translate-y-px"
+          className="w-full cursor-pointer rounded-xl bg-linear-to-br from-[#7fe4dc] to-[#6cccff] px-4.5 py-4 text-[1.15rem] font-extrabold text-[#0f1723] transition hover:-translate-y-px"
           onClick={handleCreateGame}
         >
           Create Game
@@ -59,7 +59,7 @@ export default function Dashboard({ onCreateGame }: DashboardProps) {
               value={roomCode}
               onChange={(event) => setRoomCode(event.target.value)}
               placeholder="Enter room code"
-              className="w-full rounded-[10px] border border-white/12 bg-white/3 px-[14px] py-4 text-[1.1rem] text-[#f2f5fc] outline-none placeholder:text-[#9ea8b8] focus:border-[#70ede5]/70 focus:ring-3 focus:ring-[#70ede5]/18"
+              className="w-full rounded-[10px] border border-white/12 bg-white/3 px-3.5 py-4 text-[1.1rem] text-[#f2f5fc] outline-none placeholder:text-[#9ea8b8] focus:border-[#70ede5]/70 focus:ring-3 focus:ring-[#70ede5]/18"
               aria-label="Room code"
               maxLength={12}
               autoComplete="off"
@@ -67,7 +67,7 @@ export default function Dashboard({ onCreateGame }: DashboardProps) {
             />
             <button
               type="button"
-              className="w-full cursor-pointer rounded-xl border border-white/12 bg-white/4 px-[18px] py-3 font-bold text-[#edf3ff] transition hover:bg-white/8"
+              className="w-full cursor-pointer rounded-xl border border-white/12 bg-white/4 px-4.5 py-3 font-bold text-[#edf3ff] transition hover:bg-white/8"
               onClick={handleJoinGame}
             >
               Join Game
