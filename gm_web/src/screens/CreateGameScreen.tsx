@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Category } from '../../../shared/types/category';
+import Chip from '../components/Chip';
 import type { CreateGameResponse } from '../features/dashboard/types';
 import { useCategories } from '../hooks/useCategories';
 import { useCreateGame } from '../hooks/useCreateGame';
@@ -21,7 +22,7 @@ const categoryIcons: Record<string, string> = {
   general: '✨',
 };
 
-const questionLimitOptions = [5, 10, 15, 20, 25];
+const questionLimitOptions = [5, 7, 10, 12, 15];
 
 function categoryIcon(category: Category): string {
   return categoryIcons[category.iconKey?.toLowerCase() ?? ''] ?? '🎯';
@@ -34,7 +35,7 @@ export default function CreateGameScreen({
   const { categories, error, loading, reload } = useCategories();
   const { createGame, error: createError, loading: creating } = useCreateGame();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [questionLimit, setQuestionLimit] = useState(25);
+  const [questionLimit, setQuestionLimit] = useState(10);
 
   async function handleConfirm() {
     if (!selectedCategoryId || creating) {
@@ -72,23 +73,26 @@ export default function CreateGameScreen({
         <p className="my-6 text-center text-[#ccd5e3]">No categories are available right now.</p>
       )}
 
-      <div className="mt-5">
-        <label className="mb-2 block text-xs font-bold tracking-[0.12em] text-[#dce6ef] uppercase" htmlFor="question-limit">
+      <div className="mt-4 mb-2">
+        <label className="mb-2 block text-xs font-bold tracking-[0.12em] text-[#dce6ef] uppercase">
           Questions Limit for each Player
         </label>
-        <select
-          id="question-limit"
-          value={questionLimit}
-          onChange={(event) => setQuestionLimit(Number(event.target.value))}
-          disabled={creating}
-          className="w-full cursor-pointer appearance-none rounded-xl border border-white/12 bg-white/5 px-4 py-3 text-base font-semibold text-[#f2f5fc] outline-none transition focus:border-[#70ede5]/70 focus:ring-3 focus:ring-[#70ede5]/18 disabled:cursor-wait disabled:opacity-65"
+        <div
+          role="radiogroup"
+          aria-label="Questions Limit for each Player"
+          className="flex flex-wrap items-center gap-2.5"
         >
           {questionLimitOptions.map((limit) => (
-            <option key={limit} value={limit} className="bg-[#1d1b21] text-[#f2f5fc]">
-              {limit} questions
-            </option>
+            <Chip
+              key={limit}
+              label={limit}
+              selected={questionLimit === limit}
+              onClick={() => setQuestionLimit(limit)}
+              disabled={creating}
+              ariaLabel={`${limit} questions`}
+            />
           ))}
-        </select>
+        </div>
       </div>
 
       <fieldset className="mt-5 grid min-w-0 gap-2.5 border-0 p-0 disabled:cursor-wait disabled:opacity-65" disabled={creating}>

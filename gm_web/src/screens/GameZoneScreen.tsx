@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
 import { useGameDetails } from '../hooks/useGameDetails';
 import { useGameState } from '../hooks/useGameState';
-import { usePuzzles } from '../hooks/usePuzzles';
 import './GameZoneScreen.css';
 
 interface GameZoneScreenProps {
@@ -161,7 +160,6 @@ export default function GameZoneScreen({
   const effectiveCategoryId = categoryId || detailsGame?.category?.id;
   const effectiveCategoryName = categoryName || detailsGame?.category?.name || 'Category';
 
-  const { puzzles } = usePuzzles(effectiveCategoryId);
   const {
     gameState,
     questions,
@@ -201,13 +199,8 @@ export default function GameZoneScreen({
   const opponent = gameState?.players?.opponent;
   const questionLimit = gameState?.questionLimit ?? 25;
 
-  // Resolve player secret display name
-  const mySecret = me?.secret;
-  const mySecretName = useMemo(() => {
-    if (!mySecret) return 'Secret Locked';
-    const found = puzzles.find((p) => p.id === mySecret);
-    return found ? found.name : mySecret;
-  }, [mySecret, puzzles]);
+  // Resolve player secret display name directly from API response
+  const mySecretName = me?.secret || 'Secret Locked';
 
   // Turn calculations
   const latestQuestion = questions.length > 0 ? questions[questions.length - 1] : gameState?.question;
