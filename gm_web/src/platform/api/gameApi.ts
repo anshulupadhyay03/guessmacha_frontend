@@ -57,6 +57,13 @@ import type {
   LeaveGameResponse,
 } from '../../features/gameZone/types';
 
+import type {
+  HistoryMatchItem,
+  HistoryFilter,
+  HistoryData,
+  GetHistoryResponse,
+} from '../../features/history/types';
+
 // Re-export feature request and response types for backward compatibility
 export type {
   GameDetails,
@@ -93,6 +100,10 @@ export type {
   GuessSecretResponse,
   LeaveGameRequest,
   LeaveGameResponse,
+  HistoryMatchItem,
+  HistoryFilter,
+  HistoryData,
+  GetHistoryResponse,
 };
 
 export const FUNCTIONS_URL = SUPABASE_FUNCTIONS_BASE_URL;
@@ -243,3 +254,26 @@ export async function joinGame(roomCode: string): Promise<JoinGameData> {
 
   return payload.data;
 }
+
+export async function getHistory(
+  filter: HistoryFilter = 'all',
+  limit: number = 20,
+  cursor?: string | null,
+): Promise<HistoryData> {
+  const params: Record<string, string | number> = {
+    limit,
+    filter,
+  };
+  if (cursor) {
+    params.cursor = cursor;
+  }
+
+  const payload = await apiClient.get<GetHistoryResponse>('history', params);
+
+  if (!payload?.success || !payload.data) {
+    throw new Error(payload?.message ?? 'Failed to load match history');
+  }
+
+  return payload.data;
+}
+

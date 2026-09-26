@@ -9,10 +9,11 @@ import GameZoneScreen from './screens/GameZoneScreen'
 import HomeScreen from './screens/HomeScreen'
 import MatchesScreen from './screens/MatchesScreen'
 import MatchLobbyScreen from './screens/MatchLobbyScreen'
+import HistoryScreen from './screens/HistoryScreen'
 import type { CreateGameResponse, JoinGameData } from './features/dashboard/types'
 import type { MatchItem } from './features/matches/types'
 
-type Screen = 'home' | 'matches' | 'create-game' | 'match-lobby' | 'game-zone'
+type Screen = 'home' | 'matches' | 'history' | 'create-game' | 'match-lobby' | 'game-zone'
 type NavKey = 'home' | 'matches' | 'history' | 'profile'
 
 interface NavigationItem {
@@ -86,7 +87,7 @@ function AppShell({
   return (
     <div className={`flex w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#1d1b21,#121016)] ${isGameZone ? 'h-screen h-[100dvh] max-h-screen' : 'min-h-screen'}`}>
       {/* Top Header shown on Home tab */}
-      {activeTab !== 'matches' && !isGameZone && (
+      {activeTab === 'home' && screen === 'home' && !isGameZone && (
         <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
           <div className="grid size-11.5 place-items-center rounded-[14px] bg-linear-to-br from-[#c7d6db] to-[#e7f0f5] text-[0.95rem] font-extrabold tracking-[0.08em] text-[#121319]" aria-label="GuessMacha app icon">
             <span>GM</span>
@@ -236,6 +237,17 @@ function App() {
       )
     }
 
+    if (activeTab === 'history' || screen === 'history') {
+      return (
+        <HistoryScreen
+          onBack={() => {
+            setActiveTab('home')
+            setScreen('home')
+          }}
+        />
+      )
+    }
+
     if (activeTab === 'matches' || screen === 'matches') {
       return (
         <MatchesScreen
@@ -271,6 +283,8 @@ function App() {
           setActiveTab(tab)
           if (tab === 'matches') {
             setScreen('matches')
+          } else if (tab === 'history') {
+            setScreen('history')
           } else if (tab === 'home') {
             setScreen('home')
           }
