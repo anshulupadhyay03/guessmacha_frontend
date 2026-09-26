@@ -3,7 +3,6 @@ import type { HistoryFilter, HistoryMatchItem } from '../features/history/types'
 import { useHistory } from '../hooks/useHistory';
 
 interface HistoryScreenProps {
-  onBack: () => void;
   onSelectMatch?: (match: HistoryMatchItem) => void;
 }
 
@@ -85,7 +84,7 @@ function DefaultAvatarIcon() {
   );
 }
 
-export default function HistoryScreen({ onBack, onSelectMatch }: HistoryScreenProps) {
+export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
   const [filter, setFilter] = useState<HistoryFilter>('all');
   const { matches, loading, loadingMore, error, hasMore, loadMore, refresh } = useHistory(filter);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -120,23 +119,8 @@ export default function HistoryScreen({ onBack, onSelectMatch }: HistoryScreenPr
   return (
     <section className="relative mx-auto flex w-full max-w-[640px] flex-col px-4 pt-3 pb-8 text-left text-[#f5f7fb]">
       {/* Top Header */}
-      <div className="relative mb-4 flex items-center justify-between border-b border-white/8 pb-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="grid size-10 place-items-center rounded-xl bg-white/4 text-[#edf3ff] transition hover:-translate-y-px hover:bg-white/8 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
-          aria-label="Back to previous screen"
-        >
-          <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12" />
-            <polyline points="12 19 5 12 12 5" />
-          </svg>
-        </button>
-
+      <div className="relative mb-4 flex items-center justify-center border-b border-white/8 pb-3">
         <h1 className="text-xl font-bold tracking-tight text-white">History</h1>
-
-        {/* Placeholder balance spacing */}
-        <div className="size-10" aria-hidden="true" />
       </div>
 
       {/* Segmented Filter Control */}

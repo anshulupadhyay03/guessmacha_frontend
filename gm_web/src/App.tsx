@@ -87,7 +87,7 @@ function AppShell({
   const isGameZone = screen === 'game-zone'
 
   return (
-    <div className={`flex w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#1d1b21,#121016)] ${isGameZone ? 'h-screen h-[100dvh] max-h-screen' : 'min-h-screen'}`}>
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#1d1b21,#121016)]">
       {/* Top Header shown on Home tab */}
       {activeTab === 'home' && screen === 'home' && !isGameZone && (
         <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
@@ -103,12 +103,14 @@ function AppShell({
         </header>
       )}
 
-      <div className={`flex-1 ${isGameZone ? 'overflow-hidden flex flex-col min-h-0 h-full' : 'overflow-y-auto'}`}>{children}</div>
+      <div className={`flex-1 min-h-0 ${isGameZone ? 'overflow-hidden flex flex-col h-full' : 'overflow-y-auto'}`}>{children}</div>
 
-      {footer && !isGameZone && <div className="shrink-0 px-5.5 pb-4 text-center max-[520px]:px-4.5">{footer}</div>}
+      {footer && activeTab === 'home' && screen === 'home' && !isGameZone && (
+        <div className="shrink-0 px-5.5 pb-4 text-center max-[520px]:px-4.5">{footer}</div>
+      )}
 
       {!isGameZone && (
-        <nav className="grid shrink-0 grid-cols-4 border-t border-white/8 bg-[rgba(18,16,22,0.96)]" aria-label="Main navigation">
+        <nav className="sticky bottom-0 z-40 grid shrink-0 grid-cols-4 border-t border-white/8 bg-[rgba(18,16,22,0.96)]" aria-label="Main navigation">
           {navigationItems.map((item) => {
             const isActive = activeTab === item.key
             return (
@@ -252,10 +254,6 @@ function App() {
     if (activeTab === 'history' || screen === 'history') {
       return (
         <HistoryScreen
-          onBack={() => {
-            setActiveTab('home')
-            setScreen('home')
-          }}
           onSelectMatch={(selected) => {
             setReviewMatch(selected)
             setScreen('match-review')
@@ -291,7 +289,7 @@ function App() {
   }
 
   return (
-    <main className={`w-full bg-[#121016] ${screen === 'game-zone' ? 'h-screen h-[100dvh] overflow-hidden' : 'min-h-screen'}`}>
+    <main className="h-screen h-[100dvh] w-full overflow-hidden bg-[#121016]">
       <AppShell
         screen={screen}
         activeTab={activeTab}
