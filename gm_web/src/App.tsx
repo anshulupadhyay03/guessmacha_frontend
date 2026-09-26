@@ -10,10 +10,12 @@ import HomeScreen from './screens/HomeScreen'
 import MatchesScreen from './screens/MatchesScreen'
 import MatchLobbyScreen from './screens/MatchLobbyScreen'
 import HistoryScreen from './screens/HistoryScreen'
+import MatchReviewScreen from './screens/MatchReviewScreen'
 import type { CreateGameResponse, JoinGameData } from './features/dashboard/types'
 import type { MatchItem } from './features/matches/types'
+import type { HistoryMatchItem } from './features/history/types'
 
-type Screen = 'home' | 'matches' | 'history' | 'create-game' | 'match-lobby' | 'game-zone'
+type Screen = 'home' | 'matches' | 'history' | 'match-review' | 'create-game' | 'match-lobby' | 'game-zone'
 type NavKey = 'home' | 'matches' | 'history' | 'profile'
 
 interface NavigationItem {
@@ -145,6 +147,7 @@ function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [activeTab, setActiveTab] = useState<NavKey>('home')
   const [game, setGame] = useState<ActiveGameContext | null>(null)
+  const [reviewMatch, setReviewMatch] = useState<HistoryMatchItem | null>(null)
 
   useEffect(() => {
     async function initializeGame() {
@@ -237,12 +240,25 @@ function App() {
       )
     }
 
+    if (screen === 'match-review' && reviewMatch) {
+      return (
+        <MatchReviewScreen
+          match={reviewMatch}
+          onBack={() => setScreen('history')}
+        />
+      )
+    }
+
     if (activeTab === 'history' || screen === 'history') {
       return (
         <HistoryScreen
           onBack={() => {
             setActiveTab('home')
             setScreen('home')
+          }}
+          onSelectMatch={(selected) => {
+            setReviewMatch(selected)
+            setScreen('match-review')
           }}
         />
       )

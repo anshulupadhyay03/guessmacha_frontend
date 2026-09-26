@@ -64,6 +64,13 @@ import type {
   GetHistoryResponse,
 } from '../../features/history/types';
 
+import type {
+  ReviewPlayer,
+  ReviewQuestionItem,
+  MatchReviewData,
+  GetQuestionsResponse,
+} from '../../features/matchReview/types';
+
 // Re-export feature request and response types for backward compatibility
 export type {
   GameDetails,
@@ -104,6 +111,10 @@ export type {
   HistoryFilter,
   HistoryData,
   GetHistoryResponse,
+  ReviewPlayer,
+  ReviewQuestionItem,
+  MatchReviewData,
+  GetQuestionsResponse,
 };
 
 export const FUNCTIONS_URL = SUPABASE_FUNCTIONS_BASE_URL;
@@ -276,4 +287,17 @@ export async function getHistory(
 
   return payload.data;
 }
+
+export async function getMatchQuestions(gameId: string): Promise<MatchReviewData> {
+  const payload = await apiClient.get<GetQuestionsResponse>('get_questions', {
+    gameId,
+  });
+
+  if (!payload?.success || !payload.data) {
+    throw new Error(payload?.message ?? 'Failed to load match review questions');
+  }
+
+  return payload.data;
+}
+
 
