@@ -1,35 +1,39 @@
-import { useCallback, useEffect, useState } from 'react'
-import { getGame } from '../platform/api/gameApi'
-import type { GameDetails } from '../features/matchLobby/types'
+import { useCallback, useEffect, useState } from 'react';
+import type { GameDetails } from '../../../shared/types/game';
+import { gameService } from '../platform/api/gameApi';
 
 interface UseGameDetailsResult {
-  game: GameDetails | null
-  loading: boolean
-  error: Error | null
-  refresh: () => Promise<void>
+  game: GameDetails | null;
+  loading: boolean;
+  error: Error | null;
+  refresh: () => Promise<void>;
 }
 
 export function useGameDetails(gameId: string): UseGameDetailsResult {
-  const [game, setGame] = useState<GameDetails | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+  const [game, setGame] = useState<GameDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const refresh = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
-      setGame(await getGame(gameId))
+      setGame(await gameService.getGame(gameId));
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError : new Error('Unable to load game'))
+      setError(
+        caughtError instanceof Error
+          ? caughtError
+          : new Error('Unable to load game'),
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [gameId])
+  }, [gameId]);
 
   useEffect(() => {
-    void Promise.resolve().then(refresh)
-  }, [refresh])
+    void Promise.resolve().then(refresh);
+  }, [refresh]);
 
-  return { game, loading, error, refresh }
+  return { game, loading, error, refresh };
 }

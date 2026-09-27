@@ -8,94 +8,41 @@ import {
   SUPABASE_FUNCTIONS_BASE_URL,
 } from '../supabase/client';
 
-import type {
-  GameDetails,
-  GetGameRequest,
-  GetGameResponse,
-  LobbyPlayer,
-  LobbyCategory,
-} from '../../features/matchLobby/types';
-
-import type {
-  CreateGameRequest,
-  CreateGameResponse,
-  JoinGameRequest,
-  JoinGameData,
-  JoinGameResponse,
-} from '../../features/dashboard/types';
-
-import type {
-  PuzzleItem,
-  CategoryDetails,
-  GetPuzzlesRequest,
-  GetPuzzlesResponse,
-  SubmitSecretRequest,
-  SubmitSecretResult,
-  SubmitSecretResponse,
-} from '../../features/chooseSecret/types';
-
-import type {
-  MatchPlayer,
-  MatchItem,
-  GetMatchesData,
-  GetMatchesResponse,
-} from '../../features/matches/types';
-
-import type {
-  GameStatePlayer,
-  GameStateQuestion,
-  GameStateData,
-  GetGameStateResponse,
-  AskQuestionRequest,
-  AskQuestionResponse,
-  AnswerQuestionRequest,
-  AnswerQuestionResponse,
-  GuessSecretRequest,
-  GuessSecretData,
-  GuessSecretResponse,
-  LeaveGameRequest,
-  LeaveGameResponse,
-} from '../../features/gameZone/types';
-
-import type {
-  HistoryMatchItem,
-  HistoryFilter,
-  HistoryData,
-  GetHistoryResponse,
-} from '../../features/history/types';
-
-import type {
-  ReviewPlayer,
-  ReviewQuestionItem,
-  MatchReviewData,
-  GetQuestionsResponse,
-} from '../../features/matchReview/types';
-
-// Re-export feature request and response types for backward compatibility
+// Re-export shared domain types for backward compatibility
 export type {
-  GameDetails,
-  GetGameRequest,
-  GetGameResponse,
-  LobbyPlayer,
-  LobbyCategory,
   CreateGameRequest,
   CreateGameResponse,
   JoinGameRequest,
   JoinGameData,
   JoinGameResponse,
+  GameDetails,
+  GetGameRequest,
+  GetGameResponse,
+  LobbyPlayer,
+  LobbyCategory,
+  SubmitSecretRequest,
+  SubmitSecretResult,
+  SubmitSecretResponse,
+} from '../../../../shared/types/game';
+
+export type {
   PuzzleItem,
   CategoryDetails,
   GetPuzzlesRequest,
   GetPuzzlesResponse,
-  SubmitSecretRequest,
-  SubmitSecretResult,
-  SubmitSecretResponse,
+} from '../../../../shared/types/puzzle';
+
+export type {
   MatchPlayer,
   MatchItem,
   GetMatchesData,
   GetMatchesResponse,
+} from '../../../../shared/types/match';
+
+export type {
   GameStatePlayer,
   GameStateQuestion,
+  GameResultData,
   GameStateData,
   GetGameStateResponse,
   AskQuestionRequest,
@@ -104,18 +51,25 @@ export type {
   AnswerQuestionResponse,
   GuessSecretRequest,
   GuessSecretData,
+  RealtimeGuessNotification,
   GuessSecretResponse,
   LeaveGameRequest,
   LeaveGameResponse,
+} from '../../../../shared/types/gameplay';
+
+export type {
   HistoryMatchItem,
   HistoryFilter,
   HistoryData,
   GetHistoryResponse,
+} from '../../../../shared/types/history';
+
+export type {
   ReviewPlayer,
   ReviewQuestionItem,
   MatchReviewData,
   GetQuestionsResponse,
-};
+} from '../../../../shared/types/matchReview';
 
 export const FUNCTIONS_URL = SUPABASE_FUNCTIONS_BASE_URL;
 export { BASE_URL };
@@ -124,180 +78,6 @@ export const apiClient = createApiClient(authProvider, {
   baseUrl: BASE_URL,
   apiKey: SUPABASE_ANON_KEY,
 });
+
 const gameRepository = createGameRepository(apiClient);
-
 export const gameService = createGameService(gameRepository);
-
-export async function getGame(gameId: string): Promise<GameDetails> {
-  const payload = await apiClient.get<GetGameResponse>('get_game', { gameId });
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Unable to load the latest game status');
-  }
-
-  return payload.data;
-}
-
-export async function getPuzzles(
-  categoryId: string,
-): Promise<{ category: CategoryDetails; puzzles: PuzzleItem[] }> {
-  const payload = await apiClient.get<GetPuzzlesResponse>('get_puzzles', {
-    categoryId,
-  });
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Unable to load puzzles for category');
-  }
-
-  return payload.data;
-}
-
-export async function submitSecret(
-  gameId: string,
-  secretPuzzleId: string,
-): Promise<SubmitSecretResult> {
-  const payload = await apiClient.post<SubmitSecretResponse>('submit_secret', {
-    gameId,
-    secretPuzzleId,
-  });
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Unable to submit secret');
-  }
-
-  return payload.data;
-}
-
-export async function getMatches(): Promise<GetMatchesData> {
-  const payload = await apiClient.get<GetMatchesResponse>('get_matches');
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Unable to load matches');
-  }
-
-  return payload.data;
-}
-
-export async function getGameState(gameId: string): Promise<GameStateData> {
-  const payload = await apiClient.get<GetGameStateResponse>('game_state', { gameId });
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Unable to load game state');
-  }
-
-  return payload.data;
-}
-
-export async function askQuestion(
-  gameId: string,
-  questionText: string,
-  clientRequestId?: string,
-): Promise<AskQuestionResponse> {
-  const payload = await apiClient.post<AskQuestionResponse>('ask_question', {
-    gameId,
-    questionText,
-    clientRequestId: clientRequestId ?? crypto.randomUUID(),
-  });
-
-  if (!payload?.success) {
-    throw new Error(payload?.message ?? 'Failed to submit question');
-  }
-
-  return payload;
-}
-
-export async function answerQuestion(
-  gameId: string,
-  answerText: string,
-  clientRequestId?: string,
-): Promise<AnswerQuestionResponse> {
-  const payload = await apiClient.post<AnswerQuestionResponse>('answer_question', {
-    gameId,
-    answerText,
-    clientRequestId: clientRequestId ?? crypto.randomUUID(),
-  });
-
-  if (!payload?.success) {
-    throw new Error(payload?.message ?? 'Failed to submit answer');
-  }
-
-  return payload;
-}
-
-export async function guessSecret(
-  gameId: string,
-  guessedPuzzleId: string,
-  clientRequestId?: string,
-): Promise<GuessSecretData> {
-  const payload = await apiClient.post<GuessSecretResponse>('guess_secret', {
-    gameId,
-    guessedPuzzleId,
-    clientRequestId: clientRequestId ?? crypto.randomUUID(),
-  });
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Failed to guess secret');
-  }
-
-  return payload.data;
-}
-
-export async function leaveGame(
-  gameId: string,
-  clientRequestId?: string,
-): Promise<LeaveGameResponse> {
-  const payload = await apiClient.post<LeaveGameResponse>('leave_game', {
-    gameId,
-    clientRequestId: clientRequestId ?? crypto.randomUUID(),
-  });
-
-  return payload;
-}
-
-export async function joinGame(roomCode: string): Promise<JoinGameData> {
-  const payload = await apiClient.post<JoinGameResponse>('join_game', {
-    roomCode,
-  });
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Failed to join game');
-  }
-
-  return payload.data;
-}
-
-export async function getHistory(
-  filter: HistoryFilter = 'all',
-  limit: number = 20,
-  cursor?: string | null,
-): Promise<HistoryData> {
-  const params: Record<string, string | number> = {
-    limit,
-    filter,
-  };
-  if (cursor) {
-    params.cursor = cursor;
-  }
-
-  const payload = await apiClient.get<GetHistoryResponse>('history', params);
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Failed to load match history');
-  }
-
-  return payload.data;
-}
-
-export async function getMatchQuestions(gameId: string): Promise<MatchReviewData> {
-  const payload = await apiClient.get<GetQuestionsResponse>('get_questions', {
-    gameId,
-  });
-
-  if (!payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? 'Failed to load match review questions');
-  }
-
-  return payload.data;
-}
-
-

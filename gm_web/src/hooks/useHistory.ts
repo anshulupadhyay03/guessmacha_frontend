@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { HistoryFilter, HistoryMatchItem } from '../features/history/types';
-import { getHistory } from '../platform/api/gameApi';
+import { historyService } from '../platform/api/historyApi';
 
 export function useHistory(filter: HistoryFilter = 'all') {
   const [matches, setMatches] = useState<HistoryMatchItem[]>([]);
@@ -14,7 +14,7 @@ export function useHistory(filter: HistoryFilter = 'all') {
     setLoading(true);
     setError(null);
     try {
-      const data = await getHistory(filter, 20, null);
+      const data = await historyService.getHistory(filter, 20, null);
       setMatches(data.matches || []);
       setHasMore(data.hasMore);
       setNextCursor(data.nextCursor);
@@ -32,7 +32,7 @@ export function useHistory(filter: HistoryFilter = 'all') {
       setLoading(true);
       setError(null);
       try {
-        const data = await getHistory(filter, 20, null);
+        const data = await historyService.getHistory(filter, 20, null);
         if (!cancelled) {
           setMatches(data.matches || []);
           setHasMore(data.hasMore);
@@ -63,7 +63,7 @@ export function useHistory(filter: HistoryFilter = 'all') {
 
     setLoadingMore(true);
     try {
-      const data = await getHistory(filter, 20, nextCursor);
+      const data = await historyService.getHistory(filter, 20, nextCursor);
       setMatches((prev) => {
         const existingIds = new Set(prev.map((m) => m.gameId));
         const newMatches = (data.matches || []).filter((m) => !existingIds.has(m.gameId));
@@ -88,4 +88,3 @@ export function useHistory(filter: HistoryFilter = 'all') {
     refresh: fetchMatches,
   };
 }
-

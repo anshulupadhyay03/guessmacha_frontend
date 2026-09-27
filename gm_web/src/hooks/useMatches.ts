@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getMatches } from '../platform/api/gameApi';
+import { matchService } from '../platform/api/matchApi';
 import type { MatchItem } from '../features/matches/types';
 
 interface UseMatchesResult {
@@ -21,7 +21,7 @@ export function useMatches(): UseMatchesResult {
     setError(null);
 
     try {
-      const data = await getMatches();
+      const data = await matchService.getMatches();
       setActiveMatches(data.activeMatches ?? []);
       setExpiredMatches(data.expiredMatches ?? []);
     } catch (caughtError) {

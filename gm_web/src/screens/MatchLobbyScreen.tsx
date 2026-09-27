@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useGameDetails } from '../hooks/useGameDetails'
-import { submitSecret } from '../platform/api/gameApi'
+import { useSubmitSecret } from '../hooks/useSubmitSecret'
 import type { PuzzleItem } from '../features/chooseSecret/types'
 import type {
   GameDetails,
@@ -111,8 +111,14 @@ export default function MatchLobbyScreen({
   const [isChooseSecretOpen, setIsChooseSecretOpen] = useState(false)
   const [selectedSecret, setSelectedSecret] = useState<PuzzleItem | null>(null)
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
-  const [isSubmittingSecret, setIsSubmittingSecret] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const {
+    submitSecret,
+    loading: isSubmittingSecret,
+    error: submitSecretHookError,
+    clearError: clearSubmitSecretError,
+  } = useSubmitSecret()
+  const [localSubmitError, setLocalSubmitError] = useState<string | null>(null)
+  const submitError = localSubmitError || (submitSecretHookError ? submitSecretHookError.message : null)
 
   const currentUserId = session?.user?.id
   const host = game?.players.host
@@ -192,35 +198,31 @@ export default function MatchLobbyScreen({
 
   function handleSelectSecret(secret: PuzzleItem) {
     setSelectedSecret(secret)
-    setSubmitError(null)
+    setLocalSubmitError(null)
+    clearSubmitSecretError()
     setIsConfirmDialogOpen(true)
   }
 
   async function handleConfirmSecret() {
     if (!selectedSecret) return
 
-    setIsSubmittingSecret(true)
-    setSubmitError(null)
+    setLocalSubmitError(null)
+    clearSubmitSecretError()
 
-    try {
-      const result = await submitSecret(gameId, selectedSecret.id)
+    const result = await submitSecret(gameId, selectedSecret.id)
+    if (!result) return
 
-      setIsConfirmDialogOpen(false)
-      setIsChooseSecretOpen(false)
+    setIsConfirmDialogOpen(false)
+    setIsChooseSecretOpen(false)
 
-      if (result.gameStatus === 'in_progress' && result.waitingForOpponent === false) {
-        if (onNavigateToGameZone) {
-          onNavigateToGameZone()
-        } else {
-          onStartGame?.()
-        }
+    if (result.gameStatus === 'in_progress' && result.waitingForOpponent === false) {
+      if (onNavigateToGameZone) {
+        onNavigateToGameZone()
       } else {
-        await refresh()
+        onStartGame?.()
       }
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to confirm secret')
-    } finally {
-      setIsSubmittingSecret(false)
+    } else {
+      await refresh()
     }
   }
 

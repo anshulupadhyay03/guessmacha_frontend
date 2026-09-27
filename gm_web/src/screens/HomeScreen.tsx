@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { JoinGameData } from '../features/dashboard/types';
-import { joinGame } from '../platform/api/gameApi';
+import type { JoinGameData } from '../../../shared/types/game';
+import { useJoinGame } from '../hooks/useJoinGame';
 
 interface HomeScreenProps {
   onCreateGame: () => void;
@@ -9,31 +9,25 @@ interface HomeScreenProps {
 
 export default function HomeScreen({ onCreateGame, onGameJoined }: HomeScreenProps) {
   const [roomCode, setRoomCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [dialogError, setDialogError] = useState<string | null>(null);
+  const { joinGame, loading, error, clearError } = useJoinGame();
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const dialogError = localError || (error ? error.message : null);
 
   async function handleJoinRoom() {
     const normalizedCode = roomCode.trim().toUpperCase();
 
     if (!normalizedCode) {
-      setDialogError('Please enter a room code to join a game.');
+      setLocalError('Please enter a room code to join a game.');
       return;
     }
 
-    setLoading(true);
-    setDialogError(null);
+    setLocalError(null);
+    clearError();
 
-    try {
-      const data = await joinGame(normalizedCode);
+    const data = await joinGame(normalizedCode);
+    if (data) {
       onGameJoined?.(data);
-    } catch (err) {
-      setDialogError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to join room. Please check the code and try again.',
-      );
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -112,7 +106,10 @@ export default function HomeScreen({ onCreateGame, onGameJoined }: HomeScreenPro
             </p>
             <button
               type="button"
-              onClick={() => setDialogError(null)}
+              onClick={() => {
+                setLocalError(null);
+                clearError();
+              }}
               className="mt-5 w-full cursor-pointer rounded-xl bg-[#63d6ea] py-3 text-base font-extrabold text-[#00363e] transition hover:opacity-90 shadow-[0_4px_16px_rgba(99,214,234,0.2)]"
             >
               OK

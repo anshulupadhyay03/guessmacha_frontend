@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getPuzzles } from '../platform/api/gameApi';
-import type { CategoryDetails, PuzzleItem } from '../features/chooseSecret/types';
+import type { CategoryDetails, PuzzleItem } from '../../../shared/types/puzzle';
+import { puzzleService } from '../platform/api/puzzleApi';
 
 interface UsePuzzlesResult {
   category: CategoryDetails | null;
@@ -28,7 +28,7 @@ export function usePuzzles(categoryId?: string): UsePuzzlesResult {
     setError(null);
 
     try {
-      const data = await getPuzzles(categoryId);
+      const data = await puzzleService.getPuzzles(categoryId);
       setCategory(data.category);
       setPuzzles(data.puzzles);
     } catch (caughtError) {
@@ -48,4 +48,3 @@ export function usePuzzles(categoryId?: string): UsePuzzlesResult {
 
   return { category, puzzles, loading, error, reload };
 }
-
