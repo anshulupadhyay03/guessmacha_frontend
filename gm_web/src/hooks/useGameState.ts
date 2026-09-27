@@ -11,6 +11,7 @@ import type {
   GameStateData,
   GameStateQuestion,
   GuessSecretData,
+  RealtimeGuessNotification,
 } from '../features/gameZone/types';
 
 interface UseGameStateResult {
@@ -18,6 +19,8 @@ interface UseGameStateResult {
   questions: GameStateQuestion[];
   loading: boolean;
   error: Error | null;
+  guessNotification: RealtimeGuessNotification | null;
+  clearGuessNotification: () => void;
   refresh: () => Promise<void>;
   submitQuestion: (text: string, clientRequestId?: string) => Promise<void>;
   submitAnswer: (text: string, clientRequestId?: string) => Promise<void>;
@@ -41,6 +44,11 @@ export function useGameState(gameId: string): UseGameStateResult {
   const [questions, setQuestions] = useState<GameStateQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [guessNotification, setGuessNotification] = useState<RealtimeGuessNotification | null>(null);
+
+  const clearGuessNotification = useCallback(() => {
+    setGuessNotification(null);
+  }, []);
 
   const isMountedRef = useRef(true);
 
@@ -136,6 +144,7 @@ export function useGameState(gameId: string): UseGameStateResult {
       event: '*',
       schema: 'public',
       table: 'games',
+      filter: `id=eq.${gameId}`,
     },
     (payload) => {
       console.log('[Game Realtime] games event:', payload);
@@ -148,6 +157,7 @@ export function useGameState(gameId: string): UseGameStateResult {
       event: '*',
       schema: 'public',
       table: 'game_players',
+      filter: `game_id=eq.${gameId}`,
     },
     (payload) => {
       console.log('[Game Realtime] game_players event:', payload);
@@ -160,6 +170,7 @@ export function useGameState(gameId: string): UseGameStateResult {
       event: '*',
       schema: 'public',
       table: 'questions',
+      filter: `game_id=eq.${gameId}`,
     },
     (payload) => {
       console.log('[Game Realtime] questions event:', payload);
@@ -172,33 +183,40 @@ export function useGameState(gameId: string): UseGameStateResult {
       event: '*',
       schema: 'public',
       table: 'guesses',
+      filter: `game_id=eq.${gameId}`,
     },
-    (payload) => {
+    async (payload) => {
       console.log('[Game Realtime] guesses event:', payload);
-      handleRealtimeChange();
+      if (!isMountedRef.current) return;
+
+      // 1. Authoritative game state fetch
+      try {
+        await fetchState(false);
+      } catch (err) {
+        console.error('[Game Realtime] fetchState after guesses event failed:', err);
+      }
+
+      if (!isMountedRef.current) return;
+
+      // 2. Pass down realtime guess event details to UI after GameState API call
+      if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+        const row = (payload.new || {}) as Record<string, unknown>;
+        const isCorrect = Boolean(row.is_correct ?? row.isCorrect);
+        const guesserId = (row.player_id ?? row.playerId ?? row.guesser_id ?? row.guesserId ?? null) as string | null;
+
+        setGuessNotification({
+          id: (row.id as string) || generateClientRequestId(),
+          isCorrect,
+          guesserId,
+          rawPayload: row,
+          timestamp: Date.now(),
+        });
+      }
     },
   )
   .subscribe((status) => {
   console.log('[Game Realtime] subscription status:', status);
 });
-
-   /*  const channel = supabase
-  .channel(`game:${gameId}`)
-  .on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'games',
-    },
-    (payload) => {
-      console.log('[Game Realtime TEST] games event:', payload);
-      handleRealtimeChange();
-    },
-  )
-  .subscribe((status) => {
-    console.log('[Game Realtime TEST] subscription status:', status);
-  }); */
 
     // 4. Cleanup when leaving the Game Zone
     return () => {
@@ -279,6 +297,8 @@ export function useGameState(gameId: string): UseGameStateResult {
     questions,
     loading,
     error,
+    guessNotification,
+    clearGuessNotification,
     refresh,
     submitQuestion,
     submitAnswer,

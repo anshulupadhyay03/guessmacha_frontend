@@ -6,7 +6,7 @@ export interface GameStatePlayer {
   secret: string | null;
   finalGuessUsed: boolean;
   isCompleted: boolean;
-  isMyTurn: boolean;
+  isMyTurn: boolean | null;
   isBonusTurn: boolean;
 }
 
@@ -18,18 +18,23 @@ export interface GameStateQuestion {
   answerText?: string | null;
 }
 
+export interface GameResultData {
+  status: string;
+  winnerId?: string | null;
+}
+
 export interface GameStateData {
   gameId: string;
   status: string;
   questionLimit: number;
-  currentPlayerId: string;
+  currentPlayerId: string | null;
   players: {
     me: GameStatePlayer;
     opponent: GameStatePlayer;
   };
   question?: GameStateQuestion | null;
   questions?: GameStateQuestion[];
-  gameResult?: string | null;
+  gameResult?: GameResultData | string | null;
   endReason?: string | null;
   endedByPlayerId?: string | null;
 }
@@ -96,6 +101,14 @@ export interface GuessSecretData {
   bonus_turn_player_id?: string | null;
   is_bonus_turn_active?: boolean;
   bonus_turn_consumed?: boolean;
+}
+
+export interface RealtimeGuessNotification {
+  id: string;
+  isCorrect: boolean;
+  guesserId?: string | null;
+  rawPayload?: Record<string, unknown> | null;
+  timestamp: number;
 }
 
 export interface GuessSecretResponse {

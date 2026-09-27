@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
+import type { HistoryMatchItem } from '../features/history/types';
 import { useGameDetails } from '../hooks/useGameDetails';
 import { useGameState } from '../hooks/useGameState';
 import './GameZoneScreen.css';
@@ -13,6 +14,8 @@ interface GameZoneScreenProps {
   categoryName?: string;
   onBackToLobby?: () => void;
   onLeave?: () => void;
+  onGoHome?: () => void;
+  onReviewMatch?: (match: HistoryMatchItem) => void;
 }
 
 type ActionMode = 'ask' | 'answer' | 'disabled';
@@ -67,16 +70,127 @@ function PlayerAvatar({
   );
 }
 
+interface GameOutcome {
+  isFinished: boolean;
+  resultType: 'win' | 'loss' | 'draw' | null;
+  title: string;
+  subtitle: string;
+  badgeClass: string;
+  textColor: string;
+}
+
+function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
+  if (!gameState) {
+    return { isFinished: false, resultType: null, title: '', subtitle: '', badgeClass: '', textColor: '' };
+  }
+
+  const isFinished = gameState.status === 'finished' || gameState.status === 'completed';
+  if (!isFinished) {
+    return { isFinished: false, resultType: null, title: '', subtitle: '', badgeClass: '', textColor: '' };
+  }
+
+  const me = gameState.players?.me;
+  const opponent = gameState.players?.opponent;
+  const opponentName = opponent?.playerName || 'Opponent';
+
+  const rawResult = gameState.gameResult;
+  let winnerId: string | null = null;
+  let resultStatus = '';
+
+  if (typeof rawResult === 'object' && rawResult !== null) {
+    winnerId = rawResult.winnerId ?? null;
+    resultStatus = (rawResult.status || '').toLowerCase();
+  } else if (typeof rawResult === 'string') {
+    resultStatus = rawResult.toLowerCase();
+  }
+
+  // 1. Authoritative resolution based on winnerId
+  if (winnerId) {
+    if (winnerId === me?.playerId) {
+      return {
+        isFinished: true,
+        resultType: 'win',
+        title: 'VICTORY',
+        subtitle: `You defeated ${opponentName}!`,
+        badgeClass: 'bg-[#63d6ea]/15 text-[#63d6ea] border-[#63d6ea]/30',
+        textColor: 'text-[#63d6ea]',
+      };
+    }
+    if (winnerId === opponent?.playerId) {
+      return {
+        isFinished: true,
+        resultType: 'loss',
+        title: 'DEFEAT',
+        subtitle: `${opponentName} won the match!`,
+        badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
+        textColor: 'text-red-400',
+      };
+    }
+  }
+
+  // 2. Fallback resolution based on result status
+  if (resultStatus === 'won' || resultStatus === 'win' || resultStatus === 'victory') {
+    if (gameState.endedByPlayerId && gameState.endedByPlayerId === opponent?.playerId) {
+      return {
+        isFinished: true,
+        resultType: 'loss',
+        title: 'DEFEAT',
+        subtitle: `${opponentName} outsmarted you!`,
+        badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
+        textColor: 'text-red-400',
+      };
+    }
+    return {
+      isFinished: true,
+      resultType: 'win',
+      title: 'VICTORY',
+      subtitle: `You outsmarted ${opponentName}!`,
+      badgeClass: 'bg-[#63d6ea]/15 text-[#63d6ea] border-[#63d6ea]/30',
+      textColor: 'text-[#63d6ea]',
+    };
+  }
+
+  if (resultStatus === 'lost' || resultStatus === 'loss' || resultStatus === 'defeat') {
+    return {
+      isFinished: true,
+      resultType: 'loss',
+      title: 'DEFEAT',
+      subtitle: `${opponentName} outsmarted you!`,
+      badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
+      textColor: 'text-red-400',
+    };
+  }
+
+  // 3. Draw fallback
+  return {
+    isFinished: true,
+    resultType: 'draw',
+    title: 'DRAW',
+    subtitle: `Match with ${opponentName} ended in a draw`,
+    badgeClass: 'bg-amber-400/15 text-amber-300 border-amber-400/30',
+    textColor: 'text-amber-400',
+  };
+}
+
 function getTurnInfo(
   me?: GameStatePlayer,
   opponent?: GameStatePlayer,
-  currentPlayerId?: string,
+  currentPlayerId?: string | null,
   currentQuestion?: GameStateQuestion | null,
+  isFinished = false,
 ): { title: string; isMyTurn: boolean; isBonus: boolean } {
+  if (isFinished) {
+    return {
+      title: 'Match Finished',
+      isMyTurn: false,
+      isBonus: false,
+    };
+  }
+
   const opponentName = opponent?.playerName || 'Opponent';
 
   // Check if I am the active player
-  const isMyTurn = (currentPlayerId === me?.playerId || me?.isMyTurn === true) && !opponent?.isMyTurn;
+  const isMyTurn = Boolean((currentPlayerId === me?.playerId || me?.isMyTurn === true) && !opponent?.isMyTurn);
 
   if (isMyTurn) {
     // If opponent asked a question and I must answer
@@ -114,7 +228,11 @@ function getActionMode(
   gameState: GameStateData | null,
   activeQuestion?: GameStateQuestion | null,
 ): { mode: ActionMode; placeholder: string } {
-  if (!gameState || gameState.status !== 'in_progress') {
+  if (!gameState || gameState.status === 'finished' || gameState.status === 'completed') {
+    return { mode: 'disabled', placeholder: 'Match is finished' };
+  }
+
+  if (gameState.status !== 'in_progress') {
     return { mode: 'disabled', placeholder: 'Game is not in progress' };
   }
 
@@ -155,6 +273,8 @@ export default function GameZoneScreen({
   categoryName,
   onBackToLobby,
   onLeave,
+  onGoHome,
+  onReviewMatch,
 }: GameZoneScreenProps) {
   const { game: detailsGame } = useGameDetails(gameId);
   const effectiveCategoryId = categoryId || detailsGame?.category?.id;
@@ -165,6 +285,8 @@ export default function GameZoneScreen({
     questions,
     loading,
     error,
+    guessNotification,
+    clearGuessNotification,
     submitQuestion,
     submitAnswer,
     submitGuess,
@@ -202,9 +324,42 @@ export default function GameZoneScreen({
   // Resolve player secret display name directly from API response
   const mySecretName = me?.secret || 'Secret Locked';
 
+  // Realtime guess notification message
+  const guessNotificationMessage = useMemo(() => {
+    if (!guessNotification) return null;
+
+    const guesserId = guessNotification.guesserId;
+    const isCorrect = guessNotification.isCorrect;
+    const oppName = opponent?.playerName || 'Opponent';
+
+    const isOpponent = guesserId === opponent?.playerId || (!guesserId && me?.isBonusTurn);
+    const isMe = guesserId === me?.playerId || (!guesserId && opponent?.isBonusTurn);
+
+    if (isOpponent) {
+      if (isCorrect) {
+        return `${oppName} guessed your secret correctly! You continue to ask Questions to guess ${oppName} secret.`;
+      }
+      return `${oppName}'s guess was incorrect! You receive a bonus turn.`;
+    }
+
+    if (isMe) {
+      if (isCorrect) {
+        return 'Your guess was correct! You can only answer to help ${oppName} to guess your secret.';
+      }
+      return `Your guess was incorrect! ${oppName} receives a bonus turn.`;
+    }
+
+    // Generic fallback if guesser cannot be determined
+    if (isCorrect) {
+      return 'Secret guess was correct!';
+    }
+    return 'Secret guess was incorrect! Opponent receives a bonus turn.';
+  }, [guessNotification, me?.playerId, me?.isBonusTurn, opponent?.playerId, opponent?.playerName, opponent?.isBonusTurn]);
+
   // Turn calculations
+  const outcome = resolveGameOutcome(gameState);
   const latestQuestion = questions.length > 0 ? questions[questions.length - 1] : gameState?.question;
-  const turnInfo = getTurnInfo(me, opponent, gameState?.currentPlayerId, latestQuestion);
+  const turnInfo = getTurnInfo(me, opponent, gameState?.currentPlayerId, latestQuestion, outcome.isFinished);
   const { mode: actionMode, placeholder: inputPlaceholder } = getActionMode(gameState, latestQuestion);
 
   const turnAvatarUrl = turnInfo.isMyTurn ? me?.playerImageUrl : opponent?.playerImageUrl;
@@ -212,6 +367,7 @@ export default function GameZoneScreen({
 
   // Guess Secret button enablement
   const isGuessDisabled =
+    outcome.isFinished ||
     Boolean(me?.isCompleted) ||
     Boolean(me?.finalGuessUsed) ||
     !me?.isMyTurn ||
@@ -276,6 +432,40 @@ export default function GameZoneScreen({
     }
   }
 
+  function handleGoHome() {
+    if (onGoHome) {
+      onGoHome();
+    } else if (onLeave) {
+      onLeave();
+    } else if (onBackToLobby) {
+      onBackToLobby();
+    }
+  }
+
+  function handleReviewMatch() {
+    if (onReviewMatch && gameState) {
+      const reviewData: HistoryMatchItem = {
+        gameId: gameState.gameId,
+        result: outcome.resultType === 'win' ? 'Won' : outcome.resultType === 'loss' ? 'Lost' : 'Draw',
+        playedAt: new Date().toISOString(),
+        categoryId: effectiveCategoryId || '',
+        categoryName: effectiveCategoryName,
+        opponentId: opponent?.playerId || '',
+        opponentName: opponent?.playerName || '-',
+        opponentImageUrl: opponent?.playerImageUrl || null,
+        questionCount: questions.length || ((me?.questionsAsked ?? 0) + (opponent?.questionsAsked ?? 0)),
+        durationSeconds: 0,
+        playerQuestionCount: me?.questionsAsked ?? 0,
+        opponentQuestionCount: opponent?.questionsAsked ?? 0,
+        playerSecret: me?.secret || null,
+        opponentSecret: opponent?.secret || null,
+      };
+      onReviewMatch(reviewData);
+    } else {
+      handleGoHome();
+    }
+  }
+
   const meQuestionsLeft = Math.max(0, questionLimit - (me?.questionsAsked ?? 0));
   const opponentQuestionsLeft = Math.max(0, questionLimit - (opponent?.questionsAsked ?? 0));
 
@@ -313,10 +503,48 @@ export default function GameZoneScreen({
           </button>
         </header>
 
+        {/* Real-time Guess Event Notification Tooltip */}
+        {guessNotification && guessNotificationMessage && (
+          <div
+            className={`relative mb-3 flex items-center justify-between gap-3 rounded-xl p-3 text-sm shadow-md border ${
+              guessNotification.isCorrect
+                ? 'bg-[#63d6ea]/15 border-[#63d6ea]/40 text-[#63d6ea]'
+                : 'bg-amber-500/15 border-amber-500/40 text-amber-200'
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="text-base" aria-hidden="true">
+                {guessNotification.isCorrect ? '🎯' : '⚠️'}
+              </span>
+              <span className="font-semibold leading-snug">
+                {guessNotificationMessage}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={clearGuessNotification}
+              className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white cursor-pointer"
+              aria-label="Close notification"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Global Action / Error banner */}
         {actionError && (
-          <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-xl text-center text-sm text-[#ffd9d9]">
-            {actionError}
+          <div className="relative mb-3 flex items-center justify-between gap-3 rounded-xl border border-red-500/30 bg-red-500/15 p-3 text-sm text-[#ffd9d9]">
+            <span>{actionError}</span>
+            <button
+              type="button"
+              onClick={() => setActionError(null)}
+              className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white cursor-pointer"
+              aria-label="Close error"
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -372,7 +600,9 @@ export default function GameZoneScreen({
                 <div className="gamezone-player-info">
                   <div className="gamezone-player-name">{opponent?.playerName || 'Opponent'}</div>
                   <div className="gamezone-player-secret gamezone-player-secret--hidden">
-                    <span>Hidden 👁️‍🗨️</span>
+                    <span>
+                      {opponent?.secret ? opponent.secret : outcome.isFinished ? 'Revealed in Review' : 'Hidden 👁️‍🗨️'}
+                    </span>
                   </div>
                   <div className="gamezone-player-questions">
                     <span className="gamezone-player-questions-label">Questions left:</span>{' '}
@@ -382,35 +612,45 @@ export default function GameZoneScreen({
               </div>
             </div>
 
-            {/* Turn Status Banner with Player Avatar */}
-            <div
-              className={`gamezone-turn-banner ${
-                !turnInfo.isMyTurn ? 'gamezone-turn-banner--opponent' : ''
-              }`}
-            >
-              <PlayerAvatar
-                imageUrl={turnAvatarUrl}
-                name={turnPlayerName}
-                className="gamezone-turn-banner-avatar"
-                iconSize="size-4"
-              />
-              <div className="gamezone-turn-banner-text">{turnInfo.title}</div>
-              {turnInfo.isBonus && (
-                <span className="gamezone-turn-banner-badge gamezone-turn-banner-badge--bonus">
-                  Bonus Turn
-                </span>
-              )}
-            </div>
-
-            {/* Game Over Banner */}
-            {gameState.status === 'completed' && (
+            {/* Turn Status Banner OR Game Over / Match Finished Banner */}
+            {outcome.isFinished ? (
               <div className="gamezone-game-over-banner">
-                <h2 className="gamezone-game-over-title">
-                  {gameState.gameResult ? `Match Over: ${gameState.gameResult.toUpperCase()}` : 'Match Concluded'}
+                <div className="flex items-center justify-center gap-2">
+                  <span className={`inline-block rounded-full px-3 py-1 text-xs font-black tracking-widest border ${outcome.badgeClass}`}>
+                    {outcome.title}
+                  </span>
+                </div>
+                <h2 className={`mt-2 text-lg font-black tracking-tight ${outcome.textColor}`}>
+                  {outcome.subtitle}
                 </h2>
                 <p className="gamezone-game-over-desc">
-                  {gameState.endReason ?? 'The match has finished.'}
+                  {gameState.endReason ?? (
+                    outcome.resultType === 'win'
+                      ? 'Congratulations on the victory!'
+                      : outcome.resultType === 'loss'
+                      ? `${opponent?.playerName || 'Opponent'} correctly guessed your secret.`
+                      : 'Both players completed the match.'
+                  )}
                 </p>
+              </div>
+            ) : (
+              <div
+                className={`gamezone-turn-banner ${
+                  !turnInfo.isMyTurn ? 'gamezone-turn-banner--opponent' : ''
+                }`}
+              >
+                <PlayerAvatar
+                  imageUrl={turnAvatarUrl}
+                  name={turnPlayerName}
+                  className="gamezone-turn-banner-avatar"
+                  iconSize="size-4"
+                />
+                <div className="gamezone-turn-banner-text">{turnInfo.title}</div>
+                {turnInfo.isBonus && (
+                  <span className="gamezone-turn-banner-badge gamezone-turn-banner-badge--bonus">
+                    Bonus Turn
+                  </span>
+                )}
               </div>
             )}
 
@@ -453,42 +693,54 @@ export default function GameZoneScreen({
             </div>
 
             {/* Bottom Actions Bar */}
-            <div className="gamezone-bottom-bar">
-              {/* Question / Answer text form */}
-              <form onSubmit={handleSendMessage} className="gamezone-input-form">
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder={inputPlaceholder}
-                  disabled={actionMode === 'disabled' || submitting}
-                  className="gamezone-input-field"
-                  maxLength={180}
-                />
+            {outcome.isFinished ? (
+              <div className="gamezone-bottom-bar">
                 <button
-                  type="submit"
-                  disabled={!inputText.trim() || actionMode === 'disabled' || submitting}
-                  className="gamezone-send-btn"
-                  aria-label="Send message"
+                  type="button"
+                  onClick={handleGoHome}
+                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#63d6ea] text-sm font-extrabold text-[#00363e] shadow-[0_4px_16px_rgba(99,214,234,0.2)] transition hover:opacity-90 active:scale-[0.99] sm:text-base"
                 >
-                  <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
+                  Go to Home
                 </button>
-              </form>
+              </div>
+            ) : (
+              <div className="gamezone-bottom-bar">
+                {/* Question / Answer text form */}
+                <form onSubmit={handleSendMessage} className="gamezone-input-form">
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder={inputPlaceholder}
+                    disabled={actionMode === 'disabled' || submitting}
+                    className="gamezone-input-field"
+                    maxLength={180}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!inputText.trim() || actionMode === 'disabled' || submitting}
+                    className="gamezone-send-btn"
+                    aria-label="Send message"
+                  >
+                    <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13" />
+                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                  </button>
+                </form>
 
-              {/* Guess Secret Button - Primary color background (#63d6ea) */}
-              <button
-                type="button"
-                onClick={() => setIsGuessModalOpen(true)}
-                disabled={isGuessDisabled}
-                className="gamezone-guess-btn"
-                aria-label="Guess Secret"
-              >
-                Guess Secret
-              </button>
-            </div>
+                {/* Guess Secret Button - Primary color background (#63d6ea) */}
+                <button
+                  type="button"
+                  onClick={() => setIsGuessModalOpen(true)}
+                  disabled={isGuessDisabled}
+                  className="gamezone-guess-btn"
+                  aria-label="Guess Secret"
+                >
+                  Guess Secret
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -559,6 +811,100 @@ export default function GameZoneScreen({
                 className="gamezone-modal-btn gamezone-modal-btn--confirm"
               >
                 OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Non-closable Game Result Modal Dialog */}
+      {outcome.isFinished && gameState && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="game-result-dialog-title"
+        >
+          <div className="relative w-full max-w-95 rounded-2xl border border-white/15 bg-[#17141d] p-6 text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center gap-4">
+            {/* Outcome Icon */}
+            <div
+              className={`grid size-16 place-items-center rounded-full border text-3xl ${
+                outcome.resultType === 'win'
+                  ? 'bg-[#63d6ea]/15 border-[#63d6ea]/40 text-[#63d6ea] shadow-[0_0_24px_rgba(99,214,234,0.3)]'
+                  : outcome.resultType === 'loss'
+                    ? 'bg-red-500/15 border-red-500/40 text-red-400 shadow-[0_0_24px_rgba(239,68,68,0.3)]'
+                    : 'bg-amber-400/15 border-amber-400/40 text-amber-300 shadow-[0_0_24px_rgba(245,158,11,0.3)]'
+              }`}
+              aria-hidden="true"
+            >
+              {outcome.resultType === 'win' ? '🏆' : outcome.resultType === 'loss' ? '⚔️' : '🤝'}
+            </div>
+
+            {/* Outcome Header */}
+            <div className="flex flex-col items-center gap-1.5">
+              <span className={`inline-block rounded-full px-3 py-1 text-xs font-black tracking-widest border ${outcome.badgeClass}`}>
+                {outcome.title}
+              </span>
+              <h2 id="game-result-dialog-title" className={`text-2xl font-black tracking-tight ${outcome.textColor}`}>
+                {outcome.resultType === 'win' ? 'Victory!' : outcome.resultType === 'loss' ? 'Defeat' : 'Draw'}
+              </h2>
+              <p className="text-sm text-[#c4c7d0]">
+                {outcome.subtitle}
+              </p>
+            </div>
+
+            {/* Match Summary Details */}
+            <div className="w-full rounded-xl border border-white/8 bg-white/[0.03] p-3.5 text-left text-xs space-y-2">
+              <div className="flex items-center justify-between text-[#8f94a6]">
+                <span>Category</span>
+                <span className="font-semibold text-white">{effectiveCategoryName}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-[#8f94a6]">Your Secret</span>
+                <span className="font-semibold text-white">{mySecretName}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-[#8f94a6]">{opponent?.playerName || 'Opponent'}'s Secret</span>
+                <span className="font-semibold text-amber-300">
+                  {opponent?.secret || 'Available in Review'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-white/6 text-[#8f94a6]">
+                <span>Questions Asked</span>
+                <span className="font-medium text-white">
+                  You: {me?.questionsAsked ?? 0} • {opponent?.playerName || 'Opponent'}: {opponent?.questionsAsked ?? 0}
+                </span>
+              </div>
+
+              {gameState.endReason && (
+                <div className="pt-1 border-t border-white/6 text-[#8f94a6]">
+                  <span>Reason: </span>
+                  <span className="text-white/90">{gameState.endReason}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Non-closable forced action buttons */}
+            <div className="w-full flex flex-col gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={handleReviewMatch}
+                className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#63d6ea] text-sm font-extrabold text-[#00363e] shadow-[0_4px_16px_rgba(99,214,234,0.25)] transition hover:opacity-90 active:scale-[0.99] sm:text-base"
+              >
+                <span>Review Match</span>
+                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGoHome}
+                className="flex h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-white/15 bg-white/6 text-sm font-bold text-white transition hover:bg-white/10 active:scale-[0.99]"
+              >
+                Go to Home
               </button>
             </div>
           </div>

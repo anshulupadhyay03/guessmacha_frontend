@@ -236,7 +236,18 @@ function App() {
           onBackToLobby={() => setScreen('match-lobby')}
           onLeave={() => {
             setGame(null)
-            setScreen(activeTab === 'matches' ? 'matches' : 'home')
+            setActiveTab('home')
+            setScreen('home')
+          }}
+          onGoHome={() => {
+            setGame(null)
+            setActiveTab('home')
+            setScreen('home')
+          }}
+          onReviewMatch={(selectedMatch) => {
+            setGame(null)
+            setReviewMatch(selectedMatch)
+            setScreen('match-review')
           }}
         />
       )
@@ -246,7 +257,10 @@ function App() {
       return (
         <MatchReviewScreen
           match={reviewMatch}
-          onBack={() => setScreen('history')}
+          onBack={() => {
+            setReviewMatch(null)
+            setScreen(activeTab === 'history' ? 'history' : 'home')
+          }}
         />
       )
     }
