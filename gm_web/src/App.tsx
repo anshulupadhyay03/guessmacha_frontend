@@ -11,11 +11,11 @@ import MatchesScreen from './screens/MatchesScreen'
 import MatchLobbyScreen from './screens/MatchLobbyScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import MatchReviewScreen from './screens/MatchReviewScreen'
+import ProfileScreen from './screens/ProfileScreen'
 import type { CreateGameResponse, JoinGameData } from './features/dashboard/types'
 import type { MatchItem } from './features/matches/types'
-import type { HistoryMatchItem } from './features/history/types'
 
-type Screen = 'home' | 'matches' | 'history' | 'match-review' | 'create-game' | 'match-lobby' | 'game-zone'
+type Screen = 'home' | 'matches' | 'history' | 'profile' | 'match-review' | 'create-game' | 'match-lobby' | 'game-zone'
 type NavKey = 'home' | 'matches' | 'history' | 'profile'
 
 interface NavigationItem {
@@ -149,7 +149,7 @@ function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [activeTab, setActiveTab] = useState<NavKey>('home')
   const [game, setGame] = useState<ActiveGameContext | null>(null)
-  const [reviewMatch, setReviewMatch] = useState<HistoryMatchItem | null>(null)
+  const [reviewGameId, setReviewGameId] = useState<string | null>(null)
 
   useEffect(() => {
     async function initializeGame() {
@@ -244,21 +244,21 @@ function App() {
             setActiveTab('home')
             setScreen('home')
           }}
-          onReviewMatch={(selectedMatch) => {
+          onReviewMatch={(targetGameId) => {
             setGame(null)
-            setReviewMatch(selectedMatch)
+            setReviewGameId(targetGameId)
             setScreen('match-review')
           }}
         />
       )
     }
 
-    if (screen === 'match-review' && reviewMatch) {
+    if (screen === 'match-review' && reviewGameId) {
       return (
         <MatchReviewScreen
-          match={reviewMatch}
+          gameId={reviewGameId}
           onBack={() => {
-            setReviewMatch(null)
+            setReviewGameId(null)
             setScreen(activeTab === 'history' ? 'history' : 'home')
           }}
         />
@@ -268,12 +268,16 @@ function App() {
     if (activeTab === 'history' || screen === 'history') {
       return (
         <HistoryScreen
-          onSelectMatch={(selected) => {
-            setReviewMatch(selected)
+          onSelectMatch={(targetGameId) => {
+            setReviewGameId(targetGameId)
             setScreen('match-review')
           }}
         />
       )
+    }
+
+    if (activeTab === 'profile' || screen === 'profile') {
+      return <ProfileScreen />
     }
 
     if (activeTab === 'matches' || screen === 'matches') {
@@ -313,6 +317,8 @@ function App() {
             setScreen('matches')
           } else if (tab === 'history') {
             setScreen('history')
+          } else if (tab === 'profile') {
+            setScreen('profile')
           } else if (tab === 'home') {
             setScreen('home')
           }
