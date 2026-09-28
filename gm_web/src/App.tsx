@@ -11,10 +11,11 @@ import MatchesScreen from './screens/MatchesScreen'
 import MatchLobbyScreen from './screens/MatchLobbyScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import MatchReviewScreen from './screens/MatchReviewScreen'
+import ProfileScreen from './screens/ProfileScreen'
 import type { CreateGameResponse, JoinGameData } from './features/dashboard/types'
 import type { MatchItem } from './features/matches/types'
 
-type Screen = 'home' | 'matches' | 'history' | 'match-review' | 'create-game' | 'match-lobby' | 'game-zone'
+type Screen = 'home' | 'matches' | 'history' | 'profile' | 'match-review' | 'create-game' | 'match-lobby' | 'game-zone'
 type NavKey = 'home' | 'matches' | 'history' | 'profile'
 
 interface NavigationItem {
@@ -275,6 +276,10 @@ function App() {
       )
     }
 
+    if (activeTab === 'profile' || screen === 'profile') {
+      return <ProfileScreen />
+    }
+
     if (activeTab === 'matches' || screen === 'matches') {
       return (
         <MatchesScreen
@@ -312,6 +317,8 @@ function App() {
             setScreen('matches')
           } else if (tab === 'history') {
             setScreen('history')
+          } else if (tab === 'profile') {
+            setScreen('profile')
           } else if (tab === 'home') {
             setScreen('home')
           }
