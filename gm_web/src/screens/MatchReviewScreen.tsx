@@ -5,8 +5,9 @@ import { useMatchReview } from '../hooks/useMatchReview';
 import './GameZoneScreen.css';
 
 interface MatchReviewScreenProps {
-  match: HistoryMatchItem;
+  gameId: string;
   onBack: () => void;
+  match?: HistoryMatchItem;
 }
 
 function formatDuration(seconds: number): string {
@@ -63,32 +64,84 @@ function PlayerAvatar({
   );
 }
 
-export default function MatchReviewScreen({ match, onBack }: MatchReviewScreenProps) {
-  const { questions, loading, error, refresh } = useMatchReview(match.gameId);
+export default function MatchReviewScreen({ gameId, onBack, match: initialMatch }: MatchReviewScreenProps) {
+  const { match: matchSummary, questions, loading, error, refresh } = useMatchReview(gameId);
   const { session } = useAuth();
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
 
-  const lowerResult = (match.result || '').toLowerCase();
+  // Player & Opponent metadata from API response (matchSummary), falling back to initialMatch
+  const opponentName = matchSummary?.opponent?.playerName || initialMatch?.opponentName || 'Opponent';
+  const opponentId = matchSummary?.opponent?.playerId || initialMatch?.opponentId;
+  const opponentImageUrl = matchSummary?.opponent?.playerImageUrl || initialMatch?.opponentImageUrl || null;
+  const opponentSecret = matchSummary?.opponent?.secret ?? initialMatch?.opponentSecret ?? null;
+  const opponentQuestionCount =
+    matchSummary?.opponentQuestionCount ??
+    matchSummary?.opponent?.questionsAsked ??
+    initialMatch?.opponentQuestionCount ??
+    0;
+
+  const playerSecret = matchSummary?.player?.secret ?? initialMatch?.playerSecret ?? null;
+  const playerQuestionCount =
+    matchSummary?.playerQuestionCount ??
+    matchSummary?.player?.questionsAsked ??
+    initialMatch?.playerQuestionCount ??
+    0;
+
+  const categoryName = matchSummary?.categoryName || initialMatch?.categoryName || 'General';
+  const durationSeconds = matchSummary?.durationSeconds ?? initialMatch?.durationSeconds ?? 0;
+  const questionCount =
+    matchSummary?.questionCount ??
+    initialMatch?.questionCount ??
+    (playerQuestionCount + opponentQuestionCount);
+
+  // Outcome computation
+  let result = matchSummary?.result || initialMatch?.result || '';
+  if (!result && matchSummary?.winnerId) {
+    if (matchSummary.winnerId === matchSummary.player?.playerId) {
+      result = 'won';
+    } else if (matchSummary.winnerId === matchSummary.opponent?.playerId) {
+      result = 'lost';
+    }
+  }
+
+  const lowerResult = (result || '').toLowerCase();
   const isWon = lowerResult === 'won' || lowerResult === 'victory' || lowerResult === 'win';
   const isLost = lowerResult === 'lost' || lowerResult === 'defeat' || lowerResult === 'loss';
+  const isDraw = lowerResult === 'draw';
 
-  const outcomeTitle = isWon ? 'VICTORY' : isLost ? 'DEFEAT' : 'DRAW';
-  const outcomeColor = isWon ? 'text-[#63d6ea]' : isLost ? 'text-[#ffb4ab]' : 'text-[#f59e0b]';
+  const outcomeTitle = isWon
+    ? 'VICTORY'
+    : isLost
+      ? 'DEFEAT'
+      : isDraw
+        ? 'DRAW'
+        : 'IN PROGRESS';
+
+  const outcomeColor = isWon
+    ? 'text-[#63d6ea]'
+    : isLost
+      ? 'text-[#ffb4ab]'
+      : isDraw
+        ? 'text-[#f59e0b]'
+        : 'text-[#63d6ea]';
 
   const outcomeSubtitle = isWon
-    ? `You defeated ${match.opponentName || 'Opponent'}`
+    ? `You defeated ${opponentName}`
     : isLost
-      ? `${match.opponentName || 'Opponent'} defeated you`
-      : `Match with ${match.opponentName || 'Opponent'} ended in a draw`;
+      ? `${opponentName} defeated you`
+      : isDraw
+        ? `Match with ${opponentName} ended in a draw`
+        : `Match with ${opponentName} is currently in progress`;
 
-  const totalQuestions = match.questionCount || (match.playerQuestionCount + match.opponentQuestionCount) || 1;
-  const playerPercent = Math.round(((match.playerQuestionCount || 0) / totalQuestions) * 100);
+  const totalQuestions = questionCount || (playerQuestionCount + opponentQuestionCount) || 1;
+  const playerPercent = Math.round((playerQuestionCount / totalQuestions) * 100);
 
   const playerFromQuestions = questions.find(
-    (q) => q.askedBy?.playerId && q.askedBy.playerId !== match.opponentId,
+    (q) => q.askedBy?.playerId && q.askedBy.playerId !== opponentId,
   );
   const userAvatarUrl =
+    matchSummary?.player?.playerImageUrl ||
     playerFromQuestions?.askedBy?.playerImageUrl ||
     (session?.user?.user_metadata?.avatar_url as string | undefined) ||
     (session?.user?.user_metadata?.picture as string | undefined) ||
@@ -115,140 +168,178 @@ export default function MatchReviewScreen({ match, onBack }: MatchReviewScreenPr
         <div className="size-10" aria-hidden="true" />
       </div>
 
-      {/* Match Dashboard Summary Card */}
-      <div className="relative mb-4 overflow-hidden rounded-2xl border border-white/10 bg-[#1e1924] p-4 shadow-md">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h2 className={`text-2xl font-black tracking-tight ${outcomeColor}`}>
-              {outcomeTitle}
-            </h2>
-            <p className="text-sm text-[#c5cad4]">{outcomeSubtitle}</p>
+      {/* Initial Loading Skeleton */}
+      {loading && !matchSummary && !initialMatch && (
+        <div className="flex flex-col gap-4">
+          <div className="animate-pulse rounded-2xl border border-white/10 bg-[#1e1924] p-5">
+            <div className="flex items-center justify-between">
+              <div className="h-6 w-32 rounded bg-white/10" />
+              <div className="h-5 w-24 rounded-full bg-white/10" />
+            </div>
+            <div className="mt-3 h-4 w-48 rounded bg-white/10" />
+            <div className="mt-4 h-10 rounded-xl bg-white/5" />
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-bold text-[#e1bfbc]">
-              {match.categoryName || 'General'}
-            </span>
-            <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-bold text-[#e1bfbc]">
-              {formatDuration(match.durationSeconds)} • {match.questionCount} Qs
-            </span>
+          <div className="flex h-[280px] flex-col items-center justify-center gap-2 text-xs text-[#63d6ea]">
+            <span className="size-4 animate-spin rounded-full border-2 border-[#63d6ea] border-t-transparent" />
+            <span>Loading match details…</span>
           </div>
         </div>
+      )}
 
-        {/* Outcome Status Banner */}
-        <div
-          className={`mt-3 flex items-center justify-center gap-2 rounded-xl p-2.5 text-xs font-semibold ${
-            isWon
-              ? 'bg-[#63d6ea]/10 border border-[#63d6ea]/25 text-[#63d6ea]'
-              : isLost
-                ? 'bg-red-500/10 border border-red-500/25 text-[#ffdad6]'
-                : 'bg-amber-400/10 border border-amber-400/25 text-[#fef3c7]'
-          }`}
-        >
-          <span aria-hidden="true">{isWon ? '✓' : isLost ? '✕' : '•'}</span>
-          <span>
-            {isWon
-              ? 'You guessed correctly first.'
-              : isLost
-                ? `${match.opponentName || 'Opponent'} guessed your secret first.`
-                : 'Match ended in a draw.'}
-          </span>
-        </div>
-
-        {/* Collapsible Details */}
-        {isDetailsOpen && (
-          <div className="mt-3.5 flex flex-col gap-3 border-t border-white/8 pt-3 text-xs">
-            {/* Integrated Stats Grid matching design reference */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 rounded-lg border border-white/10 bg-white/3 p-4 mt-2">
-              <div>
-                <p className="text-xs font-semibold text-[#a9afbc]">Total Questions</p>
-                <p className="text-lg sm:text-xl font-bold text-white mt-1">{match.questionCount}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[#a9afbc]">Duration</p>
-                <p className="text-lg sm:text-xl font-bold text-white mt-1">{formatDuration(match.durationSeconds)}</p>
-              </div>
-              <div className="col-span-2 flex flex-col justify-center">
-                <div className="flex justify-between items-end mb-2">
-                  <p className="text-xs font-semibold text-[#a9afbc]">Question Split</p>
-                  <div className="flex gap-3 text-xs font-semibold">
-                    <span className="text-[#63d6ea]">You: {match.playerQuestionCount}</span>
-                    <span className="text-[#e5a93c]">{match.opponentName || 'Player B'}: {match.opponentQuestionCount}</span>
-                  </div>
-                </div>
-                <div className="flex h-2 rounded-full overflow-hidden bg-white/10 w-full">
-                  <div
-                    className="bg-[#63d6ea] h-full transition-all"
-                    style={{ width: `${playerPercent}%` }}
-                    aria-label={`You asked ${playerPercent}% of questions`}
-                  />
-                  <div
-                    className="bg-[#e5a93c] h-full transition-all"
-                    style={{ width: `${100 - playerPercent}%` }}
-                    aria-label={`Opponent asked ${100 - playerPercent}% of questions`}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Players Condensed matching design reference */}
-            <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4 mt-2">
-              <div className="flex items-center gap-3">
-                <PlayerAvatar
-                  imageUrl={userAvatarUrl}
-                  name="You"
-                  sizeClass="size-10"
-                  iconSizeClass="size-5"
-                  borderClass="border-2 border-[#63d6ea]/70"
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-bold text-[#63d6ea] uppercase tracking-wider">YOU</span>
-                  <span className="text-sm font-semibold text-white truncate">{match.playerSecret || '—'}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 text-right">
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-bold text-[#e5a93c] uppercase tracking-wider truncate">
-                    {(match.opponentName || 'Player B').toUpperCase()}
-                  </span>
-                  <span className={`text-sm font-semibold text-[#c5cad4] truncate ${isWon ? 'line-through opacity-75' : ''}`}>
-                    {match.opponentSecret || '—'}
-                  </span>
-                </div>
-                <PlayerAvatar
-                  imageUrl={match.opponentImageUrl}
-                  name={match.opponentName || 'Player B'}
-                  sizeClass="size-10"
-                  iconSizeClass="size-5"
-                  borderClass="border-2 border-[#e5a93c]/70"
-                  className={isWon ? 'grayscale-[25%]' : ''}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Details Toggle Button */}
-        <div className="mt-2.5 flex justify-center">
+      {/* Initial Error State */}
+      {error && !matchSummary && !initialMatch && (
+        <div className="my-4 rounded-xl border border-red-500/25 bg-red-500/15 p-4 text-center text-sm text-[#ffd9d9]">
+          <p>{error.message || 'Unable to load match review details.'}</p>
           <button
             type="button"
-            onClick={() => setIsDetailsOpen((prev) => !prev)}
-            className="flex items-center gap-1 text-xs font-bold tracking-wider text-[#63d6ea] uppercase transition hover:text-[#63d6ea]/80 cursor-pointer"
-            aria-expanded={isDetailsOpen}
+            onClick={() => void refresh()}
+            className="mt-2 text-xs font-bold text-cyan-300 underline cursor-pointer"
           >
-            <span>Match Details</span>
-            <span
-              className={`inline-block transition-transform duration-200 ${
-                isDetailsOpen ? 'rotate-180' : 'rotate-0'
-              }`}
-              aria-hidden="true"
-            >
-              ⌄
-            </span>
+            Try Again
           </button>
         </div>
-      </div>
+      )}
+
+      {/* Match Dashboard Summary Card */}
+      {(matchSummary || initialMatch) && (
+        <div className="relative mb-4 overflow-hidden rounded-2xl border border-white/10 bg-[#1e1924] p-4 shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 className={`text-2xl font-black tracking-tight ${outcomeColor}`}>
+                {outcomeTitle}
+              </h2>
+              <p className="text-sm text-[#c5cad4]">{outcomeSubtitle}</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-bold text-[#e1bfbc]">
+                {categoryName}
+              </span>
+              <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-bold text-[#e1bfbc]">
+                {formatDuration(durationSeconds)} • {questionCount} Qs
+              </span>
+            </div>
+          </div>
+
+          {/* Outcome Status Banner */}
+          <div
+            className={`mt-3 flex items-center justify-center gap-2 rounded-xl p-2.5 text-xs font-semibold ${
+              isWon
+                ? 'bg-[#63d6ea]/10 border border-[#63d6ea]/25 text-[#63d6ea]'
+                : isLost
+                  ? 'bg-red-500/10 border border-red-500/25 text-[#ffdad6]'
+                  : isDraw
+                    ? 'bg-amber-400/10 border border-amber-400/25 text-[#fef3c7]'
+                    : 'bg-[#63d6ea]/10 border border-[#63d6ea]/25 text-[#63d6ea]'
+            }`}
+          >
+            <span aria-hidden="true">{isWon ? '✓' : isLost ? '✕' : '•'}</span>
+            <span>
+              {isWon
+                ? 'You guessed correctly first.'
+                : isLost
+                  ? `${opponentName} guessed your secret first.`
+                  : isDraw
+                    ? 'Match ended in a draw.'
+                    : 'Match is currently in progress.'}
+            </span>
+          </div>
+
+          {/* Collapsible Details */}
+          {isDetailsOpen && (
+            <div className="mt-3.5 flex flex-col gap-3 border-t border-white/8 pt-3 text-xs">
+              {/* Integrated Stats Grid matching design reference */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 rounded-lg border border-white/10 bg-white/3 p-4 mt-2">
+                <div>
+                  <p className="text-xs font-semibold text-[#a9afbc]">Total Questions</p>
+                  <p className="text-lg sm:text-xl font-bold text-white mt-1">{questionCount}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[#a9afbc]">Duration</p>
+                  <p className="text-lg sm:text-xl font-bold text-white mt-1">{formatDuration(durationSeconds)}</p>
+                </div>
+                <div className="col-span-2 flex flex-col justify-center">
+                  <div className="flex justify-between items-end mb-2">
+                    <p className="text-xs font-semibold text-[#a9afbc]">Question Split</p>
+                    <div className="flex gap-3 text-xs font-semibold">
+                      <span className="text-[#63d6ea]">You: {playerQuestionCount}</span>
+                      <span className="text-[#e5a93c]">{opponentName}: {opponentQuestionCount}</span>
+                    </div>
+                  </div>
+                  <div className="flex h-2 rounded-full overflow-hidden bg-white/10 w-full">
+                    <div
+                      className="bg-[#63d6ea] h-full transition-all"
+                      style={{ width: `${playerPercent}%` }}
+                      aria-label={`You asked ${playerPercent}% of questions`}
+                    />
+                    <div
+                      className="bg-[#e5a93c] h-full transition-all"
+                      style={{ width: `${100 - playerPercent}%` }}
+                      aria-label={`Opponent asked ${100 - playerPercent}% of questions`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Players Condensed matching design reference */}
+              <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4 mt-2">
+                <div className="flex items-center gap-3">
+                  <PlayerAvatar
+                    imageUrl={userAvatarUrl}
+                    name="You"
+                    sizeClass="size-10"
+                    iconSizeClass="size-5"
+                    borderClass="border-2 border-[#63d6ea]/70"
+                  />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold text-[#63d6ea] uppercase tracking-wider">YOU</span>
+                    <span className="text-sm font-semibold text-white truncate">{playerSecret || '—'}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 text-right">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold text-[#e5a93c] uppercase tracking-wider truncate">
+                      {opponentName.toUpperCase()}
+                    </span>
+                    <span className={`text-sm font-semibold text-[#c5cad4] truncate ${isWon ? 'line-through opacity-75' : ''}`}>
+                      {opponentSecret || '—'}
+                    </span>
+                  </div>
+                  <PlayerAvatar
+                    imageUrl={opponentImageUrl}
+                    name={opponentName}
+                    sizeClass="size-10"
+                    iconSizeClass="size-5"
+                    borderClass="border-2 border-[#e5a93c]/70"
+                    className={isWon ? 'grayscale-[25%]' : ''}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Details Toggle Button */}
+          <div className="mt-2.5 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setIsDetailsOpen((prev) => !prev)}
+              className="flex items-center gap-1 text-xs font-bold tracking-wider text-[#63d6ea] uppercase transition hover:text-[#63d6ea]/80 cursor-pointer"
+              aria-expanded={isDetailsOpen}
+            >
+              <span>Match Details</span>
+              <span
+                className={`inline-block transition-transform duration-200 ${
+                  isDetailsOpen ? 'rotate-180' : 'rotate-0'
+                }`}
+                aria-hidden="true"
+              >
+                ⌄
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tactical Replay Timeline Card - Fixed Height with Internal Scroll */}
       <div className="mb-4 flex flex-col rounded-2xl border border-white/10 bg-[#1e1924] p-4 shadow-md">
@@ -294,10 +385,12 @@ export default function MatchReviewScreen({ match, onBack }: MatchReviewScreenPr
         {!loading && questions.length > 0 && (
           <div className="gamezone-qa-container h-[380px] max-h-[380px] overflow-y-auto pr-1">
             {questions.map((q) => {
-              const isAskedByMe = q.askedBy?.playerId !== match.opponentId;
+              const isAskedByMe = opponentId
+                ? q.askedBy?.playerId !== opponentId
+                : Boolean(matchSummary?.player?.playerId && q.askedBy?.playerId === matchSummary.player.playerId);
               const isAnswered = Boolean(q.answerText);
               const waitingText = isAskedByMe
-                ? `Waiting for ${match.opponentName || 'opponent'}...`
+                ? `Waiting for ${opponentName}...`
                 : 'Waiting for answer...';
 
               return (

@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { ReviewQuestionItem } from '../features/matchReview/types';
+import type {
+  MatchReviewSummary,
+  ReviewQuestionItem,
+} from '../features/matchReview/types';
 import { matchReviewService } from '../platform/api/matchReviewApi';
 
 export function useMatchReview(gameId: string) {
+  const [match, setMatch] = useState<MatchReviewSummary | null>(null);
   const [questions, setQuestions] = useState<ReviewQuestionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -13,6 +17,7 @@ export function useMatchReview(gameId: string) {
     setError(null);
     try {
       const data = await matchReviewService.getMatchQuestions(gameId);
+      setMatch(data.match ?? null);
       const sorted = (data.questions || []).sort(
         (a, b) => a.questionNumber - b.questionNumber,
       );
@@ -38,6 +43,7 @@ export function useMatchReview(gameId: string) {
       try {
         const data = await matchReviewService.getMatchQuestions(gameId);
         if (!cancelled) {
+          setMatch(data.match ?? null);
           const sorted = (data.questions || []).sort(
             (a, b) => a.questionNumber - b.questionNumber,
           );
@@ -66,6 +72,7 @@ export function useMatchReview(gameId: string) {
   }, [gameId]);
 
   return {
+    match,
     questions,
     loading,
     error,

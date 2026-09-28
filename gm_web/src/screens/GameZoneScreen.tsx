@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
-import type { HistoryMatchItem } from '../features/history/types';
 import { useGameDetails } from '../hooks/useGameDetails';
 import { useGameState } from '../hooks/useGameState';
 import './GameZoneScreen.css';
@@ -15,7 +14,7 @@ interface GameZoneScreenProps {
   onBackToLobby?: () => void;
   onLeave?: () => void;
   onGoHome?: () => void;
-  onReviewMatch?: (match: HistoryMatchItem) => void;
+  onReviewMatch?: (gameId: string) => void;
 }
 
 type ActionMode = 'ask' | 'answer' | 'disabled';
@@ -443,24 +442,8 @@ export default function GameZoneScreen({
   }
 
   function handleReviewMatch() {
-    if (onReviewMatch && gameState) {
-      const reviewData: HistoryMatchItem = {
-        gameId: gameState.gameId,
-        result: outcome.resultType === 'win' ? 'Won' : outcome.resultType === 'loss' ? 'Lost' : 'Draw',
-        playedAt: new Date().toISOString(),
-        categoryId: effectiveCategoryId || '',
-        categoryName: effectiveCategoryName,
-        opponentId: opponent?.playerId || '',
-        opponentName: opponent?.playerName || '-',
-        opponentImageUrl: opponent?.playerImageUrl || null,
-        questionCount: questions.length || ((me?.questionsAsked ?? 0) + (opponent?.questionsAsked ?? 0)),
-        durationSeconds: 0,
-        playerQuestionCount: me?.questionsAsked ?? 0,
-        opponentQuestionCount: opponent?.questionsAsked ?? 0,
-        playerSecret: me?.secret || null,
-        opponentSecret: opponent?.secret || null,
-      };
-      onReviewMatch(reviewData);
+    if (onReviewMatch && gameId) {
+      onReviewMatch(gameId);
     } else {
       handleGoHome();
     }

@@ -16,6 +16,8 @@ export interface GameStateQuestion {
   askedByPlayerId: string;
   answeredByPlayerId?: string | null;
   answerText?: string | null;
+  questionNumber?: number;
+  createdAt?: string;
 }
 
 export interface GameResultData {

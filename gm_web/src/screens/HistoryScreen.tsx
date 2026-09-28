@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import type { HistoryFilter, HistoryMatchItem } from '../features/history/types';
+import type { HistoryFilter } from '../features/history/types';
 import { useHistory } from '../hooks/useHistory';
 
 interface HistoryScreenProps {
-  onSelectMatch?: (match: HistoryMatchItem) => void;
+  onSelectMatch?: (gameId: string) => void;
 }
 
 const FILTER_OPTIONS: { key: HistoryFilter; label: string }[] = [
@@ -313,7 +313,7 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
 
                   <button
                     type="button"
-                    onClick={() => onSelectMatch?.(match)}
+                    onClick={() => onSelectMatch?.(match.gameId)}
                     className="flex items-center gap-1 font-bold text-[#63d6ea] transition hover:gap-1.5 cursor-pointer"
                   >
                     <span>Review Match</span>

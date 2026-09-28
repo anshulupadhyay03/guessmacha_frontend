@@ -2,7 +2,7 @@ import type { MatchReviewData } from '../types/matchReview';
 import type { ApiClient } from '../api/client';
 
 export interface MatchReviewRepository {
-  getMatchQuestions(gameId: string): Promise<MatchReviewData>;
+  getMatchReviews(gameId: string): Promise<MatchReviewData>;
 }
 
 function isMatchReviewData(value: unknown): value is MatchReviewData {
@@ -42,8 +42,8 @@ function normalizeMatchReviewResponse(response: unknown): MatchReviewData {
 
 export function createMatchReviewRepository(apiClient: ApiClient): MatchReviewRepository {
   return {
-    async getMatchQuestions(gameId: string): Promise<MatchReviewData> {
-      const response = await apiClient.get<unknown>('get_questions', { gameId });
+    async getMatchReviews(gameId: string): Promise<MatchReviewData> {
+      const response = await apiClient.get<unknown>('match_review', { gameId });
       return normalizeMatchReviewResponse(response);
     },
   };

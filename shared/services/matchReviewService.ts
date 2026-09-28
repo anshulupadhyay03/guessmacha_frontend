@@ -13,7 +13,7 @@ export function createMatchReviewService(
       if (!gameId || !gameId.trim()) {
         throw new Error('Game ID is required to load review questions');
       }
-      return matchReviewRepository.getMatchQuestions(gameId.trim());
+      return matchReviewRepository.getMatchReviews(gameId.trim());
     },
   };
 }

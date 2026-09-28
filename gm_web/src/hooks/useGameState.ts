@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gameService } from '../platform/api/gameApi';
+import { matchReviewService } from '../platform/api/matchReviewApi';
 import { supabase } from '../platform/supabase/client';
 import type {
   GameStateData,
@@ -16,6 +17,7 @@ interface UseGameStateResult {
   guessNotification: RealtimeGuessNotification | null;
   clearGuessNotification: () => void;
   refresh: () => Promise<void>;
+  refreshQuestions: () => Promise<void>;
   submitQuestion: (text: string, clientRequestId?: string) => Promise<void>;
   submitAnswer: (text: string, clientRequestId?: string) => Promise<void>;
   submitGuess: (puzzleId: string, clientRequestId?: string) => Promise<GuessSecretData>;
@@ -73,7 +75,21 @@ export function useGameState(gameId: string): UseGameStateResult {
         }
       }
 
-      return updated;
+      return updated.sort((a, b) => {
+        if (a.questionNumber != null && b.questionNumber != null) {
+          return a.questionNumber - b.questionNumber;
+        }
+        if (a.questionNumber != null && b.questionNumber == null) {
+          return -1;
+        }
+        if (a.questionNumber == null && b.questionNumber != null) {
+          return 1;
+        }
+        if (a.createdAt && b.createdAt) {
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        }
+        return 0;
+      });
     },
     [],
   );
@@ -86,11 +102,34 @@ export function useGameState(gameId: string): UseGameStateResult {
     }
 
     try {
-      const data = await gameService.getGameState(gameId);
+      const [data, reviewData] = await Promise.all([
+        gameService.getGameState(gameId),
+        matchReviewService.getMatchQuestions(gameId).catch((err) => {
+          console.warn('[GameZone] Could not load questions history:', err);
+          return null;
+        }),
+      ]);
       if (!isMountedRef.current) return;
 
       setGameState(data);
-      setQuestions((prev) => mergeQuestions(prev, data.question, data.questions));
+
+      const historyQuestions: GameStateQuestion[] = (reviewData?.questions || []).map((q) => ({
+        id: q.id,
+        questionNumber: q.questionNumber,
+        questionText: q.questionText,
+        askedByPlayerId: q.askedBy?.playerId || '',
+        answeredByPlayerId: q.answeredBy?.playerId || null,
+        answerText: q.answerText || null,
+        createdAt: q.createdAt,
+      }));
+
+      setQuestions((prev) => {
+        let updated = mergeQuestions(prev, null, historyQuestions);
+        if (data.question || (data.questions && data.questions.length > 0)) {
+          updated = mergeQuestions(updated, data.question, data.questions);
+        }
+        return updated;
+      });
       setError(null);
     } catch (err) {
       if (!isMountedRef.current) return;
@@ -99,6 +138,26 @@ export function useGameState(gameId: string): UseGameStateResult {
       if (isMountedRef.current && isInitial) {
         setLoading(false);
       }
+    }
+  }, [gameId, mergeQuestions]);
+
+  const refreshQuestions = useCallback(async () => {
+    if (!gameId) return;
+    try {
+      const reviewData = await matchReviewService.getMatchQuestions(gameId);
+      if (!isMountedRef.current) return;
+      const historyQuestions: GameStateQuestion[] = (reviewData?.questions || []).map((q) => ({
+        id: q.id,
+        questionNumber: q.questionNumber,
+        questionText: q.questionText,
+        askedByPlayerId: q.askedBy?.playerId || '',
+        answeredByPlayerId: q.answeredBy?.playerId || null,
+        answerText: q.answerText || null,
+        createdAt: q.createdAt,
+      }));
+      setQuestions((prev) => mergeQuestions(prev, null, historyQuestions));
+    } catch (err) {
+      console.warn('[GameZone] Failed to refresh questions:', err);
     }
   }, [gameId, mergeQuestions]);
 
@@ -112,7 +171,7 @@ export function useGameState(gameId: string): UseGameStateResult {
 
     isMountedRef.current = true;
 
-    // 1. Initial authoritative load
+    // 1. Initial authoritative load (loads game state & refills question history)
     void Promise.resolve().then(() => fetchState(true));
 
     // 2. Debounced state refresh when Realtime notifies of changes
@@ -234,6 +293,7 @@ export function useGameState(gameId: string): UseGameStateResult {
           askedByPlayerId: res.data.asked_by_player_id || res.data.askedByPlayerId || gameState?.players?.me?.playerId || '',
           answeredByPlayerId: res.data.answered_by_player_id || res.data.answeredByPlayerId || null,
           answerText: null,
+          createdAt: new Date().toISOString(),
         };
         setQuestions((prev) => mergeQuestions(prev, newQ));
       }
@@ -294,6 +354,7 @@ export function useGameState(gameId: string): UseGameStateResult {
     guessNotification,
     clearGuessNotification,
     refresh,
+    refreshQuestions,
     submitQuestion,
     submitAnswer,
     submitGuess,
