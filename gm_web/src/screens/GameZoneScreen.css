@@ -3,8 +3,8 @@
 .gamezone-container {
   height: 100%;
   max-height: 100%;
-  background-color: #121016;
-  color: #f4f1f7;
+  background-color: var(--color-surface, #f5fafc);
+  color: var(--color-on-surface, #171d1e);
   font-family: inherit;
   display: flex;
   flex-direction: column;
@@ -35,13 +35,13 @@
   align-items: center;
   justify-content: space-between;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--color-outline-variant, #bbc9cc);
 }
 
 .gamezone-back-btn {
   background: transparent;
   border: none;
-  color: #f4f1f7;
+  color: var(--color-on-surface, #171d1e);
   padding: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -51,13 +51,14 @@
 }
 
 .gamezone-back-btn:hover {
-  color: #63d6ea;
+  color: var(--color-primary, #006875);
 }
 
 .gamezone-header-title {
+  font-family: var(--font-headline, 'Manrope', sans-serif);
   font-size: 1.25rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-on-surface, #171d1e);
   letter-spacing: -0.01em;
   text-align: center;
 }
@@ -65,7 +66,7 @@
 .gamezone-leave-btn {
   background: transparent;
   border: none;
-  color: #f87171;
+  color: var(--color-error, #ba1a1a);
   padding: 6px 4px;
   font-size: 0.95rem;
   font-weight: 700;
@@ -74,7 +75,6 @@
 }
 
 .gamezone-leave-btn:hover {
-  color: #fca5a5;
   opacity: 0.85;
 }
 
@@ -87,8 +87,8 @@
 }
 
 .gamezone-player-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--color-outline-variant, #bbc9cc);
   border-radius: 14px;
   padding: 12px 14px;
   display: flex;
@@ -96,14 +96,15 @@
   gap: 12px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .gamezone-player-card--me {
-  border-left: 4px solid #63d6ea;
+  border-left: 4px solid var(--color-primary, #006875);
 }
 
 .gamezone-player-card--opponent {
-  border-right: 4px solid #e5a93c;
+  border-right: 4px solid #f89a43;
   flex-direction: row-reverse;
   text-align: right;
 }
@@ -112,12 +113,12 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: var(--color-surface-container-low, #eff4f7);
+  border: 1.5px solid var(--color-outline-variant, #bbc9cc);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c2c6d6;
+  color: var(--color-primary, #006875);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -136,9 +137,10 @@
 }
 
 .gamezone-player-name {
+  font-family: var(--font-headline, 'Manrope', sans-serif);
   font-size: 0.92rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-on-surface, #171d1e);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -158,11 +160,11 @@
 }
 
 .gamezone-player-secret--revealed {
-  color: #ffffff;
+  color: var(--color-on-surface, #171d1e);
 }
 
 .gamezone-player-secret--hidden {
-  color: #e5a93c;
+  color: #904d00;
 }
 
 .gamezone-player-questions {
@@ -172,24 +174,24 @@
 }
 
 .gamezone-player-questions-label {
-  color: #9ca3af;
+  color: var(--color-on-surface-variant, #3c494c);
 }
 
 .gamezone-player-card--me .gamezone-player-questions-count {
-  color: #63d6ea;
+  color: var(--color-primary, #006875);
   font-weight: 700;
 }
 
 .gamezone-player-card--opponent .gamezone-player-questions-count {
-  color: #e5a93c;
+  color: #904d00;
   font-weight: 700;
 }
 
 /* Current Turn Banner - pinned */
 .gamezone-turn-banner {
   flex-shrink: 0;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: #e6f6ee;
+  border: 1px solid rgba(11, 107, 69, 0.25);
   border-radius: 12px;
   padding: 10px 14px;
   display: flex;
@@ -198,25 +200,25 @@
 }
 
 .gamezone-turn-banner--opponent {
-  background: rgba(229, 169, 60, 0.12);
-  border-color: rgba(229, 169, 60, 0.3);
+  background: #fdf3e7;
+  border-color: rgba(144, 77, 0, 0.25);
 }
 
 .gamezone-turn-banner-avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 104, 117, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
-  color: #10b981;
+  color: #0b6b45;
 }
 
 .gamezone-turn-banner--opponent .gamezone-turn-banner-avatar {
-  color: #e5a93c;
+  color: #904d00;
 }
 
 .gamezone-turn-banner-avatar img {
@@ -228,12 +230,12 @@
 .gamezone-turn-banner-text {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #10b981;
+  color: #0b6b45;
   flex: 1;
 }
 
 .gamezone-turn-banner--opponent .gamezone-turn-banner-text {
-  color: #e5a93c;
+  color: #904d00;
 }
 
 .gamezone-turn-banner-badge {
@@ -243,34 +245,35 @@
   letter-spacing: 0.05em;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(16, 185, 129, 0.2);
-  color: #34d399;
+  background: rgba(11, 107, 69, 0.12);
+  color: #0b6b45;
 }
 
 .gamezone-turn-banner-badge--bonus {
-  background: rgba(245, 158, 11, 0.25);
-  color: #fbbf24;
+  background: rgba(144, 77, 0, 0.15);
+  color: #904d00;
 }
 
 /* Game Over Banner - pinned if active */
 .gamezone-game-over-banner {
   flex-shrink: 0;
-  background: rgba(99, 214, 234, 0.1);
-  border: 1px solid rgba(99, 214, 234, 0.3);
+  background: var(--color-surface-container-low, #eff4f7);
+  border: 1px solid var(--color-primary, #006875);
   border-radius: 12px;
   padding: 14px 16px;
   text-align: center;
 }
 
 .gamezone-game-over-title {
+  font-family: var(--font-headline, 'Manrope', sans-serif);
   font-size: 1.1rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-on-surface, #171d1e);
 }
 
 .gamezone-game-over-desc {
   font-size: 0.85rem;
-  color: #c4c7d0;
+  color: var(--color-on-surface-variant, #3c494c);
   margin-top: 4px;
 }
 
@@ -297,12 +300,12 @@
 }
 
 .gamezone-qa-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 4px;
 }
 
 .gamezone-qa-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .gamezone-qa-empty {
@@ -312,7 +315,7 @@
   justify-content: center;
   margin: auto;
   padding: 32px 16px;
-  color: #8f94a6;
+  color: var(--color-outline, #6c797c);
   text-align: center;
 }
 
@@ -328,8 +331,8 @@
 /* Question-Answer Cards - matching gamezone.png exactly */
 .gamezone-qa-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--color-outline-variant, #bbc9cc);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -337,6 +340,7 @@
   box-sizing: border-box;
   animation: qa-fade-in 0.2s ease-out;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 @keyframes qa-fade-in {
@@ -351,41 +355,42 @@
 }
 
 .gamezone-qa-card--me {
-  border-left: 3.5px solid #63d6ea;
+  border-left: 3.5px solid var(--color-primary, #006875);
   text-align: left;
 }
 
 .gamezone-qa-card--opponent {
-  border-right: 3.5px solid #e5a93c;
+  border-right: 3.5px solid #f89a43;
   text-align: right;
 }
 
 .gamezone-qa-card--waiting {
   border-style: dashed;
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--color-outline-variant, #bbc9cc);
 }
 
 .gamezone-qa-card--me.gamezone-qa-card--waiting {
   border-left-style: solid;
-  border-left-color: #63d6ea;
+  border-left-color: var(--color-primary, #006875);
 }
 
 .gamezone-qa-card--opponent.gamezone-qa-card--waiting {
   border-right-style: solid;
-  border-right-color: #e5a93c;
+  border-right-color: #f89a43;
 }
 
 .gamezone-qa-question {
   font-size: 0.95rem;
   font-weight: 500;
-  color: #f4f1f7;
+  color: var(--color-on-surface, #171d1e);
   line-height: 1.35;
 }
 
 .gamezone-qa-answer {
+  font-family: var(--font-headline, 'Manrope', sans-serif);
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-primary, #006875);
   margin-top: 6px;
   line-height: 1.35;
 }
@@ -394,7 +399,7 @@
   font-size: 0.9rem;
   font-style: italic;
   font-weight: 400;
-  color: #8e8a93;
+  color: var(--color-outline, #6c797c);
   margin-top: 6px;
   line-height: 1.35;
 }
@@ -416,19 +421,20 @@
 
 .gamezone-input-field {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--color-outline-variant, #bbc9cc);
   border-radius: 12px;
   padding: 12px 14px;
-  color: #ffffff;
+  color: var(--color-on-surface, #171d1e);
   font-size: 0.9rem;
   outline: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .gamezone-input-field:focus {
-  border-color: #63d6ea;
-  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--color-primary, #006875);
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 104, 117, 0.15);
 }
 
 .gamezone-input-field:disabled {
@@ -437,12 +443,12 @@
 }
 
 .gamezone-input-field::placeholder {
-  color: #8b92a4;
+  color: var(--color-outline, #6c797c);
 }
 
 .gamezone-send-btn {
-  background: #63d6ea;
-  color: #00363e;
+  background: var(--color-primary, #006875);
+  color: var(--color-on-primary, #ffffff);
   border: none;
   border-radius: 12px;
   width: 46px;
@@ -453,11 +459,11 @@
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
-  box-shadow: 0 2px 10px rgba(99, 214, 234, 0.25);
+  box-shadow: 0 2px 10px rgba(0, 104, 117, 0.25);
 }
 
 .gamezone-send-btn:hover:not(:disabled) {
-  opacity: 0.92;
+  opacity: 0.95;
   transform: translateY(-1px);
 }
 
@@ -467,14 +473,15 @@
   box-shadow: none;
 }
 
-/* Guess Secret Button - Primary color background (#63d6ea) */
+/* Guess Secret Button */
 .gamezone-guess-btn {
   width: 100%;
   height: 52px;
   border-radius: 12px;
-  background: #63d6ea;
+  background: var(--color-primary, #006875);
   border: none;
-  color: #00363e;
+  color: var(--color-on-primary, #ffffff);
+  font-family: var(--font-headline, 'Manrope', sans-serif);
   font-size: 1.05rem;
   font-weight: 800;
   display: flex;
@@ -482,12 +489,13 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 4px 16px rgba(99, 214, 234, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 104, 117, 0.2);
 }
 
 .gamezone-guess-btn:hover:not(:disabled) {
-  opacity: 0.92;
+  opacity: 0.95;
   transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 104, 117, 0.28);
 }
 
 .gamezone-guess-btn:disabled {
@@ -501,7 +509,7 @@
 .gamezone-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.78);
+  background: rgba(23, 29, 30, 0.5);
   backdrop-filter: blur(4px);
   z-index: 60;
   display: flex;
@@ -519,14 +527,14 @@
 .gamezone-modal-box {
   width: 100%;
   max-width: 420px;
-  background: #141218;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--color-outline-variant, #bbc9cc);
   border-radius: 20px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
   text-align: center;
 }
 
@@ -535,14 +543,15 @@
 }
 
 .gamezone-modal-title {
+  font-family: var(--font-headline, 'Manrope', sans-serif);
   font-size: 1.25rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-on-surface, #171d1e);
 }
 
 .gamezone-modal-desc {
   font-size: 0.88rem;
-  color: #c4c7d0;
+  color: var(--color-on-surface-variant, #3c494c);
   line-height: 1.45;
 }
 
@@ -564,32 +573,33 @@
 }
 
 .gamezone-modal-btn--cancel {
-  background: rgba(255, 255, 255, 0.08);
-  color: #c2c6d6;
+  background: var(--color-surface-container-low, #eff4f7);
+  border: 1px solid var(--color-outline-variant, #bbc9cc);
+  color: var(--color-on-surface, #171d1e);
 }
 
 .gamezone-modal-btn--cancel:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: var(--color-surface-container, #e9eff1);
 }
 
 .gamezone-modal-btn--danger {
-  background: #ef4444;
+  background: var(--color-error, #ba1a1a);
   color: #ffffff;
 }
 
 .gamezone-modal-btn--danger:hover {
-  background: #dc2626;
+  background: #a41313;
 }
 
 .gamezone-modal-btn--confirm {
-  background: #63d6ea;
-  color: #00363e;
+  background: var(--color-primary, #006875);
+  color: var(--color-on-primary, #ffffff);
+  font-family: var(--font-headline, 'Manrope', sans-serif);
   font-weight: 800;
 }
 
 .gamezone-modal-btn--confirm:hover {
-  opacity: 0.92;
+  opacity: 0.95;
 }
 
 /* Responsive adjustments */

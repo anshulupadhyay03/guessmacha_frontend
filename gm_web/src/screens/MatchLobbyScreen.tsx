@@ -42,15 +42,15 @@ function timeUntil(expiresAt?: string): string | null {
 function CheckIcon({ muted = false, active = false }: { muted?: boolean; active?: boolean }) {
   if (active) {
     return (
-      <span className="grid size-5 place-items-center rounded-full border-2 border-[#f59e0b]">
-        <span className="size-2 animate-pulse rounded-full bg-[#f59e0b]" />
+      <span className="grid size-5 place-items-center rounded-full border-2 border-[#006875]">
+        <span className="size-2 animate-pulse rounded-full bg-[#006875]" />
       </span>
     )
   }
 
   return (
     <svg
-      className={`size-5 shrink-0 ${muted ? 'text-white/20' : 'text-[#10b981]'}`}
+      className={`size-5 shrink-0 ${muted ? 'text-[#bbc9cc]' : 'text-[#0b6b45]'}`}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -83,7 +83,7 @@ function PlayerAvatar({
   if (shouldRenderImage) {
     return (
       <img
-        className="size-10 rounded-full object-cover ring-2 ring-white/15"
+        className="size-10 rounded-full object-cover ring-2 ring-[#bbc9cc]"
         src={playerImageUrl ?? undefined}
         alt={playerName}
         onError={() => setImageFailed(true)}
@@ -92,7 +92,7 @@ function PlayerAvatar({
   }
 
   return (
-    <span className="grid size-10 place-items-center rounded-full bg-[#004852] text-sm font-bold text-[#44bcd0] ring-2 ring-white/15">
+    <span className="grid size-10 place-items-center rounded-full bg-[#eff4f7] text-sm font-bold text-[#006875] ring-2 ring-[#bbc9cc]">
       {initials}
     </span>
   )
@@ -256,46 +256,45 @@ export default function MatchLobbyScreen({
   }
 
   return (
-    <section className="min-h-full bg-lobby-background font-lobby-body text-[#f4f1f7]" aria-live="polite">
+    <section className="min-h-full bg-[#f5fafc] font-lobby-body text-[#171d1e]" aria-live="polite">
       <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-28 sm:px-6">
         <div className="mb-6 text-center">
-          <h1 className="font-lobby-display text-[28px] leading-9 font-bold text-[#63d6ea]">Match Lobby</h1>
-          <p className="mt-2 text-base text-[#c4c7d0]">Invite a friend to join.</p>
+          <h1 className="font-lobby-display text-[28px] leading-9 font-bold text-[#171d1e]">Match Lobby</h1>
+          <p className="mt-2 text-base text-[#3c494c]">Invite a friend to join.</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-12">
           <div className="space-y-6 md:col-span-5">
-            <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/4 p-6">
-              <div className="pointer-events-none absolute inset-0 bg-[#63d6ea]/5" />
+            <article className="relative overflow-hidden rounded-2xl border border-[#bbc9cc] bg-white p-6 shadow-xs">
               <div className="relative flex items-center gap-4">
-                <div className="grid size-16 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/4 text-3xl text-[#63d6ea]" aria-hidden="true">
+                <div className="grid size-16 shrink-0 place-items-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-3xl text-[#006875]" aria-hidden="true">
                   ◉
                 </div>
                 <div className="min-w-0">
-                  <span className="block text-xs font-semibold tracking-[0.12em] text-[#63d6ea] uppercase">
+                  <span className="block text-xs font-semibold tracking-[0.12em] text-[#006875] uppercase">
                     Selected category
                   </span>
-                  <h2 className="mt-1 truncate text-xl font-semibold text-white">
+                  <h2 className="mt-1 truncate text-xl font-semibold text-[#171d1e]">
                     {game?.category.name ?? 'Loading category…'}
                     {game && (
-                      <span className="font-normal text-[#c2c6d6]"> · {game.category.itemCount} items</span>
+                      <span className="font-normal text-[#6c797c]"> · {game.category.itemCount} items</span>
                     )}
                   </h2>
                 </div>
               </div>
 
-              <hr className="relative my-6 border-white/10" />
+              <hr className="relative my-6 border-[#bbc9cc]" />
 
               <div className="relative">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold tracking-[0.12em] text-[#63d6ea] uppercase">
+                  <span className="text-xs font-semibold tracking-[0.12em] text-[#006875] uppercase">
                     Match progress
                   </span>
                   <button
                     type="button"
                     onClick={() => void refresh()}
                     disabled={loading}
-                    className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-[#63d6ea] transition hover:bg-white/8 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#63d6ea]"
+                    className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-[#006875] transition hover:bg-[#eff4f7] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
                     aria-label="Refresh game status"
                     title="Refresh game status"
                   >
@@ -318,7 +317,7 @@ export default function MatchLobbyScreen({
                     return (
                       <div
                         key={step}
-                        className={`flex items-center gap-3 ${isCurrent ? 'font-bold text-[#63d6ea]' : isComplete ? 'text-[#10b981]' : 'text-[#c4c7d0]'}`}
+                        className={`flex items-center gap-3 ${isCurrent ? 'font-bold text-[#006875]' : isComplete ? 'text-[#0b6b45]' : 'text-[#6c797c]'}`}
                       >
                         {isCurrent && !isReadyStep ? (
                           <CheckIcon active />
@@ -334,7 +333,7 @@ export default function MatchLobbyScreen({
                 </div>
 
                 {error && (
-                  <p className="mt-3 text-sm leading-5 text-[#ffb4ab]" role="alert">
+                  <p className="mt-3 text-sm leading-5 text-[#ba1a1a]" role="alert">
                     {error.message}
                   </p>
                 )}
@@ -343,18 +342,18 @@ export default function MatchLobbyScreen({
           </div>
 
           <div className="space-y-6 md:col-span-7">
-            <article className="rounded-2xl border border-white/10 bg-white/4 p-6">
-              <span className="block text-xs font-semibold tracking-[0.12em] text-[#c4c7d0] uppercase">
+            <article className="rounded-2xl border border-[#bbc9cc] bg-white p-6 shadow-xs">
+              <span className="block text-xs font-semibold tracking-[0.12em] text-[#36656e] uppercase">
                 Room code
               </span>
-              <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/4 p-3">
-                <output className="min-w-0 truncate font-mono text-xl font-semibold tracking-[0.18em] text-white" aria-label="Room code">
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-[#bbc9cc] bg-[#eff4f7] p-3">
+                <output className="min-w-0 truncate font-mono text-xl font-semibold tracking-[0.18em] text-[#006875]" aria-label="Room code">
                   {roomCode}
                 </output>
                 <div className="flex shrink-0 gap-1">
                   <button
                     type="button"
-                    className="grid size-9 cursor-pointer place-items-center rounded-md text-[#63d6ea] transition hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#63d6ea]"
+                    className="grid size-9 cursor-pointer place-items-center rounded-md text-[#006875] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
                     onClick={() => void handleCopy()}
                     aria-label="Copy room code"
                     title="Copy code"
@@ -366,7 +365,7 @@ export default function MatchLobbyScreen({
                   </button>
                   <button
                     type="button"
-                    className="grid size-9 cursor-pointer place-items-center rounded-md text-[#63d6ea] transition hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#63d6ea]"
+                    className="grid size-9 cursor-pointer place-items-center rounded-md text-[#006875] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
                     onClick={() => void handleShare()}
                     aria-label="Share room code"
                     title="Share"
@@ -382,41 +381,41 @@ export default function MatchLobbyScreen({
               </div>
 
               {copyStatus === 'copied' && (
-                <p className="mt-3 text-center text-xs text-[#10b981]">Room code copied.</p>
+                <p className="mt-3 text-center text-xs text-[#0b6b45]">Room code copied.</p>
               )}
               {copyStatus === 'error' && (
-                <p className="mt-3 text-center text-xs text-[#ffb4ab]" role="alert">
+                <p className="mt-3 text-center text-xs text-[#ba1a1a]" role="alert">
                   Couldn’t copy the room code. Please copy it manually.
                 </p>
               )}
-              <p className="mt-3 text-center text-xs font-semibold text-[#c4c7d0]">
+              <p className="mt-3 text-center text-xs font-semibold text-[#3c494c]">
                 {timeUntil(game?.expiresAt) ?? 'Checking expiry…'}
               </p>
             </article>
 
-            <article className="rounded-2xl border border-white/10 bg-white/4 p-6">
-              <span className="block text-xs font-semibold tracking-[0.12em] text-[#c4c7d0] uppercase">
+            <article className="rounded-2xl border border-[#bbc9cc] bg-white p-6 shadow-xs">
+              <span className="block text-xs font-semibold tracking-[0.12em] text-[#36656e] uppercase">
                 Players
               </span>
 
               <div className="mt-4 grid gap-3">
-                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/4 p-3">
+                <div className="flex items-center justify-between rounded-xl border border-[#bbc9cc] bg-[#eff4f7]/50 p-3">
                   <div className="flex items-center gap-3">
                     <PlayerAvatar
                       playerName={host?.playerName ?? 'Host'}
                       playerImageUrl={host?.playerImageUrl}
                     />
                     <div>
-                      <strong className="block text-white">{host?.playerName ?? 'Host'}</strong>
-                      <small className="text-xs text-[#10b981]">Host</small>
+                      <strong className="block text-[#171d1e]">{host?.playerName ?? 'Host'}</strong>
+                      <small className="text-xs text-[#0b6b45]">Host</small>
                     </div>
                   </div>
                   <CheckIcon muted={!hostSecretLocked} />
                 </div>
 
                 <div
-                  className={`flex items-center justify-between rounded-xl border bg-white/4 p-3 ${
-                    opponent ? 'border-white/10' : 'border-dashed border-white/12 opacity-50'
+                  className={`flex items-center justify-between rounded-xl border p-3 ${
+                    opponent ? 'border-[#bbc9cc] bg-[#eff4f7]/50' : 'border-dashed border-[#bbc9cc] bg-[#eff4f7]/20 opacity-60'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -425,17 +424,17 @@ export default function MatchLobbyScreen({
                       playerImageUrl={opponent?.playerImageUrl}
                     />
                     <div>
-                      <strong className={opponent ? 'block text-white' : 'block italic text-[#c4c7d0]'}>
+                      <strong className={opponent ? 'block text-[#171d1e]' : 'block italic text-[#6c797c]'}>
                         {opponent ? opponent.playerName : 'Waiting for player'}
                       </strong>
-                      <small className="text-xs text-[#c4c7d0]">Opponent</small>
+                      <small className="text-xs text-[#6c797c]">Opponent</small>
                     </div>
                   </div>
 
                   {opponent ? (
                     <CheckIcon muted={!opponentSecretLocked} />
                   ) : (
-                    <span className="size-2 animate-pulse rounded-full bg-[#f59e0b]" />
+                    <span className="size-2 animate-pulse rounded-full bg-[#006875]" />
                   )}
                 </div>
               </div>
@@ -443,10 +442,10 @@ export default function MatchLobbyScreen({
           </div>
         </div>
 
-        <div className="sticky bottom-0 z-10 -mx-4 mt-6 border-t border-white/10 bg-[#100d13]/95 px-4 pt-4 pb-2 backdrop-blur sm:-mx-6 sm:px-6">
+        <div className="sticky bottom-0 z-10 -mx-4 mt-6 border-t border-[#bbc9cc] bg-white/95 px-4 pt-4 pb-2 backdrop-blur sm:-mx-6 sm:px-6">
           <button
             type="button"
-            className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#63d6ea] text-xl font-semibold text-[#00363e] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#63d6ea] shadow-[0_4px_16px_rgba(99,214,234,0.2)]"
+            className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#006875] text-xl font-semibold text-white transition hover:bg-[#005a66] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875] shadow-[0_4px_14px_rgba(0,104,117,0.2)]"
             onClick={handleMainAction}
             disabled={matchProgress.buttonDisabled}
           >

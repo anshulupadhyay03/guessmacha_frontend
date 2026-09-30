@@ -35,8 +35,8 @@ export default function Chip({
   const shapeStyles = variant === 'square' ? 'rounded-xl' : 'rounded-full';
 
   const stateStyles = selected
-    ? 'border-2 border-[#63d6ea] bg-[#63d6ea] text-[#00363e] font-extrabold shadow-[0_2px_12px_rgba(99,214,234,0.3)]'
-    : 'border-white/10 bg-white/4 text-[#f2f5fc] hover:border-white/20 hover:bg-white/8 hover:text-white font-bold';
+    ? 'border-2 border-[#006875] bg-[#006875] text-white font-extrabold shadow-[0_2px_12px_rgba(0,104,117,0.25)]'
+    : 'border-[#bbc9cc] bg-white text-[#171d1e] hover:border-[#006875] hover:bg-[#eff4f7] font-semibold';
 
   return (
     <button
@@ -46,7 +46,7 @@ export default function Chip({
       aria-label={ariaLabel}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center justify-center border text-center transition cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#63d6ea] disabled:cursor-not-allowed disabled:opacity-50 ${sizeStyles} ${shapeStyles} ${stateStyles} ${className}`}
+      className={`inline-flex items-center justify-center border text-center transition cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875] disabled:cursor-not-allowed disabled:opacity-50 ${sizeStyles} ${shapeStyles} ${stateStyles} ${className}`}
     >
       <span className="leading-none">{label}</span>
     </button>

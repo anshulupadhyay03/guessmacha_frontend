@@ -33,7 +33,7 @@ function CrossedSwordsIcon() {
       height="36"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#63d6ea"
+      stroke="#006875"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"

@@ -78,3 +78,6 @@ gm_web/package-lock.json
 
 # add everyhting from gm_web/src/reference to gm_web/src/refer_files in .gitignore
 gm_web/src/refer_files
+gm_web/.env.local
+gm_web/.env.production
+*.zip

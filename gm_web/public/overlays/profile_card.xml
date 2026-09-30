@@ -1,10 +1,12 @@
 <View className="profileCard">
-  <Image
-    src="{{FBInstant.player.photo}}"
-    className="avatar"
-  />
-  <Text
-    content="{{FBInstant.player.name}}"
-    className="playerName"
-  />
+  <View className="avatarRing">
+    <Image
+      src="{{FBInstant.player.photo}}"
+      className="avatar"
+    />
+  </View>
+
+  <View className="playerInfo">
+    <Text content="{{FBInstant.player.name}}" className="playerName" />
+  </View>
 </View>

@@ -111,8 +111,8 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
         resultType: 'win',
         title: 'VICTORY',
         subtitle: `You defeated ${opponentName}!`,
-        badgeClass: 'bg-[#63d6ea]/15 text-[#63d6ea] border-[#63d6ea]/30',
-        textColor: 'text-[#63d6ea]',
+        badgeClass: 'bg-[#e6f6ee] text-[#0b6b45] border-[#0b6b45]/30',
+        textColor: 'text-[#006875]',
       };
     }
     if (winnerId === opponent?.playerId) {
@@ -121,8 +121,8 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
         resultType: 'loss',
         title: 'DEFEAT',
         subtitle: `${opponentName} won the match!`,
-        badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
-        textColor: 'text-red-400',
+        badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
+        textColor: 'text-[#ba1a1a]',
       };
     }
   }
@@ -135,8 +135,8 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
         resultType: 'loss',
         title: 'DEFEAT',
         subtitle: `${opponentName} outsmarted you!`,
-        badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
-        textColor: 'text-red-400',
+        badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
+        textColor: 'text-[#ba1a1a]',
       };
     }
     return {
@@ -144,8 +144,8 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
       resultType: 'win',
       title: 'VICTORY',
       subtitle: `You outsmarted ${opponentName}!`,
-      badgeClass: 'bg-[#63d6ea]/15 text-[#63d6ea] border-[#63d6ea]/30',
-      textColor: 'text-[#63d6ea]',
+      badgeClass: 'bg-[#e6f6ee] text-[#0b6b45] border-[#0b6b45]/30',
+      textColor: 'text-[#006875]',
     };
   }
 
@@ -155,8 +155,8 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
       resultType: 'loss',
       title: 'DEFEAT',
       subtitle: `${opponentName} outsmarted you!`,
-      badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
-      textColor: 'text-red-400',
+      badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
+      textColor: 'text-[#ba1a1a]',
     };
   }
 
@@ -166,8 +166,8 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
     resultType: 'draw',
     title: 'DRAW',
     subtitle: `Match with ${opponentName} ended in a draw`,
-    badgeClass: 'bg-amber-400/15 text-amber-300 border-amber-400/30',
-    textColor: 'text-amber-400',
+    badgeClass: 'bg-[#ffeccf] text-[#904d00] border-[#904d00]/30',
+    textColor: 'text-[#904d00]',
   };
 }
 
@@ -802,20 +802,20 @@ export default function GameZoneScreen({
       {/* Non-closable Game Result Modal Dialog */}
       {outcome.isFinished && gameState && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200"
           role="dialog"
           aria-modal="true"
           aria-labelledby="game-result-dialog-title"
         >
-          <div className="relative w-full max-w-95 rounded-2xl border border-white/15 bg-[#17141d] p-6 text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center gap-4">
+          <div className="relative w-full max-w-95 rounded-2xl border border-[#bbc9cc] bg-white p-6 text-center shadow-xl flex flex-col items-center gap-4">
             {/* Outcome Icon */}
             <div
               className={`grid size-16 place-items-center rounded-full border text-3xl ${
                 outcome.resultType === 'win'
-                  ? 'bg-[#63d6ea]/15 border-[#63d6ea]/40 text-[#63d6ea] shadow-[0_0_24px_rgba(99,214,234,0.3)]'
+                  ? 'bg-[#02c2d9]/15 border-[#006875]/40 text-[#006875] shadow-[0_0_24px_rgba(0,104,117,0.2)]'
                   : outcome.resultType === 'loss'
-                    ? 'bg-red-500/15 border-red-500/40 text-red-400 shadow-[0_0_24px_rgba(239,68,68,0.3)]'
-                    : 'bg-amber-400/15 border-amber-400/40 text-amber-300 shadow-[0_0_24px_rgba(245,158,11,0.3)]'
+                    ? 'bg-[#ffdad6] border-[#ba1a1a]/40 text-[#ba1a1a]'
+                    : 'bg-[#ffeccf] border-[#904d00]/40 text-[#904d00]'
               }`}
               aria-hidden="true"
             >
@@ -830,41 +830,41 @@ export default function GameZoneScreen({
               <h2 id="game-result-dialog-title" className={`text-2xl font-black tracking-tight ${outcome.textColor}`}>
                 {outcome.resultType === 'win' ? 'Victory!' : outcome.resultType === 'loss' ? 'Defeat' : 'Draw'}
               </h2>
-              <p className="text-sm text-[#c4c7d0]">
+              <p className="text-sm text-[#3c494c]">
                 {outcome.subtitle}
               </p>
             </div>
 
             {/* Match Summary Details */}
-            <div className="w-full rounded-xl border border-white/8 bg-white/[0.03] p-3.5 text-left text-xs space-y-2">
-              <div className="flex items-center justify-between text-[#8f94a6]">
+            <div className="w-full rounded-xl border border-[#bbc9cc] bg-[#eff4f7] p-3.5 text-left text-xs space-y-2">
+              <div className="flex items-center justify-between text-[#6c797c]">
                 <span>Category</span>
-                <span className="font-semibold text-white">{effectiveCategoryName}</span>
+                <span className="font-semibold text-[#171d1e]">{effectiveCategoryName}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#8f94a6]">Your Secret</span>
-                <span className="font-semibold text-white">{mySecretName}</span>
+                <span className="text-[#6c797c]">Your Secret</span>
+                <span className="font-semibold text-[#171d1e]">{mySecretName}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#8f94a6]">{opponent?.playerName || 'Opponent'}'s Secret</span>
-                <span className="font-semibold text-amber-300">
+                <span className="text-[#6c797c]">{opponent?.playerName || 'Opponent'}'s Secret</span>
+                <span className="font-semibold text-[#904d00]">
                   {opponent?.secret || 'Available in Review'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-white/6 text-[#8f94a6]">
+              <div className="flex items-center justify-between pt-1 border-t border-[#bbc9cc] text-[#6c797c]">
                 <span>Questions Asked</span>
-                <span className="font-medium text-white">
+                <span className="font-medium text-[#171d1e]">
                   You: {me?.questionsAsked ?? 0} • {opponent?.playerName || 'Opponent'}: {opponent?.questionsAsked ?? 0}
                 </span>
               </div>
 
               {gameState.endReason && (
-                <div className="pt-1 border-t border-white/6 text-[#8f94a6]">
+                <div className="pt-1 border-t border-[#bbc9cc] text-[#6c797c]">
                   <span>Reason: </span>
-                  <span className="text-white/90">{gameState.endReason}</span>
+                  <span className="text-[#171d1e]">{gameState.endReason}</span>
                 </div>
               )}
             </div>
@@ -874,7 +874,7 @@ export default function GameZoneScreen({
               <button
                 type="button"
                 onClick={handleReviewMatch}
-                className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#63d6ea] text-sm font-extrabold text-[#00363e] shadow-[0_4px_16px_rgba(99,214,234,0.25)] transition hover:opacity-90 active:scale-[0.99] sm:text-base"
+                className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#006875] text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(0,104,117,0.2)] transition hover:bg-[#005a66] active:scale-[0.99] sm:text-base"
               >
                 <span>Review Match</span>
                 <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -885,7 +885,7 @@ export default function GameZoneScreen({
               <button
                 type="button"
                 onClick={handleGoHome}
-                className="flex h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-white/15 bg-white/6 text-sm font-bold text-white transition hover:bg-white/10 active:scale-[0.99]"
+                className="flex h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-sm font-bold text-[#171d1e] transition hover:bg-[#e9eff1] active:scale-[0.99]"
               >
                 Go to Home
               </button>

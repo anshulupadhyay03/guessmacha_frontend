@@ -1,6 +1,11 @@
 declare global {
   interface FBInstantPlayer {
     getID(): string;
+    getName?(): string;
+    getPhoto?(): string;
+    getDataAsync?(keys?: string[]): Promise<Record<string, unknown>>;
+    setDataAsync?(data: Record<string, unknown>): Promise<void>;
+    getConnectedPlayersAsync?(): Promise<unknown[]>;
     getASIDAsync?(): Promise<string>;
     getAssociatedAppsASIDAsync?(): Promise<string>;
     getSignedAssociatedAppsASIDAsync?(): Promise<string>;
@@ -9,7 +14,8 @@ declare global {
     getSignedPlayerInfoAsync(
       nonce?: string,
     ): Promise<{
-      getPlayerId(): string;
+      getPlayerID(): string;
+      getPlayerId?(): string;
       getSignature(): string;
     }>;
     canSubscribeBotAsync?(): Promise<boolean>;
@@ -32,6 +38,11 @@ declare global {
     ): Promise<FBInstantOverlayView>;
   }
 
+  interface FBInstantContext {
+    getID(): string | null;
+    getType(): string;
+  }
+
   interface FBInstantAPI {
     initializeAsync(): Promise<void>;
     setLoadingProgress(progress: number): void;
@@ -40,10 +51,16 @@ declare global {
     getPlatform(): string;
     getSDKVersion(): string;
     player: FBInstantPlayer;
-    overlayViews: FBInstantOverlayViews;
+    context?: FBInstantContext;
+    overlayViews?: FBInstantOverlayViews;
+    quit?(): void;
   }
 
   const FBInstant: FBInstantAPI;
+
+  interface Window {
+    FBInstant?: FBInstantAPI;
+  }
 }
 
 export interface PlatformPlayer {

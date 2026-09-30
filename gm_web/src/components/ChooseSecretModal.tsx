@@ -73,29 +73,29 @@ export default function ChooseSecretModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs p-0 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="choose-secret-title"
     >
-      <div className="w-full max-w-lg bg-[#141218] border border-white/12 rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col overflow-hidden text-[#f4f1f7] shadow-2xl animate-in fade-in slide-in-from-bottom duration-200">
+      <div className="w-full max-w-lg bg-white border border-[#bbc9cc] rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col overflow-hidden text-[#171d1e] shadow-xl animate-in fade-in slide-in-from-bottom duration-200">
         {/* Drag handle pill on mobile */}
-        <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1.5 sm:hidden" />
+        <div className="w-12 h-1 bg-[#bbc9cc] rounded-full mx-auto mt-2.5 mb-1.5 sm:hidden" />
 
         {/* Modal Header */}
         <div className="flex items-start justify-between px-6 pt-4 pb-2">
           <div>
-            <h2 id="choose-secret-title" className="font-lobby-display text-2xl font-bold text-white">
+            <h2 id="choose-secret-title" className="font-lobby-display text-2xl font-bold text-[#171d1e]">
               {title ?? 'Choose Secret'}
             </h2>
-            <p className="text-sm text-[#c4c7d0] mt-0.5">
+            <p className="text-sm text-[#3c494c] mt-0.5">
               {subtitle ?? 'Select an item for your opponent to deduce'}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="size-9 rounded-full bg-white/6 border border-white/12 text-[#c2c6d6] hover:bg-white/10 hover:text-white flex items-center justify-center transition cursor-pointer"
+            className="size-9 rounded-full bg-[#eff4f7] border border-[#bbc9cc] text-[#171d1e] hover:bg-[#e9eff1] flex items-center justify-center transition cursor-pointer"
             aria-label="Close choose secret modal"
           >
             <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -107,29 +107,29 @@ export default function ChooseSecretModal({
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
           {/* Category Info Card */}
-          <div className="bg-white/4 border border-white/10 rounded-xl p-3 flex items-center justify-between">
+          <div className="bg-[#eff4f7] border border-[#bbc9cc] rounded-xl p-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-lg bg-[#00363e]/80 border border-[#63d6ea]/40 text-[#63d6ea] flex items-center justify-center text-lg">
+              <div className="size-10 rounded-lg bg-[#02c2d9]/15 border border-[#006875]/30 text-[#006875] flex items-center justify-center text-lg">
                 🌍
               </div>
               <div>
-                <span className="block text-[11px] font-bold tracking-wider uppercase text-[#63d6ea]">
+                <span className="block text-[11px] font-bold tracking-wider uppercase text-[#006875]">
                   CATEGORY
                 </span>
-                <strong className="text-base font-bold text-white">
+                <strong className="text-base font-bold text-[#171d1e]">
                   {effectiveCategoryName}
                 </strong>
               </div>
             </div>
 
-            <span className="px-3 py-1 bg-white/6 border border-white/10 rounded-full text-xs font-semibold text-[#c4c7d0]">
+            <span className="px-3 py-1 bg-white border border-[#bbc9cc] rounded-full text-xs font-semibold text-[#3c494c]">
               {puzzles.length} available
             </span>
           </div>
 
           {/* Search Box */}
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#9db7d8]">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6c797c]">
               <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
@@ -140,25 +140,25 @@ export default function ChooseSecretModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${effectiveCategoryName.toLowerCase()} or clues...`}
-              className="w-full bg-white/4 border border-white/12 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#9ea8b8] focus:outline-none focus:border-[#63d6ea] transition"
+              className="w-full bg-white border border-[#bbc9cc] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#171d1e] placeholder-[#6c797c] focus:outline-none focus:border-[#006875] transition"
             />
           </div>
 
           {/* Puzzle List State Messages */}
           {loading && (
-            <div className="py-12 text-center text-[#c4c7d0]">
-              <div className="inline-block size-6 animate-spin rounded-full border-2 border-[#63d6ea] border-t-transparent mb-2" />
+            <div className="py-12 text-center text-[#3c494c]">
+              <div className="inline-block size-6 animate-spin rounded-full border-2 border-[#006875] border-t-transparent mb-2" />
               <p className="text-sm">Loading secrets…</p>
             </div>
           )}
 
           {error && (
-            <div className="p-4 bg-red-500/15 border border-red-500/30 rounded-xl text-center text-[#ffd9d9]">
+            <div className="p-4 bg-[#ffdad6] border border-[#ba1a1a]/30 rounded-xl text-center text-[#93000a]">
               <p className="text-sm">{error.message}</p>
               <button
                 type="button"
                 onClick={() => void reload()}
-                className="mt-2 text-xs font-bold text-[#63d6ea] underline cursor-pointer"
+                className="mt-2 text-xs font-bold text-[#006875] underline cursor-pointer"
               >
                 Retry
               </button>
@@ -166,7 +166,7 @@ export default function ChooseSecretModal({
           )}
 
           {!loading && !error && filteredPuzzles.length === 0 && (
-            <div className="py-10 text-center text-[#9ea8b8]">
+            <div className="py-10 text-center text-[#6c797c]">
               <p className="text-sm">No items found matching "{searchQuery}"</p>
             </div>
           )}
@@ -183,18 +183,18 @@ export default function ChooseSecretModal({
                     onClick={() => setSelectedPuzzleId(puzzle.id)}
                     className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left cursor-pointer transition ${
                       isSelected
-                        ? 'bg-[#13282c] border-2 border-[#63d6ea] text-[#63d6ea] font-bold shadow-[0_0_12px_rgba(99,214,234,0.15)]'
-                        : 'bg-white/4 border-white/8 text-[#f4f1f7] hover:border-white/20 hover:bg-white/6'
+                        ? 'bg-[#eff4f7] border-2 border-[#006875] text-[#006875] font-bold shadow-[0_0_12px_rgba(0,104,117,0.15)]'
+                        : 'bg-white border-[#bbc9cc] text-[#171d1e] hover:border-[#006875]/50 hover:bg-[#eff4f7]'
                     }`}
                   >
                     <span className="text-base truncate">{puzzle.name}</span>
                     <span className="shrink-0 ml-3 flex items-center justify-center size-5">
                       {isSelected ? (
-                        <span className="size-5 rounded-full border-2 border-[#63d6ea] bg-[#63d6ea]/15 flex items-center justify-center">
-                          <span className="size-2 rounded-full bg-[#63d6ea] block" />
+                        <span className="size-5 rounded-full border-2 border-[#006875] bg-[#02c2d9]/15 flex items-center justify-center">
+                          <span className="size-2 rounded-full bg-[#006875] block" />
                         </span>
                       ) : (
-                        <span className="size-5 rounded-full border-2 border-white/35 bg-white/5 block" />
+                        <span className="size-5 rounded-full border-2 border-[#bbc9cc] bg-white block" />
                       )}
                     </span>
                   </button>
@@ -205,16 +205,16 @@ export default function ChooseSecretModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 pt-3 pb-6 border-t border-white/10 bg-[#141218]">
+        <div className="px-6 pt-3 pb-6 border-t border-[#bbc9cc] bg-white">
           <button
             type="button"
             onClick={handleConfirm}
             disabled={!selectedPuzzle || loading}
-            className="w-full h-13 rounded-xl bg-[#63d6ea] text-[#00363e] font-extrabold text-base sm:text-lg transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_16px_rgba(99,214,234,0.2)]"
+            className="w-full h-13 rounded-xl bg-[#006875] text-white font-extrabold text-base sm:text-lg transition hover:bg-[#005a66] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_14px_rgba(0,104,117,0.2)]"
           >
             {confirmButtonText ?? 'Confirm Secret'}
           </button>
-          <p className="text-xs text-[#c4c7d0] text-center mt-2.5">
+          <p className="text-xs text-[#6c797c] text-center mt-2.5">
             {helperText ?? 'You cannot change your secret once confirmed.'}
           </p>
         </div>

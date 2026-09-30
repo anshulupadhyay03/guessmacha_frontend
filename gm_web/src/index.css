@@ -4,7 +4,44 @@
 :root {
   --font-lobby-display: 'Manrope', 'Segoe UI', sans-serif;
   --font-lobby-body: 'Inter', 'Segoe UI', sans-serif;
-  --color-lobby-background: #100d13;
+
+  /* Theme tokens from litght_theme.md */
+  --color-surface: #f5fafc;
+  --color-surface-dim: #d5dbdd;
+  --color-surface-bright: #f5fafc;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4f7;
+  --color-surface-container: #e9eff1;
+  --color-surface-container-high: #e3e9eb;
+  --color-surface-container-highest: #dee3e5;
+  --color-on-surface: #171d1e;
+  --color-on-surface-variant: #3c494c;
+  --color-inverse-surface: #2b3133;
+  --color-inverse-on-surface: #ecf2f4;
+  --color-outline: #6c797c;
+  --color-outline-variant: #bbc9cc;
+  --color-surface-tint: #006875;
+  --color-primary: #006875;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #02c2d9;
+  --color-on-primary-container: #004b55;
+  --color-inverse-primary: #3ed9f0;
+  --color-secondary: #36656e;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #baebf5;
+  --color-on-secondary-container: #3c6b74;
+  --color-tertiary: #904d00;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #f89a43;
+  --color-on-tertiary-container: #683600;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-background: #f5fafc;
+  --color-on-background: #171d1e;
+  --color-surface-variant: #dee3e5;
+  --color-lobby-background: #f5fafc;
 }
 
 .font-lobby-display { font-family: var(--font-lobby-display); }
@@ -14,7 +51,7 @@
 @layer base {
   :root {
     font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    color-scheme: dark;
+    color-scheme: light;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -24,8 +61,8 @@
   html, body, #root { min-width: 320px; min-height: 100vh; }
   body {
     margin: 0;
-    background-color: #100d13;
-    color: #f3f4f6;
+    background-color: var(--color-background);
+    color: var(--color-on-background);
   }
   button, input { font: inherit; }
 }

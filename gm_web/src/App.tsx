@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from 'react'
 import {
   initializeFacebookInstant,
   isFacebookInstantGames,
-  showFacebookPlayerProfileOverlay,
 } from './platform/facebook/fbInstant'
 import CreateGameScreen from './screens/CreateGameScreen'
 import GameZoneScreen from './screens/GameZoneScreen'
@@ -87,15 +86,15 @@ function AppShell({
   const isGameZone = screen === 'game-zone'
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#1d1b21,#121016)]">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[#f5fafc]">
       {/* Top Header shown on Home tab */}
       {activeTab === 'home' && screen === 'home' && !isGameZone && (
         <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
-          <div className="grid size-11.5 place-items-center rounded-[14px] bg-linear-to-br from-[#c7d6db] to-[#e7f0f5] text-[0.95rem] font-extrabold tracking-[0.08em] text-[#121319]" aria-label="GuessMacha app icon">
+          <div className="grid size-11.5 place-items-center rounded-[14px] bg-gradient-to-br from-[#02c2d9] to-[#006875] text-[0.95rem] font-extrabold tracking-[0.08em] text-white shadow-sm" aria-label="GuessMacha app icon">
             <span>GM</span>
           </div>
 
-          <button type="button" className="grid size-10 place-items-center rounded-xl bg-white/4 text-[#edf5ff] transition hover:-translate-y-px hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200" aria-label="Open settings">
+          <button type="button" className="grid size-10 place-items-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-[#171d1e] transition hover:-translate-y-px hover:bg-[#e9eff1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]" aria-label="Open settings">
             <svg className="size-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] stroke-[1.8]" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 3.5v2.1m0 14.8v2.1m8.5-8.5h-2.1M5.6 12H3.5m15.9-5.3L16.7 8.8M7.3 15.2 5.6 16.9m0-9.8 1.7 1.7m9.4 9.4 1.7 1.7M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
             </svg>
@@ -110,7 +109,7 @@ function AppShell({
       )}
 
       {!isGameZone && (
-        <nav className="sticky bottom-0 z-40 grid shrink-0 grid-cols-4 border-t border-white/8 bg-[rgba(18,16,22,0.96)]" aria-label="Main navigation">
+        <nav className="sticky bottom-0 z-40 grid shrink-0 grid-cols-4 border-t border-[#bbc9cc] bg-white/95 backdrop-blur-md" aria-label="Main navigation">
           {navigationItems.map((item) => {
             const isActive = activeTab === item.key
             return (
@@ -119,8 +118,8 @@ function AppShell({
                 type="button"
                 className={`flex min-h-18 cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition ${
                   isActive
-                    ? 'text-[#63d6ea]'
-                    : 'text-[#a9afbc] hover:text-[#f6f9ff]'
+                    ? 'text-[#006875]'
+                    : 'text-[#6c797c] hover:text-[#171d1e]'
                 }`}
                 onClick={() => onTabChange(item.key)}
                 aria-pressed={isActive}
@@ -164,16 +163,6 @@ function App() {
 
     void initializeGame()
   }, [])
-
-  async function handleProfileClick() {
-    const container = document.getElementById('profile-overlay-container')
-
-    if (!container) {
-      return
-    }
-
-    await showFacebookPlayerProfileOverlay(container)
-  }
 
   function handleGameCreated(createdGame: CreateGameResponse) {
     setGame(createdGame)
@@ -307,7 +296,7 @@ function App() {
   }
 
   return (
-    <main className="h-screen h-[100dvh] w-full overflow-hidden bg-[#121016]">
+    <main className="h-screen h-[100dvh] w-full overflow-hidden bg-[#f5fafc]">
       <AppShell
         screen={screen}
         activeTab={activeTab}
@@ -323,22 +312,13 @@ function App() {
             setScreen('home')
           }
         }}
-        footer={isFacebookInstantGames() ? (
-          <>
-            <button
-              type="button"
-              className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#121319] transition hover:bg-cyan-50"
-              onClick={handleProfileClick}
-            >
-              Test Facebook Profile
-            </button>
-            <div id="profile-overlay-container" className="relative mx-auto mt-3 h-15 w-50" />
-          </>
-        ) : (
-          <p className="text-[13px] leading-5 text-[#c6ccdc]">
-            Facebook Instant Games features are available when launched inside Facebook.
-          </p>
-        )}
+        footer={
+          !isFacebookInstantGames() ? (
+            <p className="text-[13px] leading-5 text-[#3c494c]">
+              Facebook Instant Games features are available when launched inside Facebook.
+            </p>
+          ) : undefined
+        }
       >
         {renderScreen()}
       </AppShell>

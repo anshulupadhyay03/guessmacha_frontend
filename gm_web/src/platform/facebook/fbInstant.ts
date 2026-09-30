@@ -1,4 +1,8 @@
 import type { PlatformPlayer } from '../../types/fbinstant'
+import { setupMockFbInstant } from './mockFbInstant'
+
+// Initialize mock FBInstant if running in an environment without Facebook Instant Games SDK
+setupMockFbInstant()
 
 export type FacebookSignedPlayerInfo = {
   playerId: string
@@ -6,17 +10,15 @@ export type FacebookSignedPlayerInfo = {
 }
 
 export function isFacebookInstantGames(): boolean {
-  return import.meta.env.PROD && typeof FBInstant !== 'undefined'
+  return typeof FBInstant !== 'undefined'
 }
 
 export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlayerInfo | null> {
   // Called only after initializeFacebookInstant() has completed.
-  // No custom request payload is used because SDK 8 on the web client can
-  // reject the passthrough message used by getSignedPlayerInfoAsync(payload).
   const player = FBInstant.player
 
   type SignedPlayerInfoRuntime = {
-    getPlayerId(): string
+    getPlayerID(): string
     getSignature(): string
   }
 
@@ -36,7 +38,7 @@ export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlaye
   try {
     const signedInfo = await playerWithSignedInfo.getSignedPlayerInfoAsync()
 
-    const playerId = signedInfo.getPlayerId()
+    const playerId = signedInfo.getPlayerID()
     const signature = signedInfo.getSignature()
 
     if (!playerId || !signature) {
@@ -55,18 +57,39 @@ export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlaye
 }
 
 export async function initializeFacebookInstant(): Promise<PlatformPlayer | null> {
+  setupMockFbInstant()
+
   if (!isFacebookInstantGames()) {
     console.log('Running outside Facebook Instant Games')
     return null
   }
 
   try {
-    await FBInstant.initializeAsync()
+    console.log('Initializing Facebook Instant Games...')
+
+    const initTimeout = new Promise<never>((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              'FBInstant.initializeAsync timed out (running outside Facebook iframe)',
+            ),
+          ),
+        4000,
+      ),
+    )
+    await Promise.race([FBInstant.initializeAsync(), initTimeout])
 
     FBInstant.setLoadingProgress(50)
     FBInstant.setLoadingProgress(100)
 
-    await FBInstant.startGameAsync()
+    const startTimeout = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('FBInstant.startGameAsync timed out')),
+        4000,
+      ),
+    )
+    await Promise.race([FBInstant.startGameAsync(), startTimeout])
 
  /*    console.log('Facebook Instant Game initialized successfully')
     console.log('SDK Version:', FBInstant.getSDKVersion())
@@ -91,8 +114,8 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
     // the Supabase backend as if they were directly available to the game.
     const platformPlayer: PlatformPlayer = {
       id,
-      name: '',
-      photo: undefined,
+      name: (typeof player.getName === 'function' ? player.getName() : '') || '',
+      photo: (typeof player.getPhoto === 'function' ? player.getPhoto() : undefined),
     }
 
     console.log('Platform player identity:', platformPlayer)
@@ -132,7 +155,7 @@ export async function showFacebookPlayerProfileOverlay(
     const overlay = await overlayViews.createOverlayViewAsync(
       xmlPath,
       container,
-      'width: 100%; height: 180px; border: none;',
+      'width: 100%; height: 70px; border: none;',
       cssPath,
     )
 
@@ -177,7 +200,7 @@ export async function showFacebookOpponentProfileOverlay(
     const overlay = await overlayViews.createOverlayViewAsync(
       xmlPath,
       container,
-      'width: 100%; height: 180px; border: none;',
+      'width: 100%; height: 70px; border: none;',
       cssPath,
     )
 

@@ -6,7 +6,8 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: radial-gradient(circle at top, #2d2c39, #130f17 42%, #0d0b12 100%);
+  background: var(--color-background, #f5fafc);
+  color: var(--color-on-background, #171d1e);
 }
 
 .screen-shell {
@@ -15,10 +16,10 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: linear-gradient(180deg, rgba(29, 27, 33, 0.98), rgba(18, 16, 22, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--color-outline-variant, #bbc9cc);
   border-radius: 30px;
-  box-shadow: 0 30px 60px rgba(2, 2, 5, 0.4);
+  box-shadow: 0 16px 48px rgba(0, 75, 85, 0.08);
   overflow: hidden;
 }
 
@@ -35,8 +36,8 @@
   display: grid;
   place-items: center;
   border-radius: 14px;
-  background: linear-gradient(135deg, #c7d6db, #e7f0f5);
-  color: #121319;
+  background: linear-gradient(135deg, #006875, #02c2d9);
+  color: #ffffff;
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -49,14 +50,14 @@
   place-items: center;
   border: 0;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #edf5ff;
+  background: rgba(0, 104, 117, 0.08);
+  color: #171d1e;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .settings-button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 104, 117, 0.15);
   transform: translateY(-1px);
 }
 
@@ -77,8 +78,8 @@
 .bottom-nav {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(18, 16, 22, 0.96);
+  border-top: 1px solid var(--color-outline-variant, #bbc9cc);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .nav-button {
@@ -90,7 +91,7 @@
   min-height: 76px;
   border: 0;
   background: transparent;
-  color: #a9afbc;
+  color: var(--color-outline, #6c797c);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -98,8 +99,8 @@
 }
 
 .nav-button.is-active {
-  color: #f6f9ff;
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-primary, #006875);
+  background: rgba(0, 104, 117, 0.06);
 }
 
 .nav-icon {
@@ -113,7 +114,7 @@
 
 .development-note {
   margin: 24px 0 0;
-  color: #c6ccdc;
+  color: var(--color-on-surface-variant, #3c494c);
   font-size: 13px;
   line-height: 1.5;
   text-align: center;
