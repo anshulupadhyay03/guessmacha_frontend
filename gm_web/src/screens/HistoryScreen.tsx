@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { HistoryFilter } from '../features/history/types';
 import { useHistory } from '../hooks/useHistory';
+import FacebookOpponentProfile from '../components/FacebookOpponentProfile';
 
 interface HistoryScreenProps {
   onSelectMatch?: (gameId: string) => void;
@@ -76,13 +77,6 @@ function formatDuration(seconds: number): string {
   return `${mins}m ${secs}s`;
 }
 
-function DefaultAvatarIcon() {
-  return (
-    <svg className="size-6 text-[#9ca3af]" viewBox="0 0 24 24" fill="currentColor">
-      <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
-    </svg>
-  );
-}
 
 export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
   const [filter, setFilter] = useState<HistoryFilter>('all');
@@ -218,41 +212,21 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                 className="group flex flex-col overflow-hidden rounded-2xl border border-[#bbc9cc] bg-white shadow-xs transition hover:border-[#006875] hover:shadow-md"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-[#bbc9cc] bg-[#eff4f7]/40 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      {match.opponentImageUrl ? (
-                        <img
-                          src={match.opponentImageUrl}
-                          alt={match.opponentName || 'Opponent'}
-                          className="size-12 rounded-full object-cover border-2 border-[#bbc9cc]"
-                        />
-                      ) : (
-                        <div className="grid size-12 place-items-center rounded-full bg-[#eff4f7] border-2 border-[#bbc9cc]">
-                          <DefaultAvatarIcon />
-                        </div>
-                      )}
-                      {resultDetails.avatarDotClass && (
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-white ${resultDetails.avatarDotClass}`}
-                          aria-hidden="true"
-                        />
-                      )}
-                    </div>
-
-                    <div className="flex flex-col">
-                      <span className="text-base font-bold text-[#171d1e] leading-tight">
-                        {match.opponentName || 'Opponent'}
-                      </span>
-                      <span className="text-[11px] font-bold tracking-wider text-[#3c494c] uppercase">
-                        {match.categoryName || 'General'}
-                      </span>
-                    </div>
+                <div className="flex items-center justify-between border-b border-[#bbc9cc] bg-[#eff4f7]/40 p-3 sm:p-4">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <FacebookOpponentProfile
+                      opponentId={match.opponentName}
+                      fallbackName={match.opponentName || 'Opponent'}
+                      fallbackImageUrl={match.opponentImageUrl}
+                    />
+                    <span className="inline-block rounded-md bg-[#eff4f7] border border-[#bbc9cc] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#3c494c] uppercase shrink-0">
+                      {match.categoryName || 'General'}
+                    </span>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex shrink-0 flex-col items-end gap-1 ml-2">
                     <span
-                      className={`rounded-full border px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-widest ${resultDetails.badgeClass}`}
+                      className={`rounded-full border px-2.5 sm:px-3 py-0.5 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest ${resultDetails.badgeClass}`}
                     >
                       {resultDetails.badgeText}
                     </span>

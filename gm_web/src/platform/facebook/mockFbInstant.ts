@@ -96,6 +96,7 @@ export function setupMockFbInstant(force = false): void {
           container: HTMLElement,
           style?: string,
           stylesheet?: string,
+          initialData?: Record<string, unknown>,
         ) {
           ensureOverlayStylesheet(stylesheet);
 
@@ -107,27 +108,54 @@ export function setupMockFbInstant(force = false): void {
             showAsync: function () {
               console.log('Mock overlay shown:', url);
               if (container) {
-                container.style.display = 'flex';
+                container.style.display = 'inline-flex';
                 if (!container.hasChildNodes()) {
-                  const playerPhoto =
-                    window.FBInstant?.player?.getPhoto?.() || fallbackAvatar;
-                  const playerName =
-                    window.FBInstant?.player?.getName?.() || 'Test Anshul';
+                  const isOpponent = url.includes('opponent_profile');
+                  let opponentId = '';
+                  let opponentParamName = '';
+                  let opponentParamPhoto = '';
+
+                  if (initialData?.opponentPlayerId) {
+                    opponentId = String(initialData.opponentPlayerId);
+                  }
+                  if (initialData?.name) {
+                    opponentParamName = String(initialData.name);
+                  }
+                  if (initialData?.photo) {
+                    opponentParamPhoto = String(initialData.photo);
+                  }
+
+                  if (url.includes('?')) {
+                    try {
+                      const params = new URLSearchParams(url.split('?')[1]);
+                      opponentId = opponentId || params.get('opponentPlayerId') || '';
+                      opponentParamName = opponentParamName || params.get('name') || '';
+                      opponentParamPhoto = opponentParamPhoto || params.get('photo') || '';
+                    } catch {
+                      // ignore URL parsing error
+                    }
+                  }
+
+                  const displayName = isOpponent
+                    ? (opponentParamName || (opponentId ? `Opponent ${opponentId.slice(-4)}` : 'Opponent'))
+                    : (window.FBInstant?.player?.getName?.() || 'Test Anshul');
+
+                  const avatarSrc = isOpponent
+                    ? (opponentParamPhoto || (opponentId ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(opponentId)}` : fallbackAvatar))
+                    : (window.FBInstant?.player?.getPhoto?.() || fallbackAvatar);
+
+                  const cardClass = isOpponent ? 'profileCard opponentProfileCard' : 'profileCard';
 
                   const card = document.createElement('div');
-                  card.className = 'profileCard';
+                  card.className = cardClass;
                   card.innerHTML = `
-                    <div class="avatarRing">
-                      <img
-                        src="${playerPhoto}"
-                        alt="${playerName}"
-                        class="avatar"
-                        onerror="this.src='${fallbackAvatar}'"
-                      />
-                    </div>
-                    <div class="playerInfo">
-                      <span class="playerName">${playerName}</span>
-                    </div>
+                    <img
+                      src="${avatarSrc}"
+                      alt="${displayName}"
+                      class="avatar"
+                      onerror="this.src='${fallbackAvatar}'"
+                    />
+                    <span class="playerName">${displayName}</span>
                   `;
                   container.appendChild(card);
                 }
@@ -214,6 +242,30 @@ export async function showFacebookPlayerProfileOverlay(
   }
 }
 
+export async function showFacebookOpponentProfileOverlay(
+  container: HTMLElement,
+  opponentPlayerId: string,
+  options?: { name?: string; photo?: string },
+): Promise<void> {
+  if (typeof window === 'undefined') {
+    return;
+  }
 
+  setupMockFbInstant();
 
+  if (window.FBInstant?.overlayViews && container) {
+    const query = new URLSearchParams({
+      opponentPlayerId: opponentPlayerId || '',
+      ...(options?.name ? { name: options.name } : {}),
+      ...(options?.photo ? { photo: options.photo } : {}),
+    }).toString();
 
+    const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
+      `overlays/opponent_profile.xml?${query}`,
+      container,
+      'width: 100%; height: 70px; border: none;',
+      'overlays/styles.css',
+    );
+    await overlay.showAsync();
+  }
+}

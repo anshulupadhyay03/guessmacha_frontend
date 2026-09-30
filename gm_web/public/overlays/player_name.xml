@@ -1,0 +1,6 @@
+<View>
+<Text
+    content="{{FBInstant.players[{{opponentPlayerId}}].name}}"
+    className="playerName"
+  />
+</View>

@@ -35,6 +35,7 @@ declare global {
       container: HTMLElement,
       style?: string,
       stylesheet?: string,
+      initialData?: Record<string, unknown>,
     ): Promise<FBInstantOverlayView>;
   }
 

@@ -132,21 +132,19 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
 
 export async function showFacebookPlayerProfileOverlay(
   container: HTMLElement,
-): Promise<void> {
+): Promise<FBInstantOverlayView | null> {
   if (!isFacebookInstantGames()) {
     console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
-    return
+    return null
   }
 
   try {
     const overlayViews = FBInstant.overlayViews
     if (!overlayViews) {
       console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
-      return
+      return null
     }
 
-    // Overlay XML/CSS files are Meta overlay assets, not normal Vite public files.
-    // The paths must resolve inside the Instant Game bundle that Meta serves.
     const xmlPath = 'overlays/profile_card.xml'
     const cssPath = 'overlays/styles.css'
 
@@ -155,40 +153,42 @@ export async function showFacebookPlayerProfileOverlay(
     const overlay = await overlayViews.createOverlayViewAsync(
       xmlPath,
       container,
-      'width: 100%; height: 70px; border: none;',
+      'width: 100%; height: 70px; border: none; overflow: hidden;',
       cssPath,
     )
 
     await overlay.showAsync()
+    return overlay
   } catch (error) {
     console.error('Failed to show Facebook player profile overlay:', error)
+    return null
   }
 }
 
 export async function showFacebookOpponentProfileOverlay(
   container: HTMLElement,
   opponentPlayerId: string,
-): Promise<void> {
+): Promise<FBInstantOverlayView | null> {
   if (!isFacebookInstantGames()) {
     console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
-    return
+    return null
   }
 
   const playerId = opponentPlayerId.trim()
 
   if (!playerId) {
     console.warn('Cannot show opponent profile overlay without a player ID')
-    return
+    return null
   }
 
   try {
     const overlayViews = FBInstant.overlayViews
     if (!overlayViews) {
       console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
-      return
+      return null
     }
 
-    const xmlPath = 'overlays/opponent_profile.xml'
+    const xmlPath = `overlays/opponent_profile.xml`
     const cssPath = 'overlays/styles.css'
 
     console.log('Creating Facebook opponent profile overlay:', {
@@ -200,13 +200,16 @@ export async function showFacebookOpponentProfileOverlay(
     const overlay = await overlayViews.createOverlayViewAsync(
       xmlPath,
       container,
-      'width: 100%; height: 70px; border: none;',
+      'width: 100%; height: 100%; border: none; overflow: hidden;',
       cssPath,
+      { opponentPlayerId: playerId }
     )
 
     await overlay.showAsync()
+    return overlay
   } catch (error) {
     console.error('Failed to show Facebook opponent profile overlay:', error)
+    return null
   }
 }
 
