@@ -304,13 +304,3 @@ export async function showFacebookPlayerNameOverlay(
     await overlay.showAsync();
   }
 }
-
-    const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
-      `overlays/opponent_profile.xml?${query}`,
-      container,
-      'width: 100%; height: 70px; border: none;',
-      'overlays/styles.css',
-    );
-    await overlay.showAsync();
-  }
-}
