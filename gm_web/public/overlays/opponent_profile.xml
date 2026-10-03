@@ -1,4 +1,4 @@
-<View className="profileCard opponentProfileCard">
+<View className="opponentProfileCard">
   <Image
     src="{{FBInstant.players[{{opponentPlayerId}}].photo}}"
     className="avatar"

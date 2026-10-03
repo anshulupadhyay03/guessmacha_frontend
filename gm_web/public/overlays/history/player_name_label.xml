@@ -1,0 +1,11 @@
+<View className="playerNameContainer_label">
+<View>
+  <Text
+    content="{{FBInstant.players[{{playerId}}].name}}"
+    className="playerName_label"
+  />
+</View>
+  <View className="playerSuffixContainer_label">
+  <Text content="{{extraText}}" className="playerSuffix_label" />
+  </View>
+</View>

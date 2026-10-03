@@ -1,0 +1,11 @@
+<View className="playerNameContainer_outcome">
+  <View>
+    <Text
+    content="{{FBInstant.players[{{playerId}}].name}}"
+    className="playerName_outcome"
+    />
+  </View>
+  <View>
+    <Text content="{{extraText}}" className="playerSuffix_outcome" />
+  </View>
+</View>

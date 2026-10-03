@@ -90,7 +90,7 @@ function AppShell({
       {/* Top Header shown on Home tab */}
       {activeTab === 'home' && screen === 'home' && !isGameZone && (
         <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
-          <div className="grid size-11.5 place-items-center rounded-[14px] bg-gradient-to-br from-[#02c2d9] to-[#006875] text-[0.95rem] font-extrabold tracking-[0.08em] text-white shadow-sm" aria-label="GuessMacha app icon">
+          <div className="grid size-11.5 place-items-center rounded-[14px] bg-linear-to-br from-[#02c2d9] to-[#006875] text-[0.95rem] font-extrabold tracking-[0.08em] text-white shadow-sm" aria-label="GuessMacha app icon">
             <span>GM</span>
           </div>
 
@@ -296,7 +296,7 @@ function App() {
   }
 
   return (
-    <main className="h-screen h-[100dvh] w-full overflow-hidden bg-[#f5fafc]">
+    <main className="h-screen w-full overflow-hidden bg-[#f5fafc]">
       <AppShell
         screen={screen}
         activeTab={activeTab}

@@ -144,6 +144,15 @@ export function setupMockFbInstant(force = false): void {
                     ? (opponentParamPhoto || (opponentId ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(opponentId)}` : fallbackAvatar))
                     : (window.FBInstant?.player?.getPhoto?.() || fallbackAvatar);
 
+                  const isPlayerName = url.includes('player_name');
+                  if (isPlayerName) {
+                    const card = document.createElement('div');
+                    card.className = 'playerNameContainer';
+                    card.innerHTML = `<span class="playerName">${displayName}</span>`;
+                    container.appendChild(card);
+                    return Promise.resolve();
+                  }
+
                   const cardClass = isOpponent ? 'profileCard opponentProfileCard' : 'profileCard';
 
                   const card = document.createElement('div');
@@ -259,6 +268,42 @@ export async function showFacebookOpponentProfileOverlay(
       ...(options?.name ? { name: options.name } : {}),
       ...(options?.photo ? { photo: options.photo } : {}),
     }).toString();
+
+    const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
+      `overlays/opponent_profile.xml?${query}`,
+      container,
+      'width: 100%; height: 70px; border: none;',
+      'overlays/styles.css',
+    );
+    await overlay.showAsync();
+  }
+}
+
+export async function showFacebookPlayerNameOverlay(
+  container: HTMLElement,
+  playerId: string,
+): Promise<void> {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  setupMockFbInstant();
+
+  if (window.FBInstant?.overlayViews && container) {
+    const query = new URLSearchParams({
+      opponentPlayerId: playerId || '',
+    }).toString();
+
+    const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
+      `overlays/player_name.xml?${query}`,
+      container,
+      'width: 100%; height: 100%; border: none;',
+      'overlays/styles.css',
+      { opponentPlayerId: playerId },
+    );
+    await overlay.showAsync();
+  }
+}
 
     const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
       `overlays/opponent_profile.xml?${query}`,

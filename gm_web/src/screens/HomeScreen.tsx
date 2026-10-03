@@ -91,7 +91,7 @@ export default function HomeScreen({ onCreateGame, onGameJoined }: HomeScreenPro
                 void handleJoinRoom();
               }
             }}
-            className="w-full rounded-[12px] border border-[#bbc9cc] bg-white px-3.5 py-4 text-[1.1rem] font-medium text-[#171d1e] outline-none placeholder:text-[#6c797c] shadow-xs transition focus:border-[#006875] focus:ring-3 focus:ring-[#006875]/15"
+            className="w-full rounded-xl border border-[#bbc9cc] bg-white px-3.5 py-4 text-[1.1rem] font-medium text-[#171d1e] outline-none placeholder:text-[#6c797c] shadow-xs transition focus:border-[#006875] focus:ring-3 focus:ring-[#006875]/15"
             placeholder="e.g. 2ZTVBD"
             aria-label="Room code"
             maxLength={12}

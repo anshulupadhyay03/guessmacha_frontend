@@ -1,0 +1,147 @@
+/* ---------- Player name overlay (renders inside its own iframe) ---------- */
+
+/* Kill the browser defaults that cause the scrollbar */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* One selector per rule: no commas, no element selectors, no calc(), no '+'. */
+
+/* ---------- 1. Label: "<NAME>'S SECRET" (name hugs the right edge) ---------- */
+.playerNameContainer_label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  margin: -8px;
+  overflow: hidden;
+}
+ 
+.playerName_label {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Inter, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6c797c;
+}
+
+.playerSuffixContainer_label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 4px;
+  display: flex;
+  flex-direction: row
+}
+ 
+.playerSuffix_label {
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: Inter, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6c797c;
+}
+
+/* ---------- 2. Outcome: "<Name> guessed your secret" (whole line centered) ---------- */
+.playerNameContainer_outcome {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  margin: -8px;
+  overflow: hidden;
+}
+
+.playerName_outcome {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Inter, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #171d1e;
+}
+
+.playerSuffix_outcome {
+  margin: 0 0 0 4px;
+  padding: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: Inter, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #171d1e;
+}
+
+/* ---------- 3. Stats: "<Name> 5" (count follows the name directly) ---------- */
+.playerNameContainer_stat {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  margin: -8px;
+  overflow: hidden;
+}
+
+.playerName_stat {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Inter, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #171d1e;
+}
+
+.playerSuffix_stat {
+  margin: 0 0 0 4px;
+  padding: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: Inter, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #171d1e;
+}

@@ -63,7 +63,7 @@ export default function FacebookOpponentProfile({
     <div className={`inline-flex items-center shrink-0 overflow-hidden ${className}`}>
       <div
         ref={containerRef}
-        className={`h-[44px] w-[135px] sm:w-[170px] overflow-hidden ${overlayActive ? 'inline-flex items-center' : 'hidden'}`}
+        className={`h-11 w-33.75 sm:w-42.5 overflow-hidden ${overlayActive ? 'inline-flex items-center' : 'hidden'}`}
       />
       {!overlayActive && (
         <div className="profileCard opponentProfileCard">

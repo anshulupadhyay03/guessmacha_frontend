@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { HistoryFilter } from '../features/history/types';
 import { useHistory } from '../hooks/useHistory';
-import FacebookOpponentProfile from '../components/FacebookOpponentProfile';
+//import FacebookOpponentProfile from '../components/FacebookOpponentProfile';
+import FacebookPlayerName from '../components/FacebookPlayerName';
 
 interface HistoryScreenProps {
   onSelectMatch?: (gameId: string) => void;
@@ -111,7 +112,7 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
   }, [hasMore, loading, loadingMore, loadMore]);
 
   return (
-    <section className="relative mx-auto flex w-full max-w-[640px] flex-col px-4 pt-3 pb-8 text-left text-[#171d1e]">
+    <section className="relative mx-auto flex w-full max-w-160 flex-col px-4 pt-3 pb-8 text-left text-[#171d1e]">
       {/* Top Header */}
       <div className="relative mb-4 flex items-center justify-center border-b border-[#bbc9cc] pb-3">
         <h1 className="text-xl font-bold tracking-tight text-[#171d1e]">History</h1>
@@ -214,11 +215,11 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-[#bbc9cc] bg-[#eff4f7]/40 p-3 sm:p-4">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <FacebookOpponentProfile
+                    {/*<FacebookOpponentProfile
                       opponentId={match.opponentName}
                       fallbackName={match.opponentName || 'Opponent'}
                       fallbackImageUrl={match.opponentImageUrl}
-                    />
+                    />*/}
                     <span className="inline-block rounded-md bg-[#eff4f7] border border-[#bbc9cc] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#3c494c] uppercase shrink-0">
                       {match.categoryName || 'General'}
                     </span>
@@ -252,9 +253,17 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                       <div className="mx-3 h-10 w-px bg-[#bbc9cc]" aria-hidden="true" />
 
                       <div className="flex flex-1 flex-col text-center">
-                        <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#6c797c] truncate px-1">
-                          {match.opponentName ? `${match.opponentName.toUpperCase()}'S SECRET` : "OPPONENT'S SECRET"}
-                        </span>
+                        <div className="mb-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-[#6c797c] truncate px-1">
+                          <FacebookPlayerName
+                            initialData={{ playerId: match.opponentName , extraText: "'S SECRET" }}
+                            fallbackName="Opponent"
+                            className="w-full h-3"
+                            textClassName="text-[10px] font-bold uppercase tracking-widest text-[#6c797c]"
+                            uppercase={true}
+                            overlayPath="overlays/history/player_name_label.xml"
+                            overlayCassPath="overlays/history/history_style.css"
+                          />
+                        </div>
                         <span className="text-base sm:text-lg font-bold text-[#171d1e] truncate px-1">
                           {match.opponentSecret || '—'}
                         </span>
@@ -265,13 +274,36 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
 
                 {/* Outcome Statement & Question Stats */}
                 <div className="px-4 py-3.5 text-center bg-white">
-                  <p className={`text-base font-bold ${resultDetails.outcomeColor}`}>
-                    {resultDetails.type === 'loss'
-                      ? `${match.opponentName || 'Opponent'} guessed your secret`
-                      : resultDetails.outcomeText}
+                  <p className={`text-base font-bold ${resultDetails.outcomeColor} flex items-center justify-center gap-1 flex-wrap`}>
+                    {resultDetails.type === 'loss' ? (
+                      <>
+                        <FacebookPlayerName
+                           initialData={{ playerId: match.opponentName , extraText: "guessed your secret" }}
+                          fallbackName="Opponent"
+                          className="w-full h-5.5"
+                          textClassName={`text-base font-bold ${resultDetails.outcomeColor}`}
+                          overlayPath="overlays/history/player_name_outcome.xml"
+                          overlayCassPath="overlays/history/history_style.css"
+                        />
+                      </>
+                    ) : (
+                      resultDetails.outcomeText
+                    )}
                   </p>
-                  <p className="mt-1 text-xs text-[#3c494c]">
-                    {match.questionCount} questions asked • <span className="text-[#171d1e] font-semibold">You {match.playerQuestionCount}</span> • <span className="text-[#171d1e] font-semibold">{match.opponentName || 'Opponent'} {match.opponentQuestionCount}</span>
+                  <p className="mt-1 text-xs text-[#3c494c] flex items-center justify-center gap-1 flex-wrap">
+                    <span>{match.questionCount} questions asked • </span>
+                    <span className="text-[#171d1e] font-semibold">You {match.playerQuestionCount}</span>
+                    <span>•</span>
+                    <span className="text-[#171d1e] font-semibold inline-flex items-center gap-1">
+                      <FacebookPlayerName
+                        initialData={{ playerId: match.opponentName , extraText:`${match.opponentQuestionCount}` }}
+                        fallbackName="Opponent"
+                        className="max-w-22.5 h-4"
+                        textClassName="text-[#171d1e] font-semibold text-xs"
+                        overlayPath="overlays/history/player_name_stat.xml"
+                        overlayCassPath="overlays/history/history_style.css"
+                      />
+                    </span>
                   </p>
                 </div>
 
@@ -320,4 +352,5 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
     </section>
   );
 }
+
 

@@ -133,8 +133,10 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
 export async function showFacebookPlayerProfileOverlay(
   container: HTMLElement,
 ): Promise<FBInstantOverlayView | null> {
+): Promise<FBInstantOverlayView | null> {
   if (!isFacebookInstantGames()) {
     console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
+    return null
     return null
   }
 
@@ -142,6 +144,7 @@ export async function showFacebookPlayerProfileOverlay(
     const overlayViews = FBInstant.overlayViews
     if (!overlayViews) {
       console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
+      return null
       return null
     }
 
@@ -154,13 +157,16 @@ export async function showFacebookPlayerProfileOverlay(
       xmlPath,
       container,
       'width: 100%; height: 70px; border: none; overflow: hidden;',
+      'width: 100%; height: 70px; border: none; overflow: hidden;',
       cssPath,
     )
 
     await overlay.showAsync()
     return overlay
+    return overlay
   } catch (error) {
     console.error('Failed to show Facebook player profile overlay:', error)
+    return null
     return null
   }
 }
@@ -169,8 +175,10 @@ export async function showFacebookOpponentProfileOverlay(
   container: HTMLElement,
   opponentPlayerId: string,
 ): Promise<FBInstantOverlayView | null> {
+): Promise<FBInstantOverlayView | null> {
   if (!isFacebookInstantGames()) {
     console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
+    return null
     return null
   }
 
@@ -179,6 +187,7 @@ export async function showFacebookOpponentProfileOverlay(
   if (!playerId) {
     console.warn('Cannot show opponent profile overlay without a player ID')
     return null
+    return null
   }
 
   try {
@@ -186,8 +195,10 @@ export async function showFacebookOpponentProfileOverlay(
     if (!overlayViews) {
       console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
       return null
+      return null
     }
 
+    const xmlPath = `overlays/opponent_profile.xml`
     const xmlPath = `overlays/opponent_profile.xml`
     const cssPath = 'overlays/styles.css'
 
@@ -201,14 +212,58 @@ export async function showFacebookOpponentProfileOverlay(
       xmlPath,
       container,
       'width: 100%; height: 100%; border: none; overflow: hidden;',
+      'width: 100%; height: 100%; border: none; overflow: hidden;',
       cssPath,
+      { opponentPlayerId: playerId }
       { opponentPlayerId: playerId }
     )
 
     await overlay.showAsync()
     return overlay
+    return overlay
   } catch (error) {
     console.error('Failed to show Facebook opponent profile overlay:', error)
+    return null
+  }
+}
+
+export async function showFacebookPlayerNameOverlay(
+  container: HTMLElement,
+  initialData?: Record<string, any>,
+  overlayPath: string = '',
+  overlayCassPath: string = '',
+): Promise<FBInstantOverlayView | null> {
+  if (!isFacebookInstantGames()) {
+    return null
+  }
+
+  const pid = initialData?.playerId?.trim()
+  if (!pid) {
+    return null
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews) {
+      return null
+    }
+
+    const xmlPath = overlayPath
+    const cssPath = overlayCassPath
+
+    const overlay = await overlayViews.createOverlayViewAsync(
+      xmlPath,
+      container,
+      'width: 100%; height: 100%; border: none; overflow: hidden;',
+      cssPath,
+      initialData,
+    )
+
+    await overlay.showAsync()
+    container.querySelector('iframe')?.setAttribute('scrolling', 'no')
+    return overlay
+  } catch (error) {
+    console.error('Failed to show Facebook player name overlay:', error)
     return null
   }
 }
