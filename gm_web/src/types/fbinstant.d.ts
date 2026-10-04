@@ -27,6 +27,7 @@ declare global {
     showAsync(): Promise<void>;
     hideAsync?(): Promise<void>;
     destroyAsync?(): Promise<void>;
+    dismissAsync?(): Promise<void>;
   }
 
   interface FBInstantOverlayViews {
@@ -36,6 +37,17 @@ declare global {
       style?: string,
       stylesheet?: string,
       initialData?: Record<string, unknown>,
+    ): Promise<FBInstantOverlayView>;
+    createProfilePictureOverlayViewAsync?(
+      container: HTMLElement,
+      imageStyle?: string,
+      iFrameStyle?: string,
+    ): Promise<FBInstantOverlayView>;
+    createProfileNameOverlayViewAsync?(
+      container: HTMLElement,
+      textStyle?: string,
+      iFrameStyle?: string,
+      pathToCss?: string,
     ): Promise<FBInstantOverlayView>;
   }
 

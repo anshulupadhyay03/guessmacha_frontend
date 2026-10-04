@@ -129,6 +129,14 @@
   object-fit: cover;
 }
 
+.gamezone-player-avatar iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  overflow: hidden;
+  display: block;
+}
+
 .gamezone-player-info {
   display: flex;
   flex-direction: column;
@@ -225,6 +233,14 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.gamezone-turn-banner-avatar iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  overflow: hidden;
+  display: block;
 }
 
 .gamezone-turn-banner-text {

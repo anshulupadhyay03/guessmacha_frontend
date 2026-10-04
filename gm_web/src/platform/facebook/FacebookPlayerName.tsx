@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import {
   isFacebookInstantGames,
   showFacebookPlayerNameOverlay,
-} from '../platform/facebook/fbInstant';
+} from './fbInstant';
 
 interface FacebookPlayerNameProps {
-  initialData?: Record<string, any>;
+  initialData?: Record<string, unknown>;
   fallbackName?: string;
   className?: string;
   textClassName?: string;
@@ -26,7 +26,7 @@ export default function FacebookPlayerName({
   const containerRef = useRef<HTMLSpanElement>(null);
   const [overlayActive, setOverlayActive] = useState(false);
 
-  const cleanPlayerId = initialData?.playerId?.trim() || '';
+  const cleanPlayerId = typeof initialData?.playerId === 'string' ? initialData.playerId.trim() : '';
 
   useEffect(() => {
     let isMounted = true;

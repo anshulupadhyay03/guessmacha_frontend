@@ -216,7 +216,7 @@ export async function showFacebookOpponentProfileOverlay(
 
 export async function showFacebookPlayerNameOverlay(
   container: HTMLElement,
-  initialData?: Record<string, any>,
+  initialData?: Record<string, unknown>,
   overlayPath: string = '',
   overlayCassPath: string = '',
 ): Promise<FBInstantOverlayView | null> {
@@ -224,7 +224,7 @@ export async function showFacebookPlayerNameOverlay(
     return null
   }
 
-  const pid = initialData?.playerId?.trim()
+  const pid = typeof initialData?.playerId === 'string' ? initialData.playerId.trim() : ''
   if (!pid) {
     return null
   }
@@ -251,6 +251,38 @@ export async function showFacebookPlayerNameOverlay(
     return overlay
   } catch (error) {
     console.error('Failed to show Facebook player name overlay:', error)
+    return null
+  }
+}
+
+export async function showFacebookProfilePictureOverlay(
+  container: HTMLElement,
+  imageStyle: string = 'position: fixed; top: 0; left: 0;width: 100%; height: 100%; border-radius: 50%; object-fit: cover; margin: 0; display: block;',
+  iFrameStyle: string = 'width: 100%; height: 100%; border: none; overflow: hidden; display: block; background: transparent; margin: 0; padding: 0;',
+): Promise<FBInstantOverlayView | null> {
+  if (!isFacebookInstantGames()) {
+    return null
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews || typeof overlayViews.createProfilePictureOverlayViewAsync !== 'function') {
+      console.warn('createProfilePictureOverlayViewAsync is unavailable in this SDK/runtime')
+      return null
+    }
+
+    console.log('Creating Facebook profile picture overlay')
+
+    const overlay = await overlayViews.createProfilePictureOverlayViewAsync(
+      container,
+      imageStyle,
+      iFrameStyle,
+    )
+
+    await overlay.showAsync()
+    return overlay
+  } catch (error) {
+    console.error('Failed to show Facebook profile picture overlay:', error)
     return null
   }
 }

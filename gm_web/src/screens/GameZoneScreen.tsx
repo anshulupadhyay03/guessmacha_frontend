@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
+import FacebookProfilePicture from '../platform/facebook/FacebookProfilePicture';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
 import { useGameDetails } from '../hooks/useGameDetails';
@@ -42,13 +43,26 @@ function PlayerAvatar({
   name,
   className = 'gamezone-player-avatar',
   iconSize = 'size-5',
+  isMe = false,
 }: {
   imageUrl?: string | null;
   name?: string;
   className?: string;
   iconSize?: string;
+  isMe?: boolean;
 }) {
   const [hasError, setHasError] = useState(false);
+
+  if (isMe) {
+    return (
+      <FacebookProfilePicture
+        fallbackImageUrl={imageUrl}
+        name={name}
+        className={className}
+        iconClassName={iconSize}
+      />
+    );
+  }
 
   if (imageUrl && !hasError) {
     return (
@@ -361,9 +375,6 @@ export default function GameZoneScreen({
   const turnInfo = getTurnInfo(me, opponent, gameState?.currentPlayerId, latestQuestion, outcome.isFinished);
   const { mode: actionMode, placeholder: inputPlaceholder } = getActionMode(gameState, latestQuestion);
 
-  const turnAvatarUrl = turnInfo.isMyTurn ? me?.playerImageUrl : opponent?.playerImageUrl;
-  const turnPlayerName = turnInfo.isMyTurn ? (me?.playerName || 'You') : (opponent?.playerName || 'Opponent');
-
   // Guess Secret button enablement
   const isGuessDisabled =
     outcome.isFinished ||
@@ -552,11 +563,11 @@ export default function GameZoneScreen({
             <div className="gamezone-players-grid">
               {/* Me Player Card */}
               <div className="gamezone-player-card gamezone-player-card--me">
-                <PlayerAvatar
-                  imageUrl={me?.playerImageUrl}
+                <FacebookProfilePicture
+                  fallbackImageUrl={me?.playerImageUrl}
                   name={me?.playerName || 'You'}
                   className="gamezone-player-avatar"
-                  iconSize="size-5"
+                  iconClassName="size-5"
                 />
 
                 <div className="gamezone-player-info">
@@ -622,12 +633,6 @@ export default function GameZoneScreen({
                   !turnInfo.isMyTurn ? 'gamezone-turn-banner--opponent' : ''
                 }`}
               >
-                <PlayerAvatar
-                  imageUrl={turnAvatarUrl}
-                  name={turnPlayerName}
-                  className="gamezone-turn-banner-avatar"
-                  iconSize="size-4"
-                />
                 <div className="gamezone-turn-banner-text">{turnInfo.title}</div>
                 {turnInfo.isBonus && (
                   <span className="gamezone-turn-banner-badge gamezone-turn-banner-badge--bonus">

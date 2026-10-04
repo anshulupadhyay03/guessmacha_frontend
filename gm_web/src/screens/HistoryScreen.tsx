@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { HistoryFilter } from '../features/history/types';
 import { useHistory } from '../hooks/useHistory';
 //import FacebookOpponentProfile from '../components/FacebookOpponentProfile';
-import FacebookPlayerName from '../components/FacebookPlayerName';
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
 
 interface HistoryScreenProps {
   onSelectMatch?: (gameId: string) => void;

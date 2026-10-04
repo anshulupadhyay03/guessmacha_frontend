@@ -185,6 +185,54 @@ export function setupMockFbInstant(force = false): void {
             },
           });
         },
+        createProfilePictureOverlayViewAsync: function (
+          container: HTMLElement,
+          imageStyle?: string,
+          _iFrameStyle?: string,
+          stylesheet?: string,
+        ) {
+          ensureOverlayStylesheet(stylesheet);
+          void _iFrameStyle;
+          return Promise.resolve({
+            showAsync: function () {
+              console.log('Mock profile picture overlay shown');
+              if (container) {
+                container.innerHTML = '';
+                const avatarSrc = window.FBInstant?.player?.getPhoto?.() || fallbackAvatar;
+                const displayName = window.FBInstant?.player?.getName?.() || 'User';
+                const img = document.createElement('img');
+                img.src = avatarSrc;
+                img.alt = displayName;
+                img.className = 'avatar';
+                img.style.cssText =
+                  imageStyle || 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover;';
+                img.onerror = () => {
+                  img.src = fallbackAvatar;
+                };
+                container.appendChild(img);
+              }
+              return Promise.resolve();
+            },
+            hideAsync: function () {
+              if (container) {
+                container.style.display = 'none';
+              }
+              return Promise.resolve();
+            },
+            dismissAsync: function () {
+              if (container) {
+                container.style.display = 'none';
+              }
+              return Promise.resolve();
+            },
+            destroyAsync: function () {
+              if (container) {
+                container.innerHTML = '';
+              }
+              return Promise.resolve();
+            },
+          });
+        },
       },
       quit: function () {
         console.log('Game quit.');
