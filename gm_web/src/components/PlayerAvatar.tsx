@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  isFacebookInstantGames,
-  showFacebookProfilePictureOverlay,
-} from './fbInstant';
+import FacebookProfilePicture from '../platform/facebook/FacebookProfilePicture';
+import { isFacebookInstantGames, showCustomOverlay } from '../platform/facebook/fbInstant';
 
-export interface FacebookProfilePictureProps {
-  fallbackImageUrl?: string | null;
+export interface PlayerAvatarProps {
+  initialData?: Record<string, unknown>;
+  imageUrl?: string | null;
   name?: string;
   className?: string;
-  imageStyle?: string;
-  iFrameStyle?: string;
-
-  iconClassName?: string;
+  iconSize?: string;
+  isMe?: boolean;
+  xmlPath?: string;
+  cssPath?: string;
 }
 
 function DefaultAvatarIcon({ className = 'size-5' }: { className?: string }) {
@@ -32,46 +31,54 @@ function DefaultAvatarIcon({ className = 'size-5' }: { className?: string }) {
   );
 }
 
-export default function FacebookProfilePicture({
-  fallbackImageUrl,
-  name = 'You',
-  className = '',
-  imageStyle = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; margin: 0; display: block;',
-  iFrameStyle = 'overlays/shared_style.css',
-  iconClassName = 'size-5',
-}: FacebookProfilePictureProps) {
+export default function PlayerAvatar({
+  initialData,
+  imageUrl,
+  name,
+  className = 'gamezone-player-avatar',
+  iconSize = 'size-5',
+  isMe = false,
+  xmlPath = 'overlays/profile_pic.xml',
+  cssPath = 'overlays/profile_pic.css',
+}: PlayerAvatarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [overlayActive, setOverlayActive] = useState(false);
-  const [fallbackError, setFallbackError] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
+    if (isMe  || !isFacebookInstantGames()) {
+      return;
+    }
+
     let isMounted = true;
     let currentOverlay: FBInstantOverlayView | null = null;
     const container = containerRef.current;
+    if (!container) return;
 
-    async function mountOverlay() {
+    async function mount() {
       if (!container || !isFacebookInstantGames()) {
         return;
       }
 
       if (typeof window !== 'undefined' && window.FBInstant?.overlayViews) {
         try {
-          currentOverlay = await showFacebookProfilePictureOverlay(
+          currentOverlay = await showCustomOverlay(
             container,
-            imageStyle,
-            iFrameStyle,
+            xmlPath,
+            cssPath,
+            { ...initialData },
           );
 
           if (isMounted && currentOverlay) {
             setOverlayActive(true);
           }
         } catch (err) {
-          console.warn('Failed to mount profile picture overlay:', err);
+          console.warn('Failed to mount opponent profile picture overlay:', err);
         }
       }
     }
 
-    void mountOverlay();
+    void mount();
 
     return () => {
       isMounted = false;
@@ -83,25 +90,38 @@ export default function FacebookProfilePicture({
         container.innerHTML = '';
       }
     };
-  }, [imageStyle, iFrameStyle]);
+  }, [initialData, isMe, xmlPath, cssPath]);
+
+  if (isMe) {
+    return (
+      <FacebookProfilePicture
+        fallbackImageUrl={imageUrl}
+        name={name}
+        className={className}
+        iconClassName={iconSize}
+      />
+    );
+  }
 
   return (
-    <div className={`relative overflow-hidden ${className}`} aria-label={name}>
-      <div
-        ref={containerRef}
-        className="w-full h-full overflow-hidden rounded-full flex items-center justify-center"
-      />
+    <div className={`relative overflow-hidden ${className}`} aria-label={name || 'Player'}>
+      {initialData && (
+        <div
+          ref={containerRef}
+          className="w-full h-full overflow-hidden rounded-full flex items-center justify-center"
+        />
+      )}
       {!overlayActive && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          {fallbackImageUrl && !fallbackError ? (
+          {imageUrl && !imageError ? (
             <img
-              src={fallbackImageUrl}
-              alt={name}
-              onError={() => setFallbackError(true)}
+              src={imageUrl}
+              alt={name || 'Player'}
+              onError={() => setImageError(true)}
               className="w-full h-full object-cover rounded-full"
             />
           ) : (
-            <DefaultAvatarIcon className={iconClassName} />
+            <DefaultAvatarIcon className={iconSize} />
           )}
         </div>
       )}

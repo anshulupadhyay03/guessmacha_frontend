@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
-import FacebookProfilePicture from '../platform/facebook/FacebookProfilePicture';
+import PlayerAvatar from '../components/PlayerAvatar';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
 import { useGameDetails } from '../hooks/useGameDetails';
@@ -19,69 +19,6 @@ interface GameZoneScreenProps {
 }
 
 type ActionMode = 'ask' | 'answer' | 'disabled';
-
-function DefaultAvatarIcon({ className = 'size-5' }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function PlayerAvatar({
-  imageUrl,
-  name,
-  className = 'gamezone-player-avatar',
-  iconSize = 'size-5',
-  isMe = false,
-}: {
-  imageUrl?: string | null;
-  name?: string;
-  className?: string;
-  iconSize?: string;
-  isMe?: boolean;
-}) {
-  const [hasError, setHasError] = useState(false);
-
-  if (isMe) {
-    return (
-      <FacebookProfilePicture
-        fallbackImageUrl={imageUrl}
-        name={name}
-        className={className}
-        iconClassName={iconSize}
-      />
-    );
-  }
-
-  if (imageUrl && !hasError) {
-    return (
-      <div className={className} aria-label={name || 'Player'}>
-        <img
-          src={imageUrl}
-          alt={name || 'Player'}
-          onError={() => setHasError(true)}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className={className} aria-label={name || 'Player'}>
-      <DefaultAvatarIcon className={iconSize} />
-    </div>
-  );
-}
 
 interface GameOutcome {
   isFinished: boolean;
@@ -563,11 +500,12 @@ export default function GameZoneScreen({
             <div className="gamezone-players-grid">
               {/* Me Player Card */}
               <div className="gamezone-player-card gamezone-player-card--me">
-                <FacebookProfilePicture
-                  fallbackImageUrl={me?.playerImageUrl}
+                <PlayerAvatar
+                  isMe
+                  imageUrl={me?.playerImageUrl}
                   name={me?.playerName || 'You'}
                   className="gamezone-player-avatar"
-                  iconClassName="size-5"
+                  iconSize="size-5"
                 />
 
                 <div className="gamezone-player-info">
@@ -585,10 +523,13 @@ export default function GameZoneScreen({
               {/* Opponent Player Card */}
               <div className="gamezone-player-card gamezone-player-card--opponent">
                 <PlayerAvatar
+                  initialData = {{ playerId: opponent?.playerName }}
                   imageUrl={opponent?.playerImageUrl}
                   name={opponent?.playerName || 'Opponent'}
                   className="gamezone-player-avatar"
                   iconSize="size-5"
+                  xmlPath="overlays/profile_pic.xml"
+                  cssPath="overlays/profile_pic.css"
                 />
 
                 <div className="gamezone-player-info">

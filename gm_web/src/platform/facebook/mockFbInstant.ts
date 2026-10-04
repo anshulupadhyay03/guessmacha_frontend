@@ -118,6 +118,9 @@ export function setupMockFbInstant(force = false): void {
                   if (initialData?.opponentPlayerId) {
                     opponentId = String(initialData.opponentPlayerId);
                   }
+                  if (initialData?.playerId) {
+                    opponentId = String(initialData.playerId);
+                  }
                   if (initialData?.name) {
                     opponentParamName = String(initialData.name);
                   }
@@ -128,7 +131,7 @@ export function setupMockFbInstant(force = false): void {
                   if (url.includes('?')) {
                     try {
                       const params = new URLSearchParams(url.split('?')[1]);
-                      opponentId = opponentId || params.get('opponentPlayerId') || '';
+                      opponentId = opponentId || params.get('opponentPlayerId') || params.get('playerId') || '';
                       opponentParamName = opponentParamName || params.get('name') || '';
                       opponentParamPhoto = opponentParamPhoto || params.get('photo') || '';
                     } catch {
@@ -143,6 +146,27 @@ export function setupMockFbInstant(force = false): void {
                   const avatarSrc = isOpponent
                     ? (opponentParamPhoto || (opponentId ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(opponentId)}` : fallbackAvatar))
                     : (window.FBInstant?.player?.getPhoto?.() || fallbackAvatar);
+
+                  const isProfilePic = url.includes('profile_pic');
+                  if (isProfilePic) {
+                    const fallbackSeed = opponentId || 'opponent';
+                    const picSrc = opponentParamPhoto || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(fallbackSeed)}`;
+                    const picContainer = document.createElement('div');
+                    picContainer.className = 'profile-pic-container';
+                    picContainer.style.width = '100%';
+                    picContainer.style.height = '100%';
+                    picContainer.innerHTML = `
+                      <img
+                        src="${picSrc}"
+                        alt="Profile"
+                        class="avatar"
+                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
+                        onerror="this.src='${fallbackAvatar}'"
+                      />
+                    `;
+                    container.appendChild(picContainer);
+                    return Promise.resolve();
+                  }
 
                   const isPlayerName = url.includes('player_name');
                   if (isPlayerName) {
@@ -352,3 +376,30 @@ export async function showFacebookPlayerNameOverlay(
     await overlay.showAsync();
   }
 }
+
+export async function showCustomOverlay(
+  container: HTMLElement,
+  xmlPath: string,
+  cssPath: string,
+  initialData: Record<string, unknown> = {},
+): Promise<FBInstantOverlayView | null> {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  setupMockFbInstant();
+
+  if (window.FBInstant?.overlayViews && container) {
+    const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
+      xmlPath,
+      container,
+      'width: 100%; height: 100%; border: none; overflow: hidden; background: transparent;',
+      cssPath,
+      initialData,
+    );
+    await overlay.showAsync();
+    return overlay;
+  }
+  return null;
+}
+

@@ -1,0 +1,6 @@
+<View className="profile-pic-container">
+    <Image
+    src="{{FBInstant.players[{{playerId}}].photo}}"
+    className="avatar"
+  />
+</View>

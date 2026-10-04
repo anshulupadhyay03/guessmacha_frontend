@@ -153,7 +153,7 @@ export async function showFacebookPlayerProfileOverlay(
     const overlay = await overlayViews.createOverlayViewAsync(
       xmlPath,
       container,
-      'width: 100%; height: 70px; border: none; overflow: hidden;',
+      'width: 100%; height: 100%; border: none; overflow: hidden;',
       cssPath,
     )
 
@@ -161,6 +161,57 @@ export async function showFacebookPlayerProfileOverlay(
     return overlay
   } catch (error) {
     console.error('Failed to show Facebook player profile overlay:', error)
+    return null
+  }
+}
+
+function normalizeOverlayPath(path: string): string {
+  if (!path) return ''
+  let p = path.trim()
+  const overlayIdx = p.indexOf('overlays/')
+  if (overlayIdx !== -1) {
+    return p.slice(overlayIdx)
+  }
+  p = p.replace(/^\/+/, '')
+  if (p.startsWith('public/')) {
+    p = p.slice('public/'.length)
+  }
+  return p
+}
+
+export async function showCustomOverlay(
+  container: HTMLElement,
+  xmlPath: string,
+  cssPath: string,
+  initialData: Record<string, unknown> = {},
+): Promise<FBInstantOverlayView | null> {
+  if (!isFacebookInstantGames()) {
+    console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
+    return null
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews) {
+      console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
+      return null
+    }
+
+    const cleanXmlPath = normalizeOverlayPath(xmlPath)
+    const cleanCssPath = normalizeOverlayPath(cssPath)
+
+    const overlay = await overlayViews.createOverlayViewAsync(
+      cleanXmlPath,
+      container,
+      'width: 100%; height: 100%; border: none; overflow: hidden; background: transparent; margin: 0; padding: 0;',
+      cleanCssPath,
+      initialData,
+    )
+
+    await overlay.showAsync()
+    return overlay
+  } catch (error) {
+    console.error('Failed to show Facebook custom overlay:', error)
     return null
   }
 }

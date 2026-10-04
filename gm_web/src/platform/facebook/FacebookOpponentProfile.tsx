@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   isFacebookInstantGames,
   showFacebookOpponentProfileOverlay,
-} from '../platform/facebook/fbInstant';
+} from './fbInstant';
 
 interface FacebookOpponentProfileProps {
   opponentId: string;
