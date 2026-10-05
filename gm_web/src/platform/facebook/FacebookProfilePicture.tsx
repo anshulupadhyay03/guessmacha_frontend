@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   isFacebookInstantGames,
   showFacebookProfilePictureOverlay,
@@ -10,7 +10,6 @@ export interface FacebookProfilePictureProps {
   className?: string;
   imageStyle?: string;
   iFrameStyle?: string;
-
   iconClassName?: string;
 }
 
@@ -32,7 +31,7 @@ function DefaultAvatarIcon({ className = 'size-5' }: { className?: string }) {
   );
 }
 
-export default function FacebookProfilePicture({
+function FacebookProfilePicture({
   fallbackImageUrl,
   name = 'You',
   className = '',
@@ -43,26 +42,49 @@ export default function FacebookProfilePicture({
   const containerRef = useRef<HTMLDivElement>(null);
   const [overlayActive, setOverlayActive] = useState(false);
   const [fallbackError, setFallbackError] = useState(false);
+  const overlayRef = useRef<FBInstantOverlayView | null>(null);
+  const mountedKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-    let currentOverlay: FBInstantOverlayView | null = null;
     const container = containerRef.current;
+    if (!container || !isFacebookInstantGames()) {
+      return;
+    }
+
+    const currentKey = `${imageStyle}::${iFrameStyle}`;
+    // If overlay is already mounted for this exact configuration, do not re-validate or recreate
+    if (mountedKeyRef.current === currentKey && overlayRef.current) {
+      return;
+    }
+
+    let isMounted = true;
 
     async function mountOverlay() {
       if (!container || !isFacebookInstantGames()) {
         return;
       }
 
+      if (overlayRef.current) {
+        if (overlayRef.current.destroyAsync) {
+          void overlayRef.current.destroyAsync().catch(() => {});
+        } else if (overlayRef.current.dismissAsync) {
+          void overlayRef.current.dismissAsync().catch(() => {});
+        }
+        overlayRef.current = null;
+        container.innerHTML = '';
+      }
+
       if (typeof window !== 'undefined' && window.FBInstant?.overlayViews) {
         try {
-          currentOverlay = await showFacebookProfilePictureOverlay(
+          const overlay = await showFacebookProfilePictureOverlay(
             container,
             imageStyle,
             iFrameStyle,
           );
 
-          if (isMounted && currentOverlay) {
+          if (isMounted && overlay) {
+            overlayRef.current = overlay;
+            mountedKeyRef.current = currentKey;
             setOverlayActive(true);
           }
         } catch (err) {
@@ -75,15 +97,22 @@ export default function FacebookProfilePicture({
 
     return () => {
       isMounted = false;
-      if (currentOverlay?.destroyAsync) {
-        void currentOverlay.destroyAsync().catch(() => {});
-      } else if (currentOverlay?.dismissAsync) {
-        void currentOverlay.dismissAsync().catch(() => {});
-      } else if (container) {
-        container.innerHTML = '';
-      }
     };
   }, [imageStyle, iFrameStyle]);
+
+  // Clean up overlay only on unmount
+  useEffect(() => {
+    return () => {
+      if (overlayRef.current) {
+        if (overlayRef.current.destroyAsync) {
+          void overlayRef.current.destroyAsync().catch(() => {});
+        } else if (overlayRef.current.dismissAsync) {
+          void overlayRef.current.dismissAsync().catch(() => {});
+        }
+        overlayRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className={`relative overflow-hidden ${className}`} aria-label={name}>
@@ -108,4 +137,6 @@ export default function FacebookProfilePicture({
     </div>
   );
 }
+
+export default React.memo(FacebookProfilePicture);
 

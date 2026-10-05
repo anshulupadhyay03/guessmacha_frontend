@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
 import PlayerAvatar from '../components/PlayerAvatar';
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
 import { useGameDetails } from '../hooks/useGameDetails';
@@ -137,38 +138,71 @@ function getTurnInfo(
     };
   }
 
-  const opponentName = opponent?.playerName || 'Opponent';
+  //const opponentName = opponent?.playerName || 'Opponent';
 
-  // Check if I am the active player
-  const isMyTurn = Boolean((currentPlayerId === me?.playerId || me?.isMyTurn === true) && !opponent?.isMyTurn);
-
-  if (isMyTurn) {
-    // If opponent asked a question and I must answer
-    if (currentQuestion && !currentQuestion.answerText && currentQuestion.askedByPlayerId === opponent?.playerId) {
-      return {
+  // 1. If an unanswered question exists, turn is defined by who must answer it
+  if (currentQuestion && !currentQuestion.answerText) {
+    // If opponent asked the question (or it's assigned to me to answer): It's my turn to ANSWER
+    if (
+      currentQuestion.askedByPlayerId === opponent?.playerId ||
+      currentQuestion.answeredByPlayerId === me?.playerId
+    ) {
+      /* return {
         title: `Your Turn: Answer ${opponentName}'s question`,
+        isMyTurn: true,
+        isBonus: me?.isBonusTurn ?? false,
+      }; */
+      return {
+        title: `Your Turn: Answer opponent's question`,
         isMyTurn: true,
         isBonus: me?.isBonusTurn ?? false,
       };
     }
-    return {
+
+    // If I asked the question (or it's assigned to opponent to answer): It's opponent's turn to ANSWER
+    if (
+      currentQuestion.askedByPlayerId === me?.playerId ||
+      currentQuestion.answeredByPlayerId === opponent?.playerId
+    ) {
+      /* return {
+        title: `${opponentName}'s Turn: Ready to Answer the question.`,
+        isMyTurn: false,
+        isBonus: opponent?.isBonusTurn ?? false,
+      }; */
+      return {
+        title: `Opponent's Turn: Wait for the question and answer it.`,
+        isMyTurn: false,
+        isBonus: opponent?.isBonusTurn ?? false,
+      };
+    }
+  }
+
+  // 2. No unanswered question pending: It is someone's turn to ASK a question
+  const isMyTurnToAsk = Boolean(
+    (currentPlayerId === me?.playerId || me?.isMyTurn === true) && !opponent?.isMyTurn
+  );
+
+  if (isMyTurnToAsk) {
+   /*  return {
       title: `Your Turn: Ask ${opponentName} one question.`,
+      isMyTurn: true,
+      isBonus: me?.isBonusTurn ?? false,
+    }; */
+    return {
+      title: `Your Turn: Ask opponent a question.`,
       isMyTurn: true,
       isBonus: me?.isBonusTurn ?? false,
     };
   }
 
-  // Opponent turn
-  if (currentQuestion && !currentQuestion.answerText && currentQuestion.askedByPlayerId === me?.playerId) {
-    return {
-      title: `${opponentName}'s Turn: Ready toAnswer the question.`,
-      isMyTurn: false,
-      isBonus: opponent?.isBonusTurn ?? false,
-    };
-  }
-
-  return {
+  // Opponent's turn to ask
+  /* return {
     title: `${opponentName}'s Turn: Waiting for question`,
+    isMyTurn: false,
+    isBonus: opponent?.isBonusTurn ?? false,
+  }; */
+  return {
+    title: `Opponent's Turn: Wait for the questions and answer it.`,
     isMyTurn: false,
     isBonus: opponent?.isBonusTurn ?? false,
   };
@@ -187,26 +221,37 @@ function getActionMode(
   }
 
   const { me, opponent } = gameState.players;
-  const opponentName = opponent?.playerName || 'Opponent';
+  //const opponentName = opponent?.playerName || 'Opponent';
 
-  // Check if there is an active question waiting for my answer
-  const isWaitingMyAnswer =
-    (activeQuestion &&
-      !activeQuestion.answerText &&
-      activeQuestion.askedByPlayerId === opponent?.playerId) ||
-    (!me.isMyTurn && activeQuestion?.answeredByPlayerId === me.playerId && !activeQuestion?.answerText);
+  // 1. Check if there is an active unanswered question
+  if (activeQuestion && !activeQuestion.answerText) {
+    // Waiting for my answer
+    if (
+      activeQuestion.askedByPlayerId === opponent?.playerId ||
+      activeQuestion.answeredByPlayerId === me?.playerId
+    ) {
+      return { mode: 'answer', placeholder: 'Answer the question...' };
+    }
 
-  if (isWaitingMyAnswer) {
-    return { mode: 'answer', placeholder: 'Answer the question...' };
+    // Question was asked by me, waiting for opponent's answer -> disable asking further questions
+    if (
+      activeQuestion.askedByPlayerId === me?.playerId ||
+      activeQuestion.answeredByPlayerId === opponent?.playerId
+    ) {
+      /* return { mode: 'disabled', placeholder: `Waiting for ${opponentName}...` }; */
+      return { mode: 'disabled', placeholder: `Waiting for opponent to answer...` };
+    }
   }
 
-  // Check if it's my turn to ask
+  // 2. No unanswered question pending: Check if it's my turn to ask
   const isMyTurnToAsk =
     (gameState.currentPlayerId === me.playerId || me.isMyTurn) &&
-    !me.isCompleted &&
-    me.questionsAsked < (gameState.questionLimit ?? 25);
+    !me.isCompleted;
 
   if (isMyTurnToAsk) {
+    if (me.questionsAsked >= (gameState.questionLimit ?? 25)) {
+      return { mode: 'disabled', placeholder: 'Question limit reached. Use Guess Secret!' };
+    }
     return { mode: 'ask', placeholder: 'Ask next question...' };
   }
 
@@ -214,8 +259,97 @@ function getActionMode(
     return { mode: 'disabled', placeholder: 'Question limit reached. Use Guess Secret!' };
   }
 
-  return { mode: 'disabled', placeholder: `Waiting for ${opponentName}...` };
+  /* return { mode: 'disabled', placeholder: `Waiting for ${opponentName}...` }; */
+  return { mode: 'disabled', placeholder: 'Waiting for opponent to answer...' };
 }
+
+interface PlayersStatusGridProps {
+  me?: GameStatePlayer;
+  opponent?: GameStatePlayer;
+  mySecretName: string;
+  meQuestionsLeft: number;
+  opponentQuestionsLeft: number;
+  questionLimit: number;
+  isFinished: boolean;
+}
+
+const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
+  me,
+  opponent,
+  mySecretName,
+  meQuestionsLeft,
+  opponentQuestionsLeft,
+  questionLimit,
+  isFinished,
+}: PlayersStatusGridProps) {
+  const opponentPlayerName = opponent?.playerName;
+  const opponentInitialData = useMemo(() => {
+    return opponentPlayerName ? { playerId: opponentPlayerName } : undefined;
+  }, [opponentPlayerName]);
+
+  return (
+    <div className="gamezone-players-grid">
+      {/* Me Player Card */}
+      <div className="gamezone-player-card gamezone-player-card--me">
+        <PlayerAvatar
+          isMe
+          imageUrl={me?.playerImageUrl}
+          name={me?.playerName || 'You'}
+          className="gamezone-player-avatar"
+          iconSize="size-5"
+        />
+
+        <div className="gamezone-player-info">
+          <div className="gamezone-player-name">
+            <span>You</span>
+          </div>
+          <div className="gamezone-player-secret gamezone-player-secret--revealed">
+            <span>{mySecretName}</span>
+          </div>
+          <div className="gamezone-player-questions">
+            <span className="gamezone-player-questions-label">Questions left:</span>{' '}
+            <span className="gamezone-player-questions-count">{meQuestionsLeft}/{questionLimit}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Opponent Player Card */}
+      <div className="gamezone-player-card gamezone-player-card--opponent">
+        <PlayerAvatar
+          initialData={opponentInitialData}
+          imageUrl={opponent?.playerImageUrl}
+          name={opponent?.playerName || 'Opponent'}
+          className="gamezone-player-avatar"
+          iconSize="size-5"
+          xmlPath="overlays/profile_pic.xml"
+          cssPath="overlays/profile_pic.css"
+        />
+
+        <div className="gamezone-player-info">
+          <div className="gamezone-player-name">
+            <FacebookPlayerName
+              initialData={opponentInitialData}
+              fallbackName={opponent?.playerName || 'Opponent'}
+              className="w-full h-5 justify-end text-right"
+              textClassName="truncate font-bold text-[#171d1e] text-[14.7px] text-right"
+              overlayPath="overlays/player_name.xml"
+              overlayCassPath="overlays/gamezone/gamezone_profile_player_name.css"
+            />
+          </div>
+          <div className="gamezone-player-secret gamezone-player-secret--hidden">
+            <span>
+              {opponent?.secret ? opponent.secret : isFinished ? 'Revealed in Review' : 'Hidden 👁️‍🗨️'}
+            </span>
+          </div>
+          <div className="gamezone-player-questions">
+            <span className="gamezone-player-questions-label">Questions left:</span>{' '}
+            <span className="gamezone-player-questions-count">{opponentQuestionsLeft}/{questionLimit}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export default function GameZoneScreen({
   gameId,
@@ -280,23 +414,27 @@ export default function GameZoneScreen({
 
     const guesserId = guessNotification.guesserId;
     const isCorrect = guessNotification.isCorrect;
-    const oppName = opponent?.playerName || 'Opponent';
+    //const oppName = opponent?.playerName || 'Opponent';
 
     const isOpponent = guesserId === opponent?.playerId || (!guesserId && me?.isBonusTurn);
     const isMe = guesserId === me?.playerId || (!guesserId && opponent?.isBonusTurn);
 
     if (isOpponent) {
       if (isCorrect) {
-        return `${oppName} guessed your secret correctly! You continue to ask Questions to guess ${oppName} secret.`;
+        //return `${oppName} guessed your secret correctly! You continue to ask Questions to guess ${oppName} secret.`;
+        return `Opponent guessed your secret correctly!`;
       }
-      return `${oppName}'s guess was incorrect! You receive a bonus turn.`;
+      //return `${oppName}'s guess was incorrect! You receive a bonus turn.`;
+      return `Opponent's guess was incorrect! You receive a bonus turn.`;
     }
 
     if (isMe) {
       if (isCorrect) {
-        return 'Your guess was correct! You can only answer to help ${oppName} to guess your secret.';
+        //return 'Your guess was correct! You can only answer to help ${oppName} to guess your secret.';
+        return 'Your guess was correct! You can only answer to help opponent guess your secret.';
       }
-      return `Your guess was incorrect! ${oppName} receives a bonus turn.`;
+      //return `Your guess was incorrect! ${oppName} receives a bonus turn.`;
+      return `Your guess was incorrect! Opponent receives a bonus turn.`;
     }
 
     // Generic fallback if guesser cannot be determined
@@ -308,9 +446,15 @@ export default function GameZoneScreen({
 
   // Turn calculations
   const outcome = resolveGameOutcome(gameState);
-  const latestQuestion = questions.length > 0 ? questions[questions.length - 1] : gameState?.question;
+  const pendingQuestion = questions.find((q) => !q.answerText);
+  const latestQuestion =
+    pendingQuestion ||
+    (gameState?.question && !gameState.question.answerText ? gameState.question : null) ||
+    (questions.length > 0 ? questions[questions.length - 1] : (gameState?.question ?? null));
   const turnInfo = getTurnInfo(me, opponent, gameState?.currentPlayerId, latestQuestion, outcome.isFinished);
   const { mode: actionMode, placeholder: inputPlaceholder } = getActionMode(gameState, latestQuestion);
+
+  const hasUnansweredQuestion = Boolean(latestQuestion && !latestQuestion.answerText);
 
   // Guess Secret button enablement
   const isGuessDisabled =
@@ -318,6 +462,7 @@ export default function GameZoneScreen({
     Boolean(me?.isCompleted) ||
     Boolean(me?.finalGuessUsed) ||
     !me?.isMyTurn ||
+    hasUnansweredQuestion ||
     gameState?.status !== 'in_progress' ||
     submitting;
 
@@ -466,12 +611,13 @@ export default function GameZoneScreen({
 
         {/* Global Action / Error banner */}
         {actionError && (
-          <div className="relative mb-3 flex items-center justify-between gap-3 rounded-xl border border-red-500/30 bg-red-500/15 p-3 text-sm text-[#ffd9d9]">
+          <div className="relative mb-3 flex items-center justify-between gap-3 rounded-xl border border-red-500/30 bg-red-500/15 p-3 text-sm color: var(--text-primary); font-weight: 600;
+">
             <span>{actionError}</span>
             <button
               type="button"
               onClick={() => setActionError(null)}
-              className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white cursor-pointer"
+              className="grid size-8 shrink-0 place-items-center rounded-lg cursor-pointer"
               aria-label="Close error"
             >
               ✕
@@ -497,55 +643,15 @@ export default function GameZoneScreen({
         {gameState && (
           <>
             {/* Players Status Grid */}
-            <div className="gamezone-players-grid">
-              {/* Me Player Card */}
-              <div className="gamezone-player-card gamezone-player-card--me">
-                <PlayerAvatar
-                  isMe
-                  imageUrl={me?.playerImageUrl}
-                  name={me?.playerName || 'You'}
-                  className="gamezone-player-avatar"
-                  iconSize="size-5"
-                />
-
-                <div className="gamezone-player-info">
-                  <div className="gamezone-player-name">{me?.playerName || 'You'}</div>
-                  <div className="gamezone-player-secret gamezone-player-secret--revealed">
-                    <span>{mySecretName}</span>
-                  </div>
-                  <div className="gamezone-player-questions">
-                    <span className="gamezone-player-questions-label">Questions left:</span>{' '}
-                    <span className="gamezone-player-questions-count">{meQuestionsLeft}/{questionLimit}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Opponent Player Card */}
-              <div className="gamezone-player-card gamezone-player-card--opponent">
-                <PlayerAvatar
-                  initialData = {{ playerId: opponent?.playerName }}
-                  imageUrl={opponent?.playerImageUrl}
-                  name={opponent?.playerName || 'Opponent'}
-                  className="gamezone-player-avatar"
-                  iconSize="size-5"
-                  xmlPath="overlays/profile_pic.xml"
-                  cssPath="overlays/profile_pic.css"
-                />
-
-                <div className="gamezone-player-info">
-                  <div className="gamezone-player-name">{opponent?.playerName || 'Opponent'}</div>
-                  <div className="gamezone-player-secret gamezone-player-secret--hidden">
-                    <span>
-                      {opponent?.secret ? opponent.secret : outcome.isFinished ? 'Revealed in Review' : 'Hidden 👁️‍🗨️'}
-                    </span>
-                  </div>
-                  <div className="gamezone-player-questions">
-                    <span className="gamezone-player-questions-label">Questions left:</span>{' '}
-                    <span className="gamezone-player-questions-count">{opponentQuestionsLeft}/{questionLimit}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PlayersStatusGrid
+              me={me}
+              opponent={opponent}
+              mySecretName={mySecretName}
+              meQuestionsLeft={meQuestionsLeft}
+              opponentQuestionsLeft={opponentQuestionsLeft}
+              questionLimit={questionLimit}
+              isFinished={outcome.isFinished}
+            />
 
             {/* Turn Status Banner OR Game Over / Match Finished Banner */}
             {outcome.isFinished ? (

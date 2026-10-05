@@ -275,8 +275,7 @@ export async function showFacebookPlayerNameOverlay(
     return null
   }
 
-  const pid = typeof initialData?.playerId === 'string' ? initialData.playerId.trim() : ''
-  if (!pid) {
+  if (!initialData || !initialData.playerId) {
     return null
   }
 
@@ -286,22 +285,60 @@ export async function showFacebookPlayerNameOverlay(
       return null
     }
 
-    const xmlPath = overlayPath
-    const cssPath = overlayCassPath
+    const xmlPath = overlayPath || 'overlays/player_name.xml'
+    const cssPath = overlayCassPath || 'overlays/styles.css'
+
+    const cleanXmlPath = normalizeOverlayPath(xmlPath)
+    const cleanCssPath = normalizeOverlayPath(cssPath)
 
     const overlay = await overlayViews.createOverlayViewAsync(
-      xmlPath,
+      cleanXmlPath,
       container,
-      'width: 100%; height: 100%; border: none; overflow: hidden;',
-      cssPath,
+      'width: 100%; height: 100%; border: none; overflow: hidden; background: transparent;',
+      cleanCssPath,
       initialData,
     )
 
     await overlay.showAsync()
-    container.querySelector('iframe')?.setAttribute('scrolling', 'no')
     return overlay
   } catch (error) {
     console.error('Failed to show Facebook player name overlay:', error)
+    return null
+  }
+}
+
+export async function showFacebookProfileNameOverlay(
+  container: HTMLElement,
+  textStyle: string = 'font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: inherit; margin: 0; padding: 0;',
+  iFrameStyle: string = 'width: 100%; height: 100%; border: none; overflow: hidden; display: block; background: transparent; margin: 0; padding: 0;',
+  pathToCss?: string,
+): Promise<FBInstantOverlayView | null> {
+  if (!isFacebookInstantGames()) {
+    return null
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews || typeof overlayViews.createProfileNameOverlayViewAsync !== 'function') {
+      console.warn('createProfileNameOverlayViewAsync is unavailable in this SDK/runtime')
+      return null
+    }
+
+    const cleanCssPath = pathToCss ? normalizeOverlayPath(pathToCss) : undefined
+
+    console.log('Creating Facebook profile name overlay:', { cleanCssPath, textStyle })
+
+    const overlay = await overlayViews.createProfileNameOverlayViewAsync(
+      container,
+      textStyle,
+      iFrameStyle,
+      cleanCssPath,
+    )
+
+    await overlay.showAsync()
+    return overlay
+  } catch (error) {
+    console.error('Failed to show Facebook profile name overlay:', error)
     return null
   }
 }

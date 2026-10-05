@@ -108,9 +108,10 @@ export function setupMockFbInstant(force = false): void {
             showAsync: function () {
               console.log('Mock overlay shown:', url);
               if (container) {
-                container.style.display = 'inline-flex';
                 if (!container.hasChildNodes()) {
-                  const isOpponent = url.includes('opponent_profile');
+                  const isOpponent =
+                    url.includes('opponent') ||
+                    Boolean(initialData?.opponentPlayerId || initialData?.playerId);
                   let opponentId = '';
                   let opponentParamName = '';
                   let opponentParamPhoto = '';
@@ -234,6 +235,50 @@ export function setupMockFbInstant(force = false): void {
                   img.src = fallbackAvatar;
                 };
                 container.appendChild(img);
+              }
+              return Promise.resolve();
+            },
+            hideAsync: function () {
+              if (container) {
+                container.style.display = 'none';
+              }
+              return Promise.resolve();
+            },
+            dismissAsync: function () {
+              if (container) {
+                container.style.display = 'none';
+              }
+              return Promise.resolve();
+            },
+            destroyAsync: function () {
+              if (container) {
+                container.innerHTML = '';
+              }
+              return Promise.resolve();
+            },
+          });
+        },
+        createProfileNameOverlayViewAsync: function (
+          container: HTMLElement,
+          textStyle?: string,
+          _iFrameStyle?: string,
+          stylesheet?: string,
+        ) {
+          ensureOverlayStylesheet(stylesheet);
+          void _iFrameStyle;
+          return Promise.resolve({
+            showAsync: function () {
+              console.log('Mock profile name overlay shown');
+              if (container) {
+                container.innerHTML = '';
+                const displayName = window.FBInstant?.player?.getName?.() || 'Test Anshul';
+                const span = document.createElement('span');
+                span.className = 'playerName';
+                span.textContent = displayName;
+                span.style.cssText =
+                  textStyle ||
+                  'font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: inherit; margin: 0; padding: 0;';
+                container.appendChild(span);
               }
               return Promise.resolve();
             },
@@ -402,4 +447,30 @@ export async function showCustomOverlay(
   }
   return null;
 }
+
+export async function showFacebookProfileNameOverlay(
+  container: HTMLElement,
+  textStyle?: string,
+  iFrameStyle?: string,
+  pathToCss?: string,
+): Promise<FBInstantOverlayView | null> {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  setupMockFbInstant();
+
+  if (window.FBInstant?.overlayViews?.createProfileNameOverlayViewAsync && container) {
+    const overlay = await window.FBInstant.overlayViews.createProfileNameOverlayViewAsync(
+      container,
+      textStyle,
+      iFrameStyle,
+      pathToCss,
+    );
+    await overlay.showAsync();
+    return overlay;
+  }
+  return null;
+}
+
 

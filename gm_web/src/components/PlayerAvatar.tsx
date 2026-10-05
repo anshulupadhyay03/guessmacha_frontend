@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FacebookProfilePicture from '../platform/facebook/FacebookProfilePicture';
 import { isFacebookInstantGames, showCustomOverlay } from '../platform/facebook/fbInstant';
 
@@ -31,7 +31,7 @@ function DefaultAvatarIcon({ className = 'size-5' }: { className?: string }) {
   );
 }
 
-export default function PlayerAvatar({
+function PlayerAvatar({
   initialData,
   imageUrl,
   name,
@@ -44,14 +44,25 @@ export default function PlayerAvatar({
   const containerRef = useRef<HTMLDivElement>(null);
   const [overlayActive, setOverlayActive] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const overlayRef = useRef<FBInstantOverlayView | null>(null);
+  const mountedKeyRef = useRef<string | null>(null);
+
+  const initialDataKey = useMemo(() => {
+    return initialData ? JSON.stringify(initialData) : '';
+  }, [initialData]);
 
   useEffect(() => {
-    if (isMe  || !isFacebookInstantGames()) {
+    if (isMe || !isFacebookInstantGames() || !initialDataKey) {
+      return;
+    }
+
+    const currentKey = `${xmlPath}::${cssPath}::${initialDataKey}`;
+    // If overlay is already mounted for this exact configuration and player, do not re-validate or recreate
+    if (mountedKeyRef.current === currentKey && overlayRef.current) {
       return;
     }
 
     let isMounted = true;
-    let currentOverlay: FBInstantOverlayView | null = null;
     const container = containerRef.current;
     if (!container) return;
 
@@ -60,16 +71,29 @@ export default function PlayerAvatar({
         return;
       }
 
+      if (overlayRef.current) {
+        if (overlayRef.current.destroyAsync) {
+          void overlayRef.current.destroyAsync().catch(() => {});
+        } else if (overlayRef.current.dismissAsync) {
+          void overlayRef.current.dismissAsync().catch(() => {});
+        }
+        overlayRef.current = null;
+        container.innerHTML = '';
+      }
+
       if (typeof window !== 'undefined' && window.FBInstant?.overlayViews) {
         try {
-          currentOverlay = await showCustomOverlay(
+          const parsedData = initialData ? { ...initialData } : {};
+          const overlay = await showCustomOverlay(
             container,
             xmlPath,
             cssPath,
-            { ...initialData },
+            parsedData,
           );
 
-          if (isMounted && currentOverlay) {
+          if (isMounted && overlay) {
+            overlayRef.current = overlay;
+            mountedKeyRef.current = currentKey;
             setOverlayActive(true);
           }
         } catch (err) {
@@ -82,15 +106,22 @@ export default function PlayerAvatar({
 
     return () => {
       isMounted = false;
-      if (currentOverlay?.destroyAsync) {
-        void currentOverlay.destroyAsync().catch(() => {});
-      } else if (currentOverlay?.dismissAsync) {
-        void currentOverlay.dismissAsync().catch(() => {});
-      } else if (container) {
-        container.innerHTML = '';
+    };
+  }, [initialDataKey, isMe, xmlPath, cssPath, initialData]);
+
+  // Clean up overlay only on unmount
+  useEffect(() => {
+    return () => {
+      if (overlayRef.current) {
+        if (overlayRef.current.destroyAsync) {
+          void overlayRef.current.destroyAsync().catch(() => {});
+        } else if (overlayRef.current.dismissAsync) {
+          void overlayRef.current.dismissAsync().catch(() => {});
+        }
+        overlayRef.current = null;
       }
     };
-  }, [initialData, isMe, xmlPath, cssPath]);
+  }, []);
 
   if (isMe) {
     return (
@@ -128,4 +159,6 @@ export default function PlayerAvatar({
     </div>
   );
 }
+
+export default React.memo(PlayerAvatar);
 
