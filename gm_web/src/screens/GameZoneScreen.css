@@ -199,6 +199,35 @@
   color: #904d00;
 }
 
+.gamezone-secret-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gamezone-secret-toggle-btn:hover {
+  background: rgba(0, 104, 117, 0.08);
+}
+
+.gamezone-secret-toggle-btn:focus-visible {
+  outline: 2px solid var(--color-primary, #006875);
+  outline-offset: 1px;
+}
+
 .gamezone-player-questions {
   font-size: 0.78rem;
   font-weight: 600;
