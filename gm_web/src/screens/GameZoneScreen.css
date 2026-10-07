@@ -435,6 +435,77 @@
   line-height: 1.35;
 }
 
+.gamezone-qa-answer--yes {
+  color: #0b6b45;
+  font-weight: 800;
+}
+
+.gamezone-qa-answer--no {
+  color: #ba1a1a;
+  font-weight: 800;
+}
+
+.gamezone-qa-answer-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  justify-content: flex-end;
+}
+
+.gamezone-qa-answer-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-on-surface-variant, #3c494c);
+  margin-right: 4px;
+}
+
+.gamezone-qa-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 24px;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1.5px solid transparent;
+  user-select: none;
+  min-width: 68px;
+}
+
+.gamezone-qa-chip--yes {
+  background: #e6f6ee;
+  border-color: rgba(11, 107, 69, 0.4);
+  color: #0b6b45;
+}
+
+.gamezone-qa-chip--yes:hover:not(:disabled) {
+  background: #0b6b45;
+  color: #ffffff;
+  border-color: #0b6b45;
+  box-shadow: 0 2px 10px rgba(11, 107, 69, 0.3);
+}
+
+.gamezone-qa-chip--no {
+  background: #ffdad6;
+  border-color: rgba(186, 26, 26, 0.4);
+  color: #ba1a1a;
+}
+
+.gamezone-qa-chip--no:hover:not(:disabled) {
+  background: #ba1a1a;
+  color: #ffffff;
+  border-color: #ba1a1a;
+  box-shadow: 0 2px 10px rgba(186, 26, 26, 0.3);
+}
+
+.gamezone-qa-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .gamezone-qa-waiting {
   font-size: 0.9rem;
   font-style: italic;

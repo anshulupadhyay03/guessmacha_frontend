@@ -276,7 +276,7 @@ function getActionMode(
       activeQuestion.askedByPlayerId === opponent?.playerId ||
       activeQuestion.answeredByPlayerId === me?.playerId
     ) {
-      return { mode: 'answer', placeholder: 'Answer the question...' };
+      return { mode: 'answer', placeholder: 'Select Yes or No on the question above' };
     }
 
     // Question was asked by me, waiting for opponent's answer -> disable asking further questions
@@ -479,30 +479,21 @@ export default function GameZoneScreen({
 
     const guesserId = guessNotification.guesserId;
     const isCorrect = guessNotification.isCorrect;
-    //const oppName = opponent?.playerName || 'Opponent';
 
     const isOpponent = guesserId === opponent?.playerId || (!guesserId && me?.isBonusTurn);
     const isMe = guesserId === me?.playerId || (!guesserId && opponent?.isBonusTurn);
 
     if (isOpponent) {
       if (isCorrect) {
-        if (me?.forcedGuess) {
-          return 'Opponent guessed your secret correctly! You must now guess their secret to force a Draw!';
-        }
         return `Opponent guessed your secret correctly!`;
       }
-      //return `${oppName}'s guess was incorrect! You receive a bonus turn.`;
       return `Opponent's guess was incorrect! You receive a bonus turn.`;
     }
 
     if (isMe) {
       if (isCorrect) {
-        if (opponent?.forcedGuess) {
-          return 'Your guess was correct! Opponent must now guess your secret to force a Draw.';
-        }
         return 'Your guess was correct!';
       }
-      //return `Your guess was incorrect! ${oppName} receives a bonus turn.`;
       return `Your guess was incorrect! Opponent receives a bonus turn.`;
     }
 
@@ -532,21 +523,30 @@ export default function GameZoneScreen({
     (!me?.forcedGuess && me?.finalGuessUsed)
   );
 
-  async function handleSendMessage(e: React.FormEvent) {
-    e.preventDefault();
-    const text = inputText.trim();
-    if (!text || submitting || actionMode === 'disabled') return;
+  async function handleQuickAnswer(answer: 'Yes' | 'No') {
+    if (submitting) return;
 
     setSubmitting(true);
     setActionError(null);
     try {
-      if (actionMode === 'ask') {
-        await submitQuestion(text);
-        setInputText('');
-      } else if (actionMode === 'answer') {
-        await submitAnswer(text);
-        setInputText('');
-      }
+      await submitAnswer(answer);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to submit answer.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    const text = inputText.trim();
+    if (!text || submitting || actionMode !== 'ask') return;
+
+    setSubmitting(true);
+    setActionError(null);
+    try {
+      await submitQuestion(text);
+      setInputText('');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Action failed. Please try again.');
     } finally {
@@ -721,17 +721,6 @@ export default function GameZoneScreen({
               isFinished={outcome.isFinished}
             />
 
-            {/* Forced Guess Status Guidance */}
-            {!outcome.isFinished && me?.forcedGuess && (
-              <div className="mb-2 rounded-xl border border-amber-500/40 bg-amber-500/15 p-3 text-center text-xs sm:text-sm font-semibold text-amber-900">
-                ⚠️ Opponent deduced your secret! Questions are disabled. Tap <strong>{me?.forcedGuess ? 'Make Final Guess' : 'Guess Secret'}</strong> to force a DRAW!
-              </div>
-            )}
-            {!outcome.isFinished && opponent?.forcedGuess && (
-              <div className="mb-2 rounded-xl border border-[#006875]/30 bg-[#02c2d9]/10 p-3 text-center text-xs sm:text-sm font-semibold text-[#006875]">
-                🎯 You deduced opponent's secret! Waiting for opponent to make their final guess.
-              </div>
-            )}
 
             {/* Turn Status Banner OR Game Over / Match Finished Banner */}
             {outcome.isFinished ? (
@@ -783,6 +772,9 @@ export default function GameZoneScreen({
                 questions.map((q) => {
                   const isAskedByMe = q.askedByPlayerId === me?.playerId;
                   const isAnswered = Boolean(q.answerText);
+                  const isQuestionPendingMyAnswer =
+                    !isAnswered &&
+                    (q.askedByPlayerId === opponent?.playerId || q.answeredByPlayerId === me?.playerId);
                   const waitingText = isAskedByMe
                     ? `Waiting for ${opponent?.playerName || 'opponent'}...`
                     : `Waiting for ${me?.playerName || 'you'}...`;
@@ -796,7 +788,40 @@ export default function GameZoneScreen({
                     >
                       <div className="gamezone-qa-question">{q.questionText}</div>
                       {isAnswered ? (
-                        <div className="gamezone-qa-answer">{q.answerText}</div>
+                        <div className="gamezone-qa-answer">
+                          <span
+                            className={
+                              q.answerText?.trim().toLowerCase() === 'yes'
+                                ? 'gamezone-qa-answer--yes'
+                                : q.answerText?.trim().toLowerCase() === 'no'
+                                ? 'gamezone-qa-answer--no'
+                                : ''
+                            }
+                          >
+                            {q.answerText}
+                          </span>
+                        </div>
+                      ) : isQuestionPendingMyAnswer ? (
+                        <div className="gamezone-qa-answer-actions">
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleQuickAnswer('Yes')}
+                            className="gamezone-qa-chip gamezone-qa-chip--yes"
+                            aria-label="Answer Yes"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleQuickAnswer('No')}
+                            className="gamezone-qa-chip gamezone-qa-chip--no"
+                            aria-label="Answer No"
+                          >
+                            No
+                          </button>
+                        </div>
                       ) : (
                         <div className="gamezone-qa-waiting">{waitingText}</div>
                       )}
@@ -820,20 +845,20 @@ export default function GameZoneScreen({
               </div>
             ) : (
               <div className="gamezone-bottom-bar">
-                {/* Question / Answer text form */}
+                {/* Question form only when asking questions */}
                 <form onSubmit={handleSendMessage} className="gamezone-input-form">
                   <input
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder={inputPlaceholder}
-                    disabled={actionMode === 'disabled' || submitting}
+                    disabled={actionMode !== 'ask' || submitting}
                     className="gamezone-input-field"
                     maxLength={180}
                   />
                   <button
                     type="submit"
-                    disabled={!inputText.trim() || actionMode === 'disabled' || submitting}
+                    disabled={!inputText.trim() || actionMode !== 'ask' || submitting}
                     className="gamezone-send-btn"
                     aria-label="Send message"
                   >
