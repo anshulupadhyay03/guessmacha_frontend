@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 
 interface ConfirmSecretDialogProps {
@@ -17,19 +18,46 @@ export default function ConfirmSecretDialog({
   onClose,
   onConfirm,
 }: ConfirmSecretDialogProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (!isOpen || !secret) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+
+    return () => {
+      if (dialog.open) {
+        dialog.close();
+      }
+      previouslyFocused?.focus?.();
+    };
+  }, [isOpen, secret]);
+
   if (!isOpen || !secret) {
     return null;
   }
 
   return (
-    <div
-      className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+    <dialog
+      ref={dialogRef}
       role="alertdialog"
-      aria-modal="true"
       aria-labelledby="confirm-dialog-title"
       aria-describedby="confirm-dialog-description"
+      onCancel={(e) => {
+        e.preventDefault();
+        if (!isSubmitting) onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
+      className="m-auto w-[calc(100%-2rem)] max-w-sm overflow-hidden p-0 rounded-2xl border border-[#bbc9cc] bg-white text-[#171d1e] shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-xs open:flex open:flex-col animate-in fade-in zoom-in-95 duration-150"
     >
-      <div className="w-full max-w-sm bg-white border border-[#bbc9cc] rounded-2xl p-6 flex flex-col items-center text-center shadow-xl animate-in zoom-in-95 duration-150">
+      <div className="w-full p-6 flex flex-col items-center text-center">
         {/* Padlock Icon Badge */}
         <div className="size-16 rounded-full bg-[#02c2d9]/15 border border-[#006875]/30 text-[#006875] flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(0,104,117,0.15)]">
           <svg className="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -45,7 +73,7 @@ export default function ConfirmSecretDialog({
 
         {/* Secret Display Box */}
         <div className="w-full bg-[#eff4f7] border border-[#bbc9cc] rounded-xl py-5 px-6 my-4 flex items-center justify-center shadow-inner">
-          <span className="text-3xl sm:text-4xl font-extrabold text-[#006875] tracking-wide wrap-break-word">
+          <span className="text-3xl sm:text-4xl font-extrabold text-[#006875] tracking-wide break-words">
             {secret.name}
           </span>
         </div>
@@ -89,7 +117,7 @@ export default function ConfirmSecretDialog({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
 

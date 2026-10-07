@@ -55,14 +55,28 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
     resultStatus = rawResult.toLowerCase();
   }
 
-  // 1. Authoritative resolution based on winnerId
+  // 1. Authoritative resolution for draw
+  if (resultStatus === 'draw' || resultStatus === 'tie') {
+    return {
+      isFinished: true,
+      resultType: 'draw',
+      title: 'DRAW',
+      subtitle: `Match ended in a draw! Both players guessed correctly!`,
+      badgeClass: 'bg-[#ffeccf] text-[#904d00] border-[#904d00]/30',
+      textColor: 'text-[#904d00]',
+    };
+  }
+
+  // 2. Authoritative resolution based on winnerId
   if (winnerId) {
     if (winnerId === me?.playerId) {
       return {
         isFinished: true,
         resultType: 'win',
         title: 'VICTORY',
-        subtitle: `You defeated ${opponentName}!`,
+        subtitle: opponent?.forcedGuess
+          ? `Opponent missed their final guess! You win!`
+          : `You defeated ${opponentName}!`,
         badgeClass: 'bg-[#e6f6ee] text-[#0b6b45] border-[#0b6b45]/30',
         textColor: 'text-[#006875]',
       };
@@ -72,14 +86,16 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
         isFinished: true,
         resultType: 'loss',
         title: 'DEFEAT',
-        subtitle: `${opponentName} won the match!`,
+        subtitle: me?.forcedGuess
+          ? `You missed your final guess! Match lost.`
+          : `${opponentName} won the match!`,
         badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
         textColor: 'text-[#ba1a1a]',
       };
     }
   }
 
-  // 2. Fallback resolution based on result status
+  // 3. Fallback resolution based on result status
   if (resultStatus === 'won' || resultStatus === 'win' || resultStatus === 'victory') {
     if (gameState.endedByPlayerId && gameState.endedByPlayerId === opponent?.playerId) {
       return {
@@ -112,7 +128,7 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
     };
   }
 
-  // 3. Draw fallback
+  // 4. Draw fallback
   return {
     isFinished: true,
     resultType: 'draw',
@@ -138,7 +154,22 @@ function getTurnInfo(
     };
   }
 
-  //const opponentName = opponent?.playerName || 'Opponent';
+  // Forced Guess priority check
+  if (me?.forcedGuess) {
+    return {
+      title: 'Your Turn: Guess secret to force a Draw!',
+      isMyTurn: true,
+      isBonus: false,
+    };
+  }
+
+  if (opponent?.forcedGuess) {
+    return {
+      title: "Opponent's Turn: Waiting for final secret guess...",
+      isMyTurn: false,
+      isBonus: false,
+    };
+  }
 
   // 1. If an unanswered question exists, turn is defined by who must answer it
   if (currentQuestion && !currentQuestion.answerText) {
@@ -222,6 +253,21 @@ function getActionMode(
 
   const { me, opponent } = gameState.players;
   //const opponentName = opponent?.playerName || 'Opponent';
+
+  // Forced Guess priority check
+  if (me?.forcedGuess) {
+    return {
+      mode: 'disabled',
+      placeholder: 'Opponent found your secret! Use "Guess Secret" to force a Draw.',
+    };
+  }
+
+  if (opponent?.forcedGuess) {
+    return {
+      mode: 'disabled',
+      placeholder: 'Waiting for opponent to make their final guess...',
+    };
+  }
 
   // 1. Check if there is an active unanswered question
   if (activeQuestion && !activeQuestion.answerText) {
@@ -390,6 +436,7 @@ export default function GameZoneScreen({
     isOpen: boolean;
     isCorrect: boolean;
     guessedName?: string;
+    wasForcedGuess?: boolean;
   }>({
     isOpen: false,
     isCorrect: false,
@@ -425,6 +472,11 @@ export default function GameZoneScreen({
   const guessNotificationMessage = useMemo(() => {
     if (!guessNotification) return null;
 
+    // Do not show guessNotificationMessage in case of forcedGuess for players
+    if (me?.forcedGuess || opponent?.forcedGuess) {
+      return null;
+    }
+
     const guesserId = guessNotification.guesserId;
     const isCorrect = guessNotification.isCorrect;
     //const oppName = opponent?.playerName || 'Opponent';
@@ -434,7 +486,9 @@ export default function GameZoneScreen({
 
     if (isOpponent) {
       if (isCorrect) {
-        //return `${oppName} guessed your secret correctly! You continue to ask Questions to guess ${oppName} secret.`;
+        if (me?.forcedGuess) {
+          return 'Opponent guessed your secret correctly! You must now guess their secret to force a Draw!';
+        }
         return `Opponent guessed your secret correctly!`;
       }
       //return `${oppName}'s guess was incorrect! You receive a bonus turn.`;
@@ -443,8 +497,10 @@ export default function GameZoneScreen({
 
     if (isMe) {
       if (isCorrect) {
-        //return 'Your guess was correct! You can only answer to help ${oppName} to guess your secret.';
-        return 'Your guess was correct! You can only answer to help opponent guess your secret.';
+        if (opponent?.forcedGuess) {
+          return 'Your guess was correct! Opponent must now guess your secret to force a Draw.';
+        }
+        return 'Your guess was correct!';
       }
       //return `Your guess was incorrect! ${oppName} receives a bonus turn.`;
       return `Your guess was incorrect! Opponent receives a bonus turn.`;
@@ -455,7 +511,7 @@ export default function GameZoneScreen({
       return 'Secret guess was correct!';
     }
     return 'Secret guess was incorrect! Opponent receives a bonus turn.';
-  }, [guessNotification, me?.playerId, me?.isBonusTurn, opponent?.playerId, opponent?.isBonusTurn]);
+  }, [guessNotification, me?.playerId, me?.isBonusTurn, me?.forcedGuess, opponent?.playerId, opponent?.isBonusTurn, opponent?.forcedGuess]);
 
   // Turn calculations
   const outcome = resolveGameOutcome(gameState);
@@ -467,9 +523,13 @@ export default function GameZoneScreen({
   const turnInfo = getTurnInfo(me, opponent, gameState?.currentPlayerId, latestQuestion, outcome.isFinished);
   const { mode: actionMode, placeholder: inputPlaceholder } = getActionMode(gameState, latestQuestion);
 
-  // Guess Secret button enablement - always enabled except only one condition
+  // Guess Secret button enablement
   const isGuessDisabled = Boolean(
-    me?.finalGuessUsed && gameState?.status !== 'in_progress' && submitting
+    submitting ||
+    outcome.isFinished ||
+    gameState?.status !== 'in_progress' ||
+    opponent?.forcedGuess ||
+    (!me?.forcedGuess && me?.finalGuessUsed)
   );
 
   async function handleSendMessage(e: React.FormEvent) {
@@ -498,12 +558,14 @@ export default function GameZoneScreen({
     setIsGuessModalOpen(false);
     setSubmitting(true);
     setActionError(null);
+    const wasForced = Boolean(me?.forcedGuess);
     try {
       const result = await submitGuess(secret.id);
       setGuessFeedback({
         isOpen: true,
         isCorrect: result.is_correct,
         guessedName: secret.name,
+        wasForcedGuess: wasForced,
       });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to submit guess.');
@@ -659,6 +721,18 @@ export default function GameZoneScreen({
               isFinished={outcome.isFinished}
             />
 
+            {/* Forced Guess Status Guidance */}
+            {!outcome.isFinished && me?.forcedGuess && (
+              <div className="mb-2 rounded-xl border border-amber-500/40 bg-amber-500/15 p-3 text-center text-xs sm:text-sm font-semibold text-amber-900">
+                ⚠️ Opponent deduced your secret! Questions are disabled. Tap <strong>{me?.forcedGuess ? 'Make Final Guess' : 'Guess Secret'}</strong> to force a DRAW!
+              </div>
+            )}
+            {!outcome.isFinished && opponent?.forcedGuess && (
+              <div className="mb-2 rounded-xl border border-[#006875]/30 bg-[#02c2d9]/10 p-3 text-center text-xs sm:text-sm font-semibold text-[#006875]">
+                🎯 You deduced opponent's secret! Waiting for opponent to make their final guess.
+              </div>
+            )}
+
             {/* Turn Status Banner OR Game Over / Match Finished Banner */}
             {outcome.isFinished ? (
               <div className="gamezone-game-over-banner">
@@ -775,10 +849,10 @@ export default function GameZoneScreen({
                   type="button"
                   onClick={() => setIsGuessModalOpen(true)}
                   disabled={isGuessDisabled}
-                  className="gamezone-guess-btn"
+                  className={`gamezone-guess-btn ${me?.forcedGuess ? 'ring-2 ring-amber-400 font-bold animate-pulse' : ''}`}
                   aria-label="Guess Secret"
                 >
-                  Guess Secret
+                  {me?.forcedGuess ? 'Make Final Guess' : 'Guess Secret'}
                 </button>
               </div>
             )}
@@ -791,10 +865,18 @@ export default function GameZoneScreen({
         isOpen={isGuessModalOpen}
         categoryId={effectiveCategoryId}
         categoryName={effectiveCategoryName}
-        title="Guess Opponent's Secret"
-        subtitle="Select the secret you think your opponent chose"
-        confirmButtonText="Confirm Guess"
-        helperText="Warning: If your guess is wrong, your opponent gets a 2-question bonus turn!"
+        title={me?.forcedGuess ? "Final Guess: Force a Draw!" : "Guess Opponent's Secret"}
+        subtitle={
+          me?.forcedGuess
+            ? "Guess correctly to draw the match, otherwise you lose"
+            : "Select the secret you think your opponent chose"
+        }
+        confirmButtonText={me?.forcedGuess ? "Submit Final Guess" : "Confirm Guess"}
+        helperText={
+          me?.forcedGuess
+            ? "Critical: If your guess is correct, the match ends in a DRAW. If incorrect, you LOSE!"
+            : "Warning: If your guess is wrong, your opponent gets a 2-question bonus turn!"
+        }
         mode="guess"
         lessLikelyIds={lessLikelyIds}
         onToggleLessLikely={handleToggleLessLikely}
@@ -838,20 +920,26 @@ export default function GameZoneScreen({
         <div className="gamezone-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedback-dialog-title">
           <div className="gamezone-modal-box">
             <div className="gamezone-modal-icon">
-              {guessFeedback.isCorrect ? '🎉' : '❌'}
+              {guessFeedback.isCorrect ? (guessFeedback.wasForcedGuess ? '🤝' : '🎉') : '❌'}
             </div>
             <h2 id="feedback-dialog-title" className="gamezone-modal-title">
-              {guessFeedback.isCorrect ? 'Correct Guess!' : 'Incorrect Guess'}
+              {guessFeedback.isCorrect
+                ? (guessFeedback.wasForcedGuess ? 'Match Drawn!' : 'Correct Guess!')
+                : (guessFeedback.wasForcedGuess ? 'Match Lost!' : 'Incorrect Guess')}
             </h2>
             <p className="gamezone-modal-desc">
-              {guessFeedback.isCorrect
-                ? `Outstanding! You successfully deduced that ${opponent?.playerName || 'your opponent'}'s secret is "${guessFeedback.guessedName}".`
-                : `That was not ${opponent?.playerName || 'your opponent'}'s secret! They now receive a 2-question bonus turn.`}
+              {guessFeedback.wasForcedGuess
+                ? (guessFeedback.isCorrect
+                    ? `Great recovery! You deduced that ${opponent?.playerName || 'your opponent'}'s secret is "${guessFeedback.guessedName}". The match ends in a DRAW!`
+                    : `That was not ${opponent?.playerName || 'your opponent'}'s secret! Because your final forced guess was incorrect, you LOSE the match.`)
+                : (guessFeedback.isCorrect
+                    ? `Outstanding! You successfully deduced that ${opponent?.playerName || 'your opponent'}'s secret is "${guessFeedback.guessedName}". Opponent now has one final chance to guess your secret!`
+                    : `That was not ${opponent?.playerName || 'your opponent'}'s secret! They now receive a 2-question bonus turn.`)}
             </p>
             <div className="gamezone-modal-actions">
               <button
                 type="button"
-                onClick={() => setGuessFeedback({ isOpen: false, isCorrect: false })}
+                onClick={() => setGuessFeedback({ isOpen: false, isCorrect: false, wasForcedGuess: false })}
                 className="gamezone-modal-btn gamezone-modal-btn--confirm"
               >
                 OK
