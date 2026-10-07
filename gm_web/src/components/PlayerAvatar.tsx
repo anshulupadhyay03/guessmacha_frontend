@@ -35,7 +35,7 @@ function PlayerAvatar({
   initialData,
   imageUrl,
   name,
-  className = 'gamezone-player-avatar',
+  className = '',
   iconSize = 'size-5',
   isMe = false,
   xmlPath = 'overlays/profile_pic.xml',

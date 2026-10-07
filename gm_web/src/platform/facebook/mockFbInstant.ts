@@ -344,83 +344,7 @@ if (typeof window !== 'undefined') {
   setupMockFbInstant();
 }
 
-/**
- * Convenience helper to render the mock profile overlay directly into a container.
- */
-export async function showFacebookPlayerProfileOverlay(
-  container: HTMLElement,
-): Promise<void> {
-  if (typeof window === 'undefined') {
-    return;
-  }
 
-  setupMockFbInstant();
-
-  console.log('Attempting to show Facebook player profile overlay in container:', container);
-  if (window.FBInstant?.overlayViews && container) {
-    const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
-      'overlays/profile_card.xml',
-      container,
-      'width: 100%; height: 70px; border: none;',
-      'overlays/styles.css',
-    );
-    await overlay.showAsync();
-  }
-}
-
-export async function showFacebookOpponentProfileOverlay(
-  container: HTMLElement,
-  opponentPlayerId: string,
-  options?: { name?: string; photo?: string },
-): Promise<void> {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  setupMockFbInstant();
-
-  if (window.FBInstant?.overlayViews && container) {
-    const query = new URLSearchParams({
-      opponentPlayerId: opponentPlayerId || '',
-      ...(options?.name ? { name: options.name } : {}),
-      ...(options?.photo ? { photo: options.photo } : {}),
-    }).toString();
-
-    const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
-      `overlays/opponent_profile.xml?${query}`,
-      container,
-      'width: 100%; height: 70px; border: none;',
-      'overlays/styles.css',
-    );
-    await overlay.showAsync();
-  }
-}
-
-export async function showFacebookPlayerNameOverlay(
-  container: HTMLElement,
-  playerId: string,
-): Promise<void> {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  setupMockFbInstant();
-
-  if (window.FBInstant?.overlayViews && container) {
-    const query = new URLSearchParams({
-      opponentPlayerId: playerId || '',
-    }).toString();
-
-    const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(
-      `overlays/player_name.xml?${query}`,
-      container,
-      'width: 100%; height: 100%; border: none;',
-      'overlays/styles.css',
-      { opponentPlayerId: playerId },
-    );
-    await overlay.showAsync();
-  }
-}
 
 export async function showCustomOverlay(
   container: HTMLElement,
@@ -444,33 +368,9 @@ export async function showCustomOverlay(
     );
     await overlay.showAsync();
     return overlay;
-  }
+  }     
   return null;
 }
 
-export async function showFacebookProfileNameOverlay(
-  container: HTMLElement,
-  textStyle?: string,
-  iFrameStyle?: string,
-  pathToCss?: string,
-): Promise<FBInstantOverlayView | null> {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  setupMockFbInstant();
-
-  if (window.FBInstant?.overlayViews?.createProfileNameOverlayViewAsync && container) {
-    const overlay = await window.FBInstant.overlayViews.createProfileNameOverlayViewAsync(
-      container,
-      textStyle,
-      iFrameStyle,
-      pathToCss,
-    );
-    await overlay.showAsync();
-    return overlay;
-  }
-  return null;
-}
 
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
 import PlayerAvatar from '../components/PlayerAvatar';
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
@@ -202,7 +202,7 @@ function getTurnInfo(
     isBonus: opponent?.isBonusTurn ?? false,
   }; */
   return {
-    title: `Opponent's Turn: Wait for the questions and answer it.`,
+    title: `Opponent's Turn: Wait for the question and answer it.`,
     isMyTurn: false,
     isBonus: opponent?.isBonusTurn ?? false,
   };
@@ -295,7 +295,7 @@ const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
           isMe
           imageUrl={me?.playerImageUrl}
           name={me?.playerName || 'You'}
-          className="gamezone-player-avatar"
+          className=""
           iconSize="size-5"
         />
 
@@ -319,7 +319,7 @@ const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
           initialData={opponentInitialData}
           imageUrl={opponent?.playerImageUrl}
           name={opponent?.playerName || 'Opponent'}
-          className="gamezone-player-avatar"
+          className=""
           iconSize="size-5"
           xmlPath="overlays/profile_pic.xml"
           cssPath="overlays/profile_pic.css"
@@ -385,6 +385,7 @@ export default function GameZoneScreen({
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [isGuessModalOpen, setIsGuessModalOpen] = useState(false);
+  const [lessLikelyIds, setLessLikelyIds] = useState<Set<string>>(() => new Set());
   const [guessFeedback, setGuessFeedback] = useState<{
     isOpen: boolean;
     isCorrect: boolean;
@@ -393,6 +394,18 @@ export default function GameZoneScreen({
     isOpen: false,
     isCorrect: false,
   });
+
+  const handleToggleLessLikely = useCallback((puzzleId: string) => {
+    setLessLikelyIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(puzzleId)) {
+        next.delete(puzzleId);
+      } else {
+        next.add(puzzleId);
+      }
+      return next;
+    });
+  }, []);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -442,7 +455,7 @@ export default function GameZoneScreen({
       return 'Secret guess was correct!';
     }
     return 'Secret guess was incorrect! Opponent receives a bonus turn.';
-  }, [guessNotification, me?.playerId, me?.isBonusTurn, opponent?.playerId, opponent?.playerName, opponent?.isBonusTurn]);
+  }, [guessNotification, me?.playerId, me?.isBonusTurn, opponent?.playerId, opponent?.isBonusTurn]);
 
   // Turn calculations
   const outcome = resolveGameOutcome(gameState);
@@ -454,17 +467,10 @@ export default function GameZoneScreen({
   const turnInfo = getTurnInfo(me, opponent, gameState?.currentPlayerId, latestQuestion, outcome.isFinished);
   const { mode: actionMode, placeholder: inputPlaceholder } = getActionMode(gameState, latestQuestion);
 
-  const hasUnansweredQuestion = Boolean(latestQuestion && !latestQuestion.answerText);
-
-  // Guess Secret button enablement
-  const isGuessDisabled =
-    outcome.isFinished ||
-    Boolean(me?.isCompleted) ||
-    Boolean(me?.finalGuessUsed) ||
-    !me?.isMyTurn ||
-    hasUnansweredQuestion ||
-    gameState?.status !== 'in_progress' ||
-    submitting;
+  // Guess Secret button enablement - always enabled except only one condition
+  const isGuessDisabled = Boolean(
+    me?.finalGuessUsed && gameState?.status !== 'in_progress' && submitting
+  );
 
   async function handleSendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -789,6 +795,9 @@ export default function GameZoneScreen({
         subtitle="Select the secret you think your opponent chose"
         confirmButtonText="Confirm Guess"
         helperText="Warning: If your guess is wrong, your opponent gets a 2-question bonus turn!"
+        mode="guess"
+        lessLikelyIds={lessLikelyIds}
+        onToggleLessLikely={handleToggleLessLikely}
         onClose={() => setIsGuessModalOpen(false)}
         onConfirmSelection={handleConfirmGuess}
       />
