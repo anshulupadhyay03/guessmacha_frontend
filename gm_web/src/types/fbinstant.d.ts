@@ -66,6 +66,8 @@ declare global {
     player: FBInstantPlayer;
     context?: FBInstantContext;
     overlayViews?: FBInstantOverlayViews;
+    performHapticFeedbackAsync?(): Promise<void>;
+    getSupportedAPIs?(): string[];
     quit?(): void;
   }
 

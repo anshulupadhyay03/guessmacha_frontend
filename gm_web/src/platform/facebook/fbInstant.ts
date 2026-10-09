@@ -396,3 +396,49 @@ export function getFacebookGameRoomCode(): string | null {
 
   return null
 }
+
+/**
+ * Triggers haptic vibration feedback using the Facebook Instant Games SDK,
+ * with graceful fallback to navigator.vibrate on mobile web.
+ *
+ * Adheres to Facebook Instant Games best practices:
+ * - Fire-and-forget: does not block game execution
+ * - Silent error handling: catches exceptions without disrupting gameplay
+ * - Hardware fallback: supports HTML5 Vibration API when not running in FBInstant
+ */
+export function triggerHapticFeedback(): void {
+  try {
+    if (typeof window !== 'undefined' && window.FBInstant?.performHapticFeedbackAsync) {
+      window.FBInstant.performHapticFeedbackAsync().catch((err) => {
+        // Haptic feedback is non-critical, catch silently per FB documentation
+        console.warn('[Haptics] FBInstant haptic feedback failed or unsupported:', err);
+      });
+      return;
+    }
+
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(40);
+    }
+  } catch (error) {
+    // Best practice: Always catch and handle errors silently
+    console.warn('[Haptics] Haptic feedback execution failed:', error);
+  }
+}
+
+/**
+ * Checks whether haptic feedback is supported on the current device and platform.
+ */
+export function isHapticFeedbackSupported(): boolean {
+  try {
+    if (typeof window !== 'undefined' && window.FBInstant?.getSupportedAPIs) {
+      return window.FBInstant.getSupportedAPIs().includes('performHapticFeedbackAsync');
+    }
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+

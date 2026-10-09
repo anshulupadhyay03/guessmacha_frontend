@@ -1,0 +1,30 @@
+<View className="playerNameContainer">
+<If>
+    <Condition lhs="{{game_result}}" operator="EQUALS" rhs="won" />
+    <Text
+      content="Great recovery! You deduced that {{FBInstant.players[{{playerId}}].name}}'s secret is {{secretName}}. The match ends in a DRAW!"
+      className="playerName"
+    />
+   <ElseIf>
+    <Condition lhs="{{guess_type}}" operator="EQUALS" rhs="forced_incorrect" />
+    <Text
+      content="That was not {{FBInstant.players[{{playerId}}].name}}'s secret! Because your final forced guess was incorrect, you LOSE the match."
+      className="playerName"
+    />
+  </ElseIf>
+   <ElseIf>
+    <Condition lhs="{{guess_type}}" operator="EQUALS" rhs="correct" />
+    <Text
+      content="Outstanding! You successfully deduced that {{FBInstant.players[{{playerId}}].name}}'s secret is {{secretName}}. Opponent now has one final chance to guess your secret!"
+      className="playerName"
+    />
+  </ElseIf>
+  <ElseIf>
+    <Condition lhs="{{guess_type}}" operator="EQUALS" rhs="in_correct" />
+    <Text
+      content="That was not {{FBInstant.players[{{playerId}}].name}}'s secret! They now receive a 1-question bonus turn."
+      className="playerName"
+    />
+  </ElseIf>
+</If>
+</View>

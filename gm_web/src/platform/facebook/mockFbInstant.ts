@@ -90,6 +90,20 @@ export function setupMockFbInstant(force = false): void {
       getSDKVersion: function () {
         return '8.0';
       },
+      performHapticFeedbackAsync: function () {
+        console.log('[Mock FBInstant] performHapticFeedbackAsync triggered');
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+          try {
+            navigator.vibrate(40);
+          } catch {
+            // ignore
+          }
+        }
+        return Promise.resolve();
+      },
+      getSupportedAPIs: function () {
+        return ['performHapticFeedbackAsync'];
+      },
       overlayViews: {
         createOverlayViewAsync: function (
           url: string,
@@ -166,6 +180,25 @@ export function setupMockFbInstant(force = false): void {
                       />
                     `;
                     container.appendChild(picContainer);
+                    return Promise.resolve();
+                  }
+
+                  if (url.includes('guess_result')) {
+                    const secretName = initialData?.secretName ? String(initialData.secretName) : '"Secret"';
+                    let message = '';
+                    if (url.includes('forced_correct') || initialData?.guess_type === 'forced_correct') {
+                      message = `Great recovery! You deduced that ${displayName}'s secret is ${secretName}. The match ends in a DRAW!`;
+                    } else if (url.includes('forced_incorrect') || initialData?.guess_type === 'forced_incorrect') {
+                      message = `That was not ${displayName}'s secret! Because your final forced guess was incorrect, you LOSE the match.`;
+                    } else if ((url.includes('correct') && !url.includes('incorrect')) || initialData?.guess_type === 'correct') {
+                      message = `Outstanding! You successfully deduced that ${displayName}'s secret is ${secretName}. Opponent now has one final chance to guess your secret!`;
+                    } else {
+                      message = `That was not ${displayName}'s secret! They now receive a 2-question bonus turn.`;
+                    }
+                    const card = document.createElement('div');
+                    card.className = 'guessResultContainer';
+                    card.innerHTML = `<p class="guessResultText">${message}</p>`;
+                    container.appendChild(card);
                     return Promise.resolve();
                   }
 

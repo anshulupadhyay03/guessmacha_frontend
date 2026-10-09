@@ -1,0 +1,7 @@
+<View className="guessResultContainer">
+  <Text
+    content="That was not {{FBInstant.players[{{playerId}}].name}}&apos;s secret! Because your final forced guess was incorrect, you LOSE the match."
+    className="guessResultText"
+  />
+</View>
+

@@ -51,7 +51,7 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-left: 4px;
+  margin-left: 1px;
   display: flex;
   flex-direction: row
 }

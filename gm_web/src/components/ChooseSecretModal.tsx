@@ -1,6 +1,10 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { HTMLAttributes, MouseEvent, PointerEvent, ReactNode } from 'react';
 import { usePuzzles } from '../hooks/usePuzzles';
+import {
+  loadGameLessLikelyIds,
+  saveGameLessLikelyIds,
+} from '../platform/storage/gameSecretsStorage';
 import type {
   PuzzleItem,
   CategoryDetails,
@@ -27,6 +31,7 @@ export type {
 
 interface ChooseSecretModalProps {
   isOpen: boolean;
+  gameId?: string;
   categoryId?: string;
   categoryName?: string;
   title?: string;
@@ -368,6 +373,7 @@ function SectionHeader({
 
 export default function ChooseSecretModal({
   isOpen,
+  gameId,
   categoryId,
   categoryName,
   title,
@@ -375,8 +381,8 @@ export default function ChooseSecretModal({
   confirmButtonText,
   helperText,
   mode = 'choose',
-  lessLikelyIds,
-  onToggleLessLikely,
+  lessLikelyIds: lessLikelyIdsProp,
+  onToggleLessLikely: onToggleLessLikelyProp,
   onClose,
   onConfirmSelection,
 }: ChooseSecretModalProps) {
@@ -387,12 +393,44 @@ export default function ChooseSecretModal({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPuzzleId, setSelectedPuzzleId] = useState<string | null>(null);
-  const [isLessLikelyExpanded, setIsLessLikelyExpanded] = useState(false);
-  const { category, puzzles, loading, error, reload } = usePuzzles(categoryId);
+  const [isLessLikelyExpanded, setIsLessLikelyExpanded] = useState(true);
+  const { category, puzzles, loading, error, reload } = usePuzzles(categoryId, gameId);
+
+  // Fallback internal storage for lessLikelyIds if parent does not control it directly
+  const [internalLessLikelyIds, setInternalLessLikelyIds] = useState<Set<string>>(() =>
+    gameId ? loadGameLessLikelyIds(gameId) : new Set(),
+  );
+
+  useEffect(() => {
+    if (gameId && !lessLikelyIdsProp) {
+      setInternalLessLikelyIds(loadGameLessLikelyIds(gameId));
+    }
+  }, [gameId, lessLikelyIdsProp]);
+
+  const activeLessLikelyIds = lessLikelyIdsProp ?? internalLessLikelyIds;
+
+  const handleToggleLessLikely = useCallback(
+    (id: string) => {
+      if (onToggleLessLikelyProp) {
+        onToggleLessLikelyProp(id);
+      } else if (gameId) {
+        setInternalLessLikelyIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          saveGameLessLikelyIds(gameId, next);
+          return next;
+        });
+      }
+      setIsLessLikelyExpanded(true);
+    },
+    [onToggleLessLikelyProp, gameId],
+  );
 
   /* Native <dialog>: focus trap, Escape, inert background and top layer for free. */
   useEffect(() => {
     if (!isOpen) return;
+    setIsLessLikelyExpanded(true);
     const dialog = dialogRef.current;
     if (!dialog) return;
 
@@ -421,9 +459,9 @@ export default function ChooseSecretModal({
     }
     const most: PuzzleItem[] = [];
     const less: PuzzleItem[] = [];
-    filteredPuzzles.forEach((p) => (lessLikelyIds?.has(p.id) ? less : most).push(p));
+    filteredPuzzles.forEach((p) => (activeLessLikelyIds?.has(p.id) ? less : most).push(p));
     return { mostLikelyPuzzles: most, lessLikelyPuzzles: less };
-  }, [filteredPuzzles, lessLikelyIds, mode]);
+  }, [filteredPuzzles, activeLessLikelyIds, mode]);
 
   const selectedPuzzle = useMemo(
     () => puzzles.find((p) => p.id === selectedPuzzleId) ?? null,
@@ -447,7 +485,7 @@ export default function ChooseSecretModal({
       isLessLikely={isLessLikely}
       swipeable={isGuess}
       onSelect={setSelectedPuzzleId}
-      onToggleLessLikely={onToggleLessLikely}
+      onToggleLessLikely={handleToggleLessLikely}
     />
   );
 

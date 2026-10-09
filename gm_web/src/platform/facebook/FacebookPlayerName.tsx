@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   isFacebookInstantGames,
   showFacebookProfileNameOverlay,
+  showCustomOverlay
 } from './fbInstant';
-import { showCustomOverlay } from './mockFbInstant';
 
 export interface FacebookPlayerNameProps {
   isMe?: boolean;
@@ -84,6 +84,8 @@ function FacebookPlayerName({
               overlayCassPath,
             );
           } else {
+
+            console.log('Mounting opponent showCustomOverlay with values:', overlayPath, overlayCassPath, initialData);
             overlay = await showCustomOverlay(
               container,
               overlayPath,
@@ -137,14 +139,13 @@ function FacebookPlayerName({
   const displayFallback = uppercase ? rawFallback.toUpperCase() : rawFallback;
 
   return (
-    <span className={`inline-flex items-center align-middle overflow-hidden ${className}`}>
-      <span
-        ref={containerRef}
-        className={`w-full h-full overflow-hidden ${overlayActive ? 'inline-flex items-center' : 'hidden'}`}
+    // outer wrapper: add `relative`
+    <span className={`relative inline-flex items-center align-middle overflow-hidden ${className}`}>
+      <span ref={containerRef} className={`absolute inset-0 overflow-hidden ${overlayActive ? 'inline-flex items-center' : 'hidden'}`}
         style={{ justifyContent: 'inherit' }}
       />
       {!overlayActive && (
-        <span className={`truncate ${textClassName}`}>{displayFallback}</span>
+        <span className={textClassName ? textClassName : 'truncate'}>{displayFallback}</span>
       )}
     </span>
   );

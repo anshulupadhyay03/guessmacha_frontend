@@ -1,0 +1,3 @@
+<View className="guessResultContainer">
+<Text content="That was not {{FBInstant.players[{{playerId}}].name}}&apos;s secret! As a penalty, they can ask 2 questions back to back." className="guessResultText"/>
+</View>
