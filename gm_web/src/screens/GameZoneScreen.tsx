@@ -32,38 +32,46 @@ interface GameOutcome {
   resultType: 'win' | 'loss' | 'draw' | null;
   title: string;
   subtitle: React.ReactNode;
+  subtitleText: string;
   badgeClass: string;
   textColor: string;
+  overlayPath?: string;
+  initialData?: Record<string, unknown>;
 }
 
 function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
   if (!gameState) {
-    return { isFinished: false, resultType: null, title: '', subtitle: '', badgeClass: '', textColor: '' };
+    return {
+      isFinished: false,
+      resultType: null,
+      title: '',
+      subtitle: '',
+      subtitleText: '',
+      badgeClass: '',
+      textColor: '',
+    };
   }
 
   const isFinished = gameState.status === 'finished' || gameState.status === 'completed';
   if (!isFinished) {
-    return { isFinished: false, resultType: null, title: '', subtitle: '', badgeClass: '', textColor: '' };
+    return {
+      isFinished: false,
+      resultType: null,
+      title: '',
+      subtitle: '',
+      subtitleText: '',
+      badgeClass: '',
+      textColor: '',
+    };
   }
 
   const me = gameState.players?.me;
   const opponent = gameState.players?.opponent;
-  const opponentName = opponent?.playerName || 'Opponent';
+  const opponentDisplayName =
+    opponent?.playerName && !/^\d{10,}$/.test(opponent.playerName)
+      ? opponent.playerName
+      : 'Opponent';
   const opponentInitialData = opponent?.playerName ? { playerId: opponent.playerName } : undefined;
-
-  const renderOpponentName = (suffix?: string) => (
-    <span className="inline-flex items-center align-middle whitespace-nowrap">
-      <FacebookPlayerName
-        initialData={opponentInitialData}
-        fallbackName={opponentName}
-        className="inline-flex max-w-[75px] h-4.5 align-middle"
-        textClassName="font-bold text-[#171d1e] truncate"
-        overlayPath="overlays/player_name.xml"
-        overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
-      />
-      {suffix ? <span>{suffix}</span> : null}
-    </span>
-  );
 
   const rawResult = gameState.gameResult;
   let winnerId: string | null = null;
@@ -78,44 +86,56 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
 
   // 1. Authoritative resolution for draw
   if (resultStatus === 'draw' || resultStatus === 'tie') {
+    const subtitleText = opponentInitialData
+      ? `Match with ${opponentDisplayName} ended in a draw!`
+      : 'Match ended in a draw! Both players guessed correctly!';
     return {
       isFinished: true,
       resultType: 'draw',
       title: 'DRAW',
-      subtitle: 'Match ended in a draw! Both players guessed correctly!',
+      subtitle: subtitleText,
+      subtitleText,
       badgeClass: 'bg-[#ffeccf] text-[#904d00] border-[#904d00]/30',
       textColor: 'text-[#904d00]',
+      overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_draw.xml' : undefined,
+      initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'draw' } : undefined,
     };
   }
 
   // 2. Authoritative resolution based on winnerId
   if (winnerId) {
     if (winnerId === me?.playerId) {
+      const isForced = Boolean(opponent?.forcedGuess);
+      const subtitleText = isForced
+        ? 'Opponent missed their final guess! You win!'
+        : `You defeated ${opponentDisplayName}!`;
       return {
         isFinished: true,
         resultType: 'win',
         title: 'VICTORY',
-        subtitle: opponent?.forcedGuess ? (
-          'Opponent missed their final guess! You win!'
-        ) : (
-          <>You defeated {renderOpponentName('!')}</>
-        ),
+        subtitle: subtitleText,
+        subtitleText,
         badgeClass: 'bg-[#e6f6ee] text-[#0b6b45] border-[#0b6b45]/30',
         textColor: 'text-[#006875]',
+        overlayPath: !isForced && opponentInitialData ? 'overlays/gamezone/player_name_game_result_win.xml' : undefined,
+        initialData: !isForced && opponentInitialData ? { ...opponentInitialData, game_result: 'win' } : undefined,
       };
     }
     if (winnerId === opponent?.playerId) {
+      const isForced = Boolean(me?.forcedGuess);
+      const subtitleText = isForced
+        ? 'You missed your final guess! Match lost.'
+        : `${opponentDisplayName} won the match!`;
       return {
         isFinished: true,
         resultType: 'loss',
         title: 'DEFEAT',
-        subtitle: me?.forcedGuess ? (
-          'You missed your final guess! Match lost.'
-        ) : (
-          <>{renderOpponentName()} won the match!</>
-        ),
+        subtitle: subtitleText,
+        subtitleText,
         badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
         textColor: 'text-[#ba1a1a]',
+        overlayPath: !isForced && opponentInitialData ? 'overlays/gamezone/player_name_game_result_loss.xml' : undefined,
+        initialData: !isForced && opponentInitialData ? { ...opponentInitialData, game_result: 'loss' } : undefined,
       };
     }
   }
@@ -123,44 +143,62 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
   // 3. Fallback resolution based on result status
   if (resultStatus === 'won' || resultStatus === 'win' || resultStatus === 'victory') {
     if (gameState.endedByPlayerId && gameState.endedByPlayerId === opponent?.playerId) {
+      const subtitleText = `${opponentDisplayName} won the match!`;
       return {
         isFinished: true,
         resultType: 'loss',
         title: 'DEFEAT',
-        subtitle: <>{renderOpponentName()} outsmarted you!</>,
+        subtitle: subtitleText,
+        subtitleText,
         badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
         textColor: 'text-[#ba1a1a]',
+        overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_loss.xml' : undefined,
+        initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'loss' } : undefined,
       };
     }
+    const subtitleText = `You defeated ${opponentDisplayName}!`;
     return {
       isFinished: true,
       resultType: 'win',
       title: 'VICTORY',
-      subtitle: <>You outsmarted {renderOpponentName('!')}</>,
+      subtitle: subtitleText,
+      subtitleText,
       badgeClass: 'bg-[#e6f6ee] text-[#0b6b45] border-[#0b6b45]/30',
       textColor: 'text-[#006875]',
+      overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_win.xml' : undefined,
+      initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'win' } : undefined,
     };
   }
 
   if (resultStatus === 'lost' || resultStatus === 'loss' || resultStatus === 'defeat') {
+    const subtitleText = `${opponentDisplayName} won the match!`;
     return {
       isFinished: true,
       resultType: 'loss',
       title: 'DEFEAT',
-      subtitle: <>{renderOpponentName()} outsmarted you!</>,
+      subtitle: subtitleText,
+      subtitleText,
       badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
       textColor: 'text-[#ba1a1a]',
+      overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_loss.xml' : undefined,
+      initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'loss' } : undefined,
     };
   }
 
   // 4. Draw fallback
+  const subtitleText = opponentInitialData
+    ? `Match with ${opponentDisplayName} ended in a draw!`
+    : 'Match ended in a draw! Both players guessed correctly!';
   return {
     isFinished: true,
     resultType: 'draw',
     title: 'DRAW',
-    subtitle: <>Match with {renderOpponentName()} ended in a draw</>,
+    subtitle: subtitleText,
+    subtitleText,
     badgeClass: 'bg-[#ffeccf] text-[#904d00] border-[#904d00]/30',
     textColor: 'text-[#904d00]',
+    overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_draw.xml' : undefined,
+    initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'draw' } : undefined,
   };
 }
 
@@ -509,10 +547,12 @@ export default function GameZoneScreen({
   const [leaving, setLeaving] = useState(false);
   const [isGuessModalOpen, setIsGuessModalOpen] = useState(false);
   const [lessLikelyIds, setLessLikelyIds] = useState<Set<string>>(() => loadGameLessLikelyIds(gameId));
+  const [prevGameId, setPrevGameId] = useState(gameId);
 
-  useEffect(() => {
+  if (prevGameId !== gameId) {
+    setPrevGameId(gameId);
     setLessLikelyIds(loadGameLessLikelyIds(gameId));
-  }, [gameId]);
+  }
 
   const handleToggleLessLikely = useCallback(
     (puzzleId: string) => {
@@ -623,6 +663,21 @@ export default function GameZoneScreen({
     return opponentPlayerName ? { playerId: opponentPlayerName } : undefined;
   }, [opponentPlayerName]);
 
+  const opponentDisplayName = useMemo(() => {
+    return opponentPlayerName && !/^\d{10,}$/.test(opponentPlayerName)
+      ? opponentPlayerName
+      : 'Opponent';
+  }, [opponentPlayerName]);
+
+  const opponentQuestionsInitialData = useMemo(() => {
+    return opponentInitialData
+      ? {
+          ...opponentInitialData,
+          count: opponent?.questionsAsked ?? 0,
+        }
+      : undefined;
+  }, [opponentInitialData, opponent?.questionsAsked]);
+
   // Resolve player secret display name directly from API response
   const mySecretName = me?.secret || 'Secret Locked';
 
@@ -704,10 +759,15 @@ export default function GameZoneScreen({
       fallbackText: `That was not ${opponentFallback}'s secret! As a penalty, they can ask 2 questions back to back.`,
       className: 'w-full h-[68px] min-[400px]:h-12 justify-center',
     };
-  }, [guessFeedback, opponent?.playerName, opponentPlayerName]);
+  }, [guessFeedback, opponent, opponentPlayerName]);
 
   // Turn calculations
-  const outcome = resolveGameOutcome(gameState);
+  const outcome = useMemo(() => resolveGameOutcome(gameState), [gameState]);
+
+  // When game outcome finishes, ensure guess feedback modal is never left open
+  if (outcome.isFinished && guessFeedback.isOpen) {
+    setGuessFeedback({ isOpen: false, isCorrect: false, wasForcedGuess: false });
+  }
   const pendingQuestion = questions.find((q) => !q.answerText);
   const latestQuestion =
     pendingQuestion ||
@@ -762,12 +822,26 @@ export default function GameZoneScreen({
     const wasForced = Boolean(me?.forcedGuess);
     try {
       const result = await submitGuess(secret.id);
-      setGuessFeedback({
-        isOpen: true,
-        isCorrect: result.is_correct,
-        guessedName: secret.name,
-        wasForcedGuess: wasForced,
-      });
+      const isFinishedNow =
+        result.game_status === 'finished' ||
+        result.game_status === 'completed' ||
+        wasForced;
+
+      if (!isFinishedNow) {
+        setGuessFeedback({
+          isOpen: true,
+          isCorrect: result.is_correct,
+          guessedName: secret.name,
+          wasForcedGuess: wasForced,
+        });
+      } else {
+        setGuessFeedback({
+          isOpen: false,
+          isCorrect: result.is_correct,
+          guessedName: secret.name,
+          wasForcedGuess: wasForced,
+        });
+      }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to submit guess.');
     } finally {
@@ -944,29 +1018,15 @@ export default function GameZoneScreen({
                   </span>
                 </div>
                 <h2 className={`mt-2 text-lg font-black tracking-tight ${outcome.textColor}`}>
-                  {outcome.subtitle}
+                  {outcome.subtitleText || outcome.subtitle}
                 </h2>
                 <p className="gamezone-game-over-desc">
                   {gameState.endReason ?? (
                     outcome.resultType === 'win'
                       ? 'Congratulations on the victory!'
-                      : outcome.resultType === 'loss' ? (
-                        <>
-                          <span className="inline-flex items-center align-middle whitespace-nowrap mr-1">
-                            <FacebookPlayerName
-                              initialData={opponentInitialData}
-                              fallbackName={opponent?.playerName || 'Opponent'}
-                              className="inline-flex max-w-[75px] h-4.5 align-middle"
-                              textClassName="font-medium text-[#3c494c] truncate"
-                              overlayPath="overlays/player_name.xml"
-                              overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
-                            />
-                          </span>
-                          correctly guessed your secret.
-                        </>
-                      ) : (
-                        'Both players completed the match.'
-                      )
+                      : outcome.resultType === 'loss'
+                        ? 'Your opponent correctly guessed your secret.'
+                        : 'Both players completed the match.'
                   )}
                 </p>
               </div>
@@ -1169,7 +1229,7 @@ export default function GameZoneScreen({
       )}
 
       {/* Guess Result Feedback Modal */}
-      {guessFeedback.isOpen && (
+      {!outcome.isFinished && guessFeedback.isOpen && (
         <div className="gamezone-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedback-dialog-title">
           <div className="gamezone-modal-box">
             <div className="gamezone-modal-icon">
@@ -1180,7 +1240,7 @@ export default function GameZoneScreen({
                 ? (guessFeedback.wasForcedGuess ? 'Match Drawn!' : 'Correct Guess!')
                 : (guessFeedback.wasForcedGuess ? 'Match Lost!' : 'Incorrect Guess')}
             </h2>
-            <div className="gamezone-modal-desc flex items-center justify-center">
+            <div className="gamezone-modal-desc flex items-center justify-center w-full">
               {guessFeedbackConfig && (
                 <FacebookPlayerName
                   initialData={guessFeedbackConfig.initialData}
@@ -1228,16 +1288,29 @@ export default function GameZoneScreen({
             </div>
 
             {/* Outcome Header */}
-            <div className="flex flex-col items-center gap-1.5">
+            <div className="w-full flex flex-col items-center gap-1.5">
               <span className={`inline-block rounded-full px-3 py-1 text-xs font-black tracking-widest border ${outcome.badgeClass}`}>
                 {outcome.title}
               </span>
               <h2 id="game-result-dialog-title" className={`text-2xl font-black tracking-tight ${outcome.textColor}`}>
                 {outcome.resultType === 'win' ? 'Victory!' : outcome.resultType === 'loss' ? 'Defeat' : 'Draw'}
               </h2>
-              <p className="text-sm text-[#3c494c]">
-                {outcome.subtitle}
-              </p>
+              <div className="gamezone-modal-desc flex items-center justify-center w-full min-h-[44px]">
+                {outcome.overlayPath && outcome.initialData ? (
+                  <FacebookPlayerName
+                    initialData={outcome.initialData}
+                    fallbackName={outcome.subtitleText}
+                    className="w-full h-11 justify-center"
+                    textClassName="text-sm font-medium text-[#3c494c] text-center leading-relaxed"
+                    overlayPath={outcome.overlayPath}
+                    overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
+                  />
+                ) : (
+                  <p className="text-sm font-medium text-[#3c494c] text-center leading-relaxed">
+                    {outcome.subtitleText || outcome.subtitle}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Match Summary Details */}
@@ -1253,41 +1326,33 @@ export default function GameZoneScreen({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#6c797c] flex items-center">
-                  <span className="inline-flex items-center align-middle whitespace-nowrap">
-                    <FacebookPlayerName
-                      initialData={opponentInitialData}
-                      fallbackName={opponent?.playerName || 'Opponent'}
-                      className="inline-flex max-w-[75px] h-4.5 align-middle"
-                      textClassName="font-medium text-[#6c797c] truncate"
-                      overlayPath="overlays/player_name.xml"
-                      overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
-                    />
-                    <span>'s</span>
-                  </span>
-                  <span className="ml-1">Secret</span>
-                </span>
-                <span className="font-semibold text-[#904d00]">
+                <div className="flex items-center min-w-0 flex-1 h-4.5 mr-2">
+                  <FacebookPlayerName
+                    initialData={opponentInitialData}
+                    fallbackName={`${opponentDisplayName}'s Secret`}
+                    className="w-full h-4.5"
+                    textClassName="font-medium text-[#6c797c] text-xs truncate"
+                    overlayPath="overlays/gamezone/player_name_summary_secret.xml"
+                    overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
+                  />
+                </div>
+                <span className="font-semibold text-[#904d00] shrink-0">
                   {opponent?.secret || 'Available in Review'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between pt-1 border-t border-[#bbc9cc] text-[#6c797c]">
-                <span>Questions Asked</span>
-                <span className="font-medium text-[#171d1e] inline-flex items-center">
-                  <span>You: {me?.questionsAsked ?? 0} • </span>
-                  <span className="inline-flex items-center align-middle whitespace-nowrap ml-1">
-                    <FacebookPlayerName
-                      initialData={opponentInitialData}
-                      fallbackName={opponent?.playerName || 'Opponent'}
-                      className="inline-flex max-w-[75px] h-4.5 align-middle"
-                      textClassName="font-medium text-[#171d1e] truncate"
-                      overlayPath="overlays/player_name.xml"
-                      overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
-                    />
-                    <span>:</span>
-                  </span>
-                  <span className="ml-1">{opponent?.questionsAsked ?? 0}</span>
+                <span className="shrink-0">Questions Asked</span>
+                <span className="font-medium text-[#171d1e] inline-flex items-center min-w-0 max-w-[65%] justify-end">
+                  <span className="shrink-0">You: {me?.questionsAsked ?? 0} •&nbsp;</span>
+                  <FacebookPlayerName
+                    initialData={opponentQuestionsInitialData}
+                    fallbackName={`${opponentDisplayName}: ${opponent?.questionsAsked ?? 0}`}
+                    className="inline-flex shrink-0 max-w-[130px] h-4.5 align-middle"
+                    textClassName="font-medium text-[#171d1e] text-xs truncate"
+                    overlayPath="overlays/gamezone/player_name_summary_stat.xml"
+                    overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
+                  />
                 </span>
               </div>
 

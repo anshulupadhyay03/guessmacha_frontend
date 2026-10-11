@@ -185,7 +185,7 @@ export function setupMockFbInstant(force = false): void {
 
                   if (url.includes('guess_result')) {
                     const secretName = initialData?.secretName ? String(initialData.secretName) : '"Secret"';
-                    let message = '';
+                    let message: string;
                     if (url.includes('forced_correct') || initialData?.guess_type === 'forced_correct') {
                       message = `Great recovery! You deduced that ${displayName}'s secret is ${secretName}. The match ends in a DRAW!`;
                     } else if (url.includes('forced_incorrect') || initialData?.guess_type === 'forced_incorrect') {
@@ -202,11 +202,47 @@ export function setupMockFbInstant(force = false): void {
                     return Promise.resolve();
                   }
 
+                  if (url.includes('game_result')) {
+                    let message: string;
+                    if (url.includes('win') || initialData?.game_result === 'win' || initialData?.game_result === 'won') {
+                      message = `You defeated ${displayName}!`;
+                    } else if (url.includes('loss') || initialData?.game_result === 'loss' || initialData?.game_result === 'lost') {
+                      message = `${displayName} won the match!`;
+                    } else if (url.includes('draw') || initialData?.game_result === 'draw') {
+                      message = `Match with ${displayName} ended in a draw!`;
+                    } else {
+                      message = `Match with ${displayName} finished!`;
+                    }
+                    const card = document.createElement('div');
+                    card.className = 'gameResultContainer';
+                    card.innerHTML = `<p class="gameResultText">${message}</p>`;
+                    container.appendChild(card);
+                    return Promise.resolve();
+                  }
+
+                  if (url.includes('summary_secret')) {
+                    const card = document.createElement('div');
+                    card.className = 'summarySecretContainer';
+                    card.innerHTML = `<span class="summarySecretPlayerName">${displayName}'s Secret</span>`;
+                    container.appendChild(card);
+                    return Promise.resolve();
+                  }
+
+                  if (url.includes('summary_stat')) {
+                    const count = initialData?.count !== undefined ? String(initialData.count) : '0';
+                    const card = document.createElement('div');
+                    card.className = 'summaryStatContainer';
+                    card.innerHTML = `<span class="summaryStatPlayerName">${displayName}: ${count}</span>`;
+                    container.appendChild(card);
+                    return Promise.resolve();
+                  }
+
                   const isPlayerName = url.includes('player_name');
                   if (isPlayerName) {
+                    const extraText = initialData?.extraText ? ` ${initialData.extraText}` : '';
                     const card = document.createElement('div');
                     card.className = 'playerNameContainer';
-                    card.innerHTML = `<span class="playerName">${displayName}</span>`;
+                    card.innerHTML = `<span class="playerName">${displayName}${extraText}</span>`;
                     container.appendChild(card);
                     return Promise.resolve();
                   }

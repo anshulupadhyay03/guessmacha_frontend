@@ -51,18 +51,21 @@ function PlayerAvatar({
     return initialData ? JSON.stringify(initialData) : '';
   }, [initialData]);
 
+  const mountRunIdRef = useRef<number>(0);
+
   useEffect(() => {
     if (isMe || !isFacebookInstantGames() || !initialDataKey) {
       return;
     }
 
     const currentKey = `${xmlPath}::${cssPath}::${initialDataKey}`;
-    // If overlay is already mounted for this exact configuration and player, do not re-validate or recreate
+    // If overlay is already mounted for this exact configuration and player, do not re-create
     if (mountedKeyRef.current === currentKey && overlayRef.current) {
       return;
     }
 
     let isMounted = true;
+    const currentRunId = ++mountRunIdRef.current;
     const container = containerRef.current;
     if (!container) return;
 
@@ -72,14 +75,16 @@ function PlayerAvatar({
       }
 
       if (overlayRef.current) {
-        if (overlayRef.current.destroyAsync) {
-          void overlayRef.current.destroyAsync().catch(() => {});
-        } else if (overlayRef.current.dismissAsync) {
-          void overlayRef.current.dismissAsync().catch(() => {});
-        }
+        const prev = overlayRef.current;
         overlayRef.current = null;
-        container.innerHTML = '';
+        mountedKeyRef.current = null;
+        if (prev.destroyAsync) {
+          void prev.destroyAsync().catch(() => {});
+        } else if (prev.dismissAsync) {
+          void prev.dismissAsync().catch(() => {});
+        }
       }
+      container.replaceChildren();
 
       if (typeof window !== 'undefined' && window.FBInstant?.overlayViews) {
         try {
@@ -91,7 +96,22 @@ function PlayerAvatar({
             parsedData,
           );
 
-          if (isMounted && overlay) {
+          if (!isMounted || currentRunId !== mountRunIdRef.current) {
+            if (overlay) {
+              if (overlay.destroyAsync) {
+                void overlay.destroyAsync().catch(() => {});
+              } else if (overlay.dismissAsync) {
+                void overlay.dismissAsync().catch(() => {});
+              }
+            }
+            container.replaceChildren();
+            return;
+          }
+
+          if (overlay) {
+            while (container.children.length > 1) {
+              container.removeChild(container.children[0]);
+            }
             overlayRef.current = overlay;
             mountedKeyRef.current = currentKey;
             setOverlayActive(true);
@@ -106,22 +126,22 @@ function PlayerAvatar({
 
     return () => {
       isMounted = false;
-    };
-  }, [initialDataKey, isMe, xmlPath, cssPath, initialData]);
-
-  // Clean up overlay only on unmount
-  useEffect(() => {
-    return () => {
+      mountRunIdRef.current += 1;
       if (overlayRef.current) {
-        if (overlayRef.current.destroyAsync) {
-          void overlayRef.current.destroyAsync().catch(() => {});
-        } else if (overlayRef.current.dismissAsync) {
-          void overlayRef.current.dismissAsync().catch(() => {});
-        }
+        const prev = overlayRef.current;
         overlayRef.current = null;
+        mountedKeyRef.current = null;
+        if (prev.destroyAsync) {
+          void prev.destroyAsync().catch(() => {});
+        } else if (prev.dismissAsync) {
+          void prev.dismissAsync().catch(() => {});
+        }
+      }
+      if (container) {
+        container.replaceChildren();
       }
     };
-  }, []);
+  }, [initialDataKey, isMe, xmlPath, cssPath]);
 
   if (isMe) {
     return (

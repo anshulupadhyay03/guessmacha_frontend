@@ -1,0 +1,7 @@
+<View className="gameResultContainer">
+  <Text
+    content="You defeated {{FBInstant.players[{{playerId}}].name}}!"
+    className="gameResultText"
+  />
+</View>
+
