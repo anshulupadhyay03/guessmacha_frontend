@@ -222,7 +222,11 @@ function App() {
           roomCode={game.roomCode}
           categoryId={game.categoryId}
           categoryName={game.categoryName}
-          onBackToLobby={() => setScreen('match-lobby')}
+          onBackToMatches={() => {
+            setGame(null)
+            setActiveTab('matches')
+            setScreen('matches')
+          }}
           onLeave={() => {
             setGame(null)
             setActiveTab('home')

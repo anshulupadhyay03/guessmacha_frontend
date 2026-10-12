@@ -19,7 +19,7 @@ interface GameZoneScreenProps {
   roomCode: string;
   categoryId?: string;
   categoryName?: string;
-  onBackToLobby?: () => void;
+  onBackToMatches?: () => void;
   onLeave?: () => void;
   onGoHome?: () => void;
   onReviewMatch?: (gameId: string) => void;
@@ -347,8 +347,7 @@ function getActionMode(
       activeQuestion.askedByPlayerId === me?.playerId ||
       activeQuestion.answeredByPlayerId === opponent?.playerId
     ) {
-      /* return { mode: 'disabled', placeholder: `Waiting for ${opponentName}...` }; */
-      return { mode: 'disabled', placeholder: `Waiting for opponent to answer...` };
+      return { mode: 'disabled', placeholder: 'Type your next question...' };
     }
   }
 
@@ -368,8 +367,7 @@ function getActionMode(
     return { mode: 'disabled', placeholder: 'Question limit reached. Use Guess Secret!' };
   }
 
-  /* return { mode: 'disabled', placeholder: `Waiting for ${opponentName}...` }; */
-  return { mode: 'disabled', placeholder: 'Waiting for opponent to answer...' };
+  return { mode: 'disabled', placeholder: 'Type your next question...' };
 }
 
 interface PlayersStatusGridProps {
@@ -516,7 +514,7 @@ export default function GameZoneScreen({
   gameId,
   categoryId,
   categoryName,
-  onBackToLobby,
+  onBackToMatches,
   onLeave,
   onGoHome,
   onReviewMatch,
@@ -784,6 +782,21 @@ export default function GameZoneScreen({
     (!me?.forcedGuess && me?.finalGuessUsed)
   );
 
+  // Question input field enablement: typing enabled at all times except when submitting, forced guess, or question limit reached
+  const isInputDisabled = Boolean(
+    submitting ||
+    gameState?.status !== 'in_progress' ||
+    me?.forcedGuess ||
+    (me && me.questionsAsked >= questionLimit)
+  );
+
+  // Send button enablement: only enabled when player has typed a question and it is their turn to ask
+  const isSendDisabled = Boolean(
+    !inputText.trim() ||
+    actionMode !== 'ask' ||
+    submitting
+  );
+
   async function handleQuickAnswer(answer: 'Yes' | 'No') {
     if (submitting) return;
 
@@ -858,8 +871,8 @@ export default function GameZoneScreen({
       setIsLeaveModalOpen(false);
       if (onLeave) {
         onLeave();
-      } else if (onBackToLobby) {
-        onBackToLobby();
+      } else if (onBackToMatches) {
+        onBackToMatches();
       }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to leave game.');
@@ -876,8 +889,8 @@ export default function GameZoneScreen({
       onGoHome();
     } else if (onLeave) {
       onLeave();
-    } else if (onBackToLobby) {
-      onBackToLobby();
+    } else if (onBackToMatches) {
+      onBackToMatches();
     }
   }
 
@@ -898,12 +911,12 @@ export default function GameZoneScreen({
       <div className="gamezone-content">
         {/* Header matching gamezone.png: Back Arrow (left), Category Name (center), Leave (right) */}
         <header className="gamezone-header">
-          {onBackToLobby ? (
+          {onBackToMatches ? (
             <button
               type="button"
-              onClick={onBackToLobby}
+              onClick={onBackToMatches}
               className="gamezone-back-btn"
-              aria-label="Back to Lobby"
+              aria-label="Back to Matches"
             >
               <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -1139,15 +1152,16 @@ export default function GameZoneScreen({
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder={inputPlaceholder}
-                    disabled={actionMode !== 'ask' || submitting}
+                    disabled={isInputDisabled}
                     className="gamezone-input-field"
                     maxLength={180}
                   />
                   <button
                     type="submit"
-                    disabled={!inputText.trim() || actionMode !== 'ask' || submitting}
+                    disabled={isSendDisabled}
                     className="gamezone-send-btn"
                     aria-label="Send message"
+                    title={actionMode !== 'ask' ? 'Send enabled on your turn' : 'Send question'}
                   >
                     <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="22" y1="2" x2="11" y2="13" />

@@ -183,11 +183,9 @@ function FacebookPlayerName({
 
   return (
     // outer wrapper: add `relative`
-    <span className={`relative inline-flex items-center align-middle overflow-hidden ${className}`}>
     <span className={`relative ${displayClass} items-center align-middle overflow-hidden ${className}`}>
       <span
         ref={containerRef}
-        className={`absolute inset-0 w-full h-full overflow-hidden ${overlayActive ? 'flex items-center' : 'hidden'}`}
         className={`absolute inset-0 w-full h-full overflow-hidden ${overlayActive ? 'flex items-center justify-center' : 'hidden'}`}
         style={{ justifyContent: 'inherit' }}
       />
