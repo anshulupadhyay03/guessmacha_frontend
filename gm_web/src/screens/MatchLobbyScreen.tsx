@@ -12,6 +12,19 @@ import type {
 } from '../features/matchLobby/types'
 import ChooseSecretModal from '../components/ChooseSecretModal'
 import ConfirmSecretDialog from '../components/ConfirmSecretDialog'
+import PlayerAvatar from '../components/PlayerAvatar'
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName'
+
+// Inline text style for the isMe profile-name overlay so your own name
+// renders in lobby typography (16px bold #171d1e, single line). Mirrors
+// public/overlays/matchlobby/match_lobby_player_name.css, which styles the
+// FB-id custom overlay (overlays/player_name.xml) used for other players.
+// margin:-8px offsets the overlay iframe's default 8px body margin so the
+// name never gets clipped into a scroller (same trick as the CSS file's
+// .playerNameContainer margin:-8px for the custom-overlay path).
+const LOBBY_PLAYER_NAME_TEXT_STYLE =
+  'font-family: Manrope, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 700; color: #171d1e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; margin: -8px; padding: 0;'
+const LOBBY_PLAYER_NAME_CSS_PATH = 'overlays/matchlobby/match_lobby_player_name.css'
 
 export type {
   GameDetails,
@@ -62,42 +75,6 @@ function CheckIcon({ muted = false, active = false }: { muted?: boolean; active?
   )
 }
 
-function PlayerAvatar({
-  playerName,
-  playerImageUrl,
-}: {
-  playerName: string
-  playerImageUrl?: string | null
-}) {
-  const [imageFailed, setImageFailed] = useState(false)
-
-  const initials = playerName
-    .split(/\s+|[_-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('') || 'P'
-
-  const shouldRenderImage = Boolean(playerImageUrl) && !imageFailed
-
-  if (shouldRenderImage) {
-    return (
-      <img
-        className="size-10 rounded-full object-cover ring-2 ring-[#bbc9cc]"
-        src={playerImageUrl ?? undefined}
-        alt={playerName}
-        onError={() => setImageFailed(true)}
-      />
-    )
-  }
-
-  return (
-    <span className="grid size-10 place-items-center rounded-full bg-[#eff4f7] text-sm font-bold text-[#006875] ring-2 ring-[#bbc9cc]">
-      {initials}
-    </span>
-  )
-}
-
 export default function MatchLobbyScreen({
   gameId,
   roomCode,
@@ -127,7 +104,28 @@ export default function MatchLobbyScreen({
   const opponentSecretLocked = opponent?.secretLocked ?? false
   const status = game?.status ?? 'waiting'
 
+  // NOTE: isOpponent / isHost describe the CURRENT USER's seat, not the card.
+  // Each is true only when viewing your own card, so passing them as
+  // PlayerAvatar's `isMe` routes correctly in both seats:
+  //   - I'm the host:    host card -> profile overlay (isMe), opponent card -> FB-id overlay.
+  //   - I'm the opponent: host card -> FB-id overlay, opponent card -> profile overlay (isMe).
   const isOpponent = Boolean(currentUserId && opponent?.playerId && currentUserId === opponent.playerId)
+  const isHost = Boolean(currentUserId && host?.playerId && currentUserId === host.playerId)
+
+  // Facebook-scoped IDs for the profile-picture overlays. Same convention as
+  // GameZoneScreen: the backend-provided playerName carries the FB id consumed
+  // by overlays/profile_pic.xml, while the auth-level playerId only identifies
+  // which card belongs to the current user (rendered via the profile overlay).
+  const hostPlayerName = host?.playerName
+  const opponentPlayerName = opponent?.playerName
+  const hostInitialData = useMemo(() => {
+    if (isHost || !hostPlayerName) return undefined
+    return { playerId: hostPlayerName }
+  }, [isHost, hostPlayerName])
+  const opponentInitialData = useMemo(() => {
+    if (isOpponent || !opponentPlayerName) return undefined
+    return { playerId: opponentPlayerName }
+  }, [isOpponent, opponentPlayerName])
   const mySecretLocked = isOpponent ? opponentSecretLocked : hostSecretLocked
   const canChooseSecret = status === 'secret_selection' && !mySecretLocked
 
@@ -400,13 +398,31 @@ export default function MatchLobbyScreen({
 
               <div className="mt-4 grid gap-3">
                 <div className="flex items-center justify-between rounded-xl border border-[#bbc9cc] bg-[#eff4f7]/50 p-3">
-                  <div className="flex items-center gap-3">
+                  {/* flex-1 lets the name host grow into the row's free space.
+                      Without it the name sizes to its (often shorter) fallback
+                      text and the overlay name clips, e.g. "Anshul" -> "A.". */}
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <PlayerAvatar
-                      playerName={host?.playerName ?? 'Host'}
-                      playerImageUrl={host?.playerImageUrl}
+                      isMe={isHost}
+                      initialData={hostInitialData}
+                      imageUrl={host?.playerImageUrl}
+                      name={host?.playerName ?? 'Host'}
+                      className="size-10 shrink-0 rounded-full bg-[#eff4f7] text-[#006875] ring-2 ring-[#bbc9cc]"
+                      iconSize="size-5"
+                      xmlPath="overlays/profile_pic.xml"
+                      cssPath="overlays/profile_pic.css"
                     />
-                    <div>
-                      <strong className="block text-[#171d1e]">{host?.playerName ?? 'Host'}</strong>
+                    <div className="min-w-0 flex-1">
+                      <FacebookPlayerName
+                        isMe={isHost}
+                        initialData={hostInitialData}
+                        fallbackName={host?.playerName ?? 'Host'}
+                        className="w-full h-6"
+                        textClassName="truncate text-base font-bold text-[#171d1e]"
+                        textStyle={LOBBY_PLAYER_NAME_TEXT_STYLE}
+                        overlayPath="overlays/player_name.xml"
+                        overlayCassPath={LOBBY_PLAYER_NAME_CSS_PATH}
+                      />
                       <small className="text-xs text-[#0b6b45]">Host</small>
                     </div>
                   </div>
@@ -418,15 +434,32 @@ export default function MatchLobbyScreen({
                     opponent ? 'border-[#bbc9cc] bg-[#eff4f7]/50' : 'border-dashed border-[#bbc9cc] bg-[#eff4f7]/20 opacity-60'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <PlayerAvatar
-                      playerName={opponent?.playerName ?? 'Waiting for player'}
-                      playerImageUrl={opponent?.playerImageUrl}
+                      isMe={isOpponent}
+                      initialData={opponentInitialData}
+                      imageUrl={opponent?.playerImageUrl}
+                      name={opponent?.playerName ?? 'Waiting for player'}
+                      className="size-10 shrink-0 rounded-full bg-[#eff4f7] text-[#006875] ring-2 ring-[#bbc9cc]"
+                      iconSize="size-5"
+                      xmlPath="overlays/profile_pic.xml"
+                      cssPath="overlays/profile_pic.css"
                     />
-                    <div>
-                      <strong className={opponent ? 'block text-[#171d1e]' : 'block italic text-[#6c797c]'}>
-                        {opponent ? opponent.playerName : 'Waiting for player'}
-                      </strong>
+                    <div className="min-w-0 flex-1">
+                      <FacebookPlayerName
+                        isMe={isOpponent}
+                        initialData={opponentInitialData}
+                        fallbackName={opponent ? opponent.playerName : 'Waiting for player'}
+                        className="w-full h-6"
+                        textClassName={
+                          opponent
+                            ? 'truncate text-base font-bold text-[#171d1e]'
+                            : 'truncate text-base italic text-[#6c797c]'
+                        }
+                        textStyle={LOBBY_PLAYER_NAME_TEXT_STYLE}
+                        overlayPath="overlays/player_name.xml"
+                        overlayCassPath={LOBBY_PLAYER_NAME_CSS_PATH}
+                      />
                       <small className="text-xs text-[#6c797c]">Opponent</small>
                     </div>
                   </div>

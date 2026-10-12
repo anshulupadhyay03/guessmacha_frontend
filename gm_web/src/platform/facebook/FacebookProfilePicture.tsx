@@ -36,7 +36,7 @@ function FacebookProfilePicture({
   name = 'You',
   className = '',
   imageStyle = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; margin: 0; display: block;',
-  iFrameStyle = 'overlays/shared_style.css',
+  iFrameStyle = 'width: 100%; height: 100%; border: none; overflow: hidden; display: block; background: transparent; margin: 0; padding: 0;',
   iconClassName = 'size-5',
 }: FacebookProfilePictureProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,6 +44,11 @@ function FacebookProfilePicture({
   const [fallbackError, setFallbackError] = useState(false);
   const overlayRef = useRef<FBInstantOverlayView | null>(null);
   const mountedKeyRef = useRef<string | null>(null);
+
+  // A previously failed URL must not hide a newly provided one.
+  useEffect(() => {
+    setFallbackError(false);
+  }, [fallbackImageUrl]);
 
   useEffect(() => {
     const container = containerRef.current;

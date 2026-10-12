@@ -53,6 +53,12 @@ function PlayerAvatar({
 
   const mountRunIdRef = useRef<number>(0);
 
+  // A previously failed URL must not hide a newly provided one
+  // (e.g. opponent joins late, or game data refreshes).
+  useEffect(() => {
+    setImageError(false);
+  }, [imageUrl]);
+
   useEffect(() => {
     if (isMe || !isFacebookInstantGames() || !initialDataKey) {
       return;
@@ -127,6 +133,9 @@ function PlayerAvatar({
     return () => {
       isMounted = false;
       mountRunIdRef.current += 1;
+      // Show the fallback again while the next player's overlay mounts,
+      // otherwise the avatar flashes empty on player swaps.
+      setOverlayActive(false);
       if (overlayRef.current) {
         const prev = overlayRef.current;
         overlayRef.current = null;
