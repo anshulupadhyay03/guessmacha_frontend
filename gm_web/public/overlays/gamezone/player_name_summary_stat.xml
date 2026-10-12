@@ -1,7 +1,14 @@
 <View className="summaryStatContainer">
-  <Text
-      content="{{FBInstant.players[{{playerId}}].name}}&#58; {{count}}"
+  <View className="summaryStatNameWrapper">
+    <Text
+      content="{{FBInstant.players[{{playerId}}].name}}"
       className="summaryStatPlayerName"
     />
+  </View>
+  <View className="summaryStatSuffixWrapper">
+    <Text
+      content=": {{count}}"
+      className="summaryStatSuffix"
+    />
+  </View>
 </View>
-

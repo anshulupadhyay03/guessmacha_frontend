@@ -189,9 +189,18 @@ function FacebookPlayerName({
         className={`absolute inset-0 w-full h-full overflow-hidden ${overlayActive ? 'flex items-center justify-center' : 'hidden'}`}
         style={{ justifyContent: 'inherit' }}
       />
-      {!overlayActive && (
-        <span className={textClassName ? textClassName : 'truncate'}>{displayFallback}</span>
-      )}
+      {/* Keep the fallback mounted when the overlay is active so the host
+          keeps its content-based width. `invisible` preserves layout space,
+          whereas unmounting would collapse shrink-to-fit (inline-flex) hosts
+          to 0 width and squeeze the overlay iframe shut. */}
+      <span
+        className={`${textClassName ? textClassName : 'truncate'} ${
+          overlayActive ? 'invisible select-none pointer-events-none' : ''
+        }`}
+        aria-hidden={overlayActive ? 'true' : undefined}
+      >
+        {displayFallback}
+      </span>
     </span>
   );
 }
