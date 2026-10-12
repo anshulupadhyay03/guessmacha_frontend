@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useMatches } from '../hooks/useMatches';
 import type { MatchItem } from '../features/matches/types';
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
 import './MatchesScreen.css';
 
 interface MatchesScreenProps {
@@ -177,6 +178,14 @@ export default function MatchesScreen({ onSelectMatch, onCreateGame }: MatchesSc
                 );
 
                 const opponentName = opponentPlayer?.displayName?.trim() || 'Opponent';
+                // FB id for the name overlay: displayName carries the FB-scoped id
+                // (profiles.display_name), same convention as lobby/gamezone.
+                // Plain object (no hook — this runs inside the list map):
+                // FacebookPlayerName keys off the serialized value.
+                // opponentPlayer is always the other seat here, so isMe=false.
+                const opponentInitialData = opponentPlayer?.displayName?.trim()
+                  ? { playerId: opponentPlayer.displayName.trim() }
+                  : undefined;
                 const mySecretLocked = currentPlayer?.isSecretLocked ?? false;
 
                 // Action Required state:
@@ -213,18 +222,40 @@ export default function MatchesScreen({ onSelectMatch, onCreateGame }: MatchesSc
                         )}
 
                         {isSecretSelection && (
-                          <span className="card-participant-info cyan">
+                          <span className="card-participant-info cyan min-w-0">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                               <circle cx="12" cy="7" r="4" />
                             </svg>
-                            <span>{opponentName} joined</span>
+                            <span className="inline-flex min-w-0 items-center">
+                              <FacebookPlayerName
+                                isMe={false}
+                                initialData={opponentInitialData}
+                                fallbackName={opponentName}
+                                className="inline-flex min-w-0 max-w-[110px] h-4.5 align-middle"
+                                textClassName="truncate text-xs font-bold"
+                                overlayPath="overlays/player_name.xml"
+                                overlayCassPath="overlays/matches/matches_player_name_cyan.css"
+                              />
+                              <span className="shrink-0">&nbsp;joined</span>
+                            </span>
                           </span>
                         )}
 
                         {isInProgress && (
-                          <span className="card-participant-info">
-                            You vs {opponentName}
+                          <span className="card-participant-info min-w-0">
+                            <span className="inline-flex min-w-0 items-center">
+                              <span className="shrink-0">You vs&nbsp;</span>
+                              <FacebookPlayerName
+                                isMe={false}
+                                initialData={opponentInitialData}
+                                fallbackName={opponentName}
+                                className="inline-flex min-w-0 max-w-[110px] h-4.5 align-middle"
+                                textClassName="truncate text-xs font-semibold"
+                                overlayPath="overlays/player_name.xml"
+                                overlayCassPath="overlays/matches/matches_player_name.css"
+                              />
+                            </span>
                           </span>
                         )}
 
