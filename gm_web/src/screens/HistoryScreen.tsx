@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { HistoryFilter } from '../features/history/types';
 import { useHistory } from '../hooks/useHistory';
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
+import { ArrowRightIcon } from '../components/icons';
 
 interface HistoryScreenProps {
   onSelectMatch?: (gameId: string) => void;
@@ -132,11 +133,10 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
               role="tab"
               aria-selected={isActive}
               onClick={() => setFilter(tab.key)}
-              className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition select-none cursor-pointer ${
-                isActive
+              className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition select-none cursor-pointer ${isActive
                   ? 'bg-[#006875] text-white shadow-xs'
                   : 'text-[#3c494c] hover:bg-white hover:text-[#171d1e]'
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -254,7 +254,7 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                       <div className="flex min-w-0 flex-1 flex-col text-center">
                         <div className="mb-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-[#6c797c] truncate px-1">
                           <FacebookPlayerName
-                            initialData={{ playerId: match.opponentName , extraText: "'S SECRET" }}
+                            initialData={{ playerId: match.opponentName, extraText: "'S SECRET" }}
                             fallbackName="Opponent"
                             className="w-full h-3.5"
                             textClassName="text-[10px] font-bold uppercase tracking-widest text-[#6c797c]"
@@ -277,7 +277,7 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                     {resultDetails.type === 'loss' ? (
                       <>
                         <FacebookPlayerName
-                           initialData={{ playerId: match.opponentName , extraText: "guessed your secret" }}
+                          initialData={{ playerId: match.opponentName, extraText: "guessed your secret" }}
                           fallbackName="Opponent"
                           className="w-full h-5.5"
                           textClassName={`text-base font-bold ${resultDetails.outcomeColor}`}
@@ -295,7 +295,7 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                     <span>•</span>
                     <span className="text-[#171d1e] font-semibold inline-flex min-w-0 items-center gap-1">
                       <FacebookPlayerName
-                        initialData={{ playerId: match.opponentName , extraText:`${match.opponentQuestionCount}` }}
+                        initialData={{ playerId: match.opponentName, extraText: `${match.opponentQuestionCount}` }}
                         fallbackName="Opponent"
                         className="max-w-22.5 h-4"
                         textClassName="text-[#171d1e] font-semibold text-xs"
@@ -319,10 +319,10 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                   <button
                     type="button"
                     onClick={() => onSelectMatch?.(match.gameId)}
-                    className="flex items-center gap-1 font-bold text-[#006875] transition hover:gap-1.5 cursor-pointer"
+                    className="group inline-flex cursor-pointer items-center gap-1 rounded-md font-bold text-[#006875] transition-colors hover:text-[#004b55] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
                   >
                     <span>Review Match</span>
-                    <span aria-hidden="true">→</span>
+                    <ArrowRightIcon className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </button>
                 </div>
               </article>
