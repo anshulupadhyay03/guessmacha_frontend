@@ -1,0 +1,6 @@
+<View className="playerNameContainer">
+  <Text
+    content="{{FBInstant.players[{{playerId}}].name}} guessed your secret first."
+    className="playerName"
+  />
+</View>

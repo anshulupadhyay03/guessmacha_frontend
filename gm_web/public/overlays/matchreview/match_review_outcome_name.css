@@ -1,0 +1,34 @@
+/* ==========================================================================
+   Match Review Outcome Subtitle Name Overlay Stylesheet
+   Reuses overlays/player_name.xml (.playerNameContainer / .playerName) but
+   matches .match-review-outcome-subtitle: 14px regular #3c494c,
+   single-line ellipsis. Used for the opponent name inside sentences like
+   "Match with <name> ended in a draw".
+   ========================================================================== */
+
+.playerNameContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  margin: -8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.playerName {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #3c494c !important;
+  letter-spacing: 0em !important;
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: left !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  max-width: 100% !important;
+}

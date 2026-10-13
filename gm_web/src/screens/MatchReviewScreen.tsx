@@ -2,7 +2,16 @@ import { useState } from 'react';
 import type { HistoryMatchItem } from '../features/history/types';
 import { useAuth } from '../hooks/useAuth';
 import { useMatchReview } from '../hooks/useMatchReview';
+import PlayerAvatar from '../components/PlayerAvatar';
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
 import './MatchReviewScreen.css';
+
+// Inline text style for the isMe profile-name overlay (your own name).
+// Mirrors public/overlays/matchreview/match_review_player_name_me.css;
+// margin:-8px offsets the overlay iframe's default 8px body margin so the
+// name never gets clipped into a scroller.
+const REVIEW_ME_NAME_TEXT_STYLE =
+  'font-family: Manrope, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 10px; font-weight: 700; color: #006875; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; line-height: 1.4; margin: -8px; padding: 0;'
 
 interface MatchReviewScreenProps {
   gameId: string;
@@ -16,46 +25,6 @@ function formatDuration(seconds: number): string {
   const secs = seconds % 60;
   if (mins === 0) return `${secs}s`;
   return `${mins}m ${secs}s`;
-}
-
-function DefaultAvatarIcon({ className = 'match-review-avatar-icon' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function PlayerAvatar({
-  imageUrl,
-  name,
-  className = '',
-}: {
-  imageUrl?: string | null;
-  name?: string;
-  className?: string;
-}) {
-  const [hasError, setHasError] = useState(false);
-
-  if (imageUrl && !hasError) {
-    return (
-      <img
-        src={imageUrl}
-        alt={name || 'Player'}
-        onError={() => setHasError(true)}
-        className={`match-review-avatar-img ${className}`}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`match-review-avatar-placeholder ${className}`}
-      aria-label={name || 'Player'}
-    >
-      <DefaultAvatarIcon />
-    </div>
-  );
 }
 
 export default function MatchReviewScreen({ gameId, onBack, match: initialMatch }: MatchReviewScreenProps) {
@@ -74,6 +43,27 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
     matchSummary?.opponent?.questionsAsked ??
     initialMatch?.opponentQuestionCount ??
     0;
+
+  const currentUserId = session?.user?.id;
+  // match.player is the requesting (logged-in) user by construction
+  // (match_review RPC builds it from p_player_id = auth UUID), verified
+  // against the session id so `isMe` unambiguously means the logged-in
+  // player and routes to the profile overlays (no id needed).
+  const playerId = matchSummary?.player?.playerId;
+  const playerFbName = matchSummary?.player?.playerName || null;
+  const amPlayer = Boolean(currentUserId && playerId && currentUserId === playerId);
+  // Overlay ids must be numeric FB ids: a non-numeric display name is already
+  // human-readable, so skip the overlay and let the fallback render it.
+  // (An overlay mounted with a bogus id would hide the fallback and render blank.)
+  const playerFbId = playerFbName && /^\d{10,}$/.test(playerFbName) ? playerFbName : undefined;
+  const playerInitialData = !amPlayer && playerFbId ? { playerId: playerFbId } : undefined;
+  // FB-scoped id for the opponent overlay: playerName carries the FB id
+  // (profiles.display_name). Never feed the 'Opponent' display default.
+  const opponentFbName = matchSummary?.opponent?.playerName || initialMatch?.opponentName || null;
+  const opponentFbId = opponentFbName && /^\d{10,}$/.test(opponentFbName) ? opponentFbName : undefined;
+  const opponentInitialData = opponentFbId ? { playerId: opponentFbId } : undefined;
+  // Human-readable name for sentence fallbacks (raw numeric ids never print).
+  const oppDisplayName = opponentName && !/^\d{10,}$/.test(opponentName) ? opponentName : 'Opponent';
 
   const playerSecret = matchSummary?.player?.secret ?? initialMatch?.playerSecret ?? null;
   const playerQuestionCount =
@@ -120,13 +110,39 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
         ? 'draw'
         : 'progress';
 
-  const outcomeSubtitle = isWon
-    ? `You defeated ${opponentName}`
+  // Outcome subtitle as ONE overlay text (whole sentence measured together),
+  // gamezone game-result style. Split static+overlay compositions leave
+  // fallback/overlay width gaps ("Paridhi   defeated you") because the host
+  // sizes to the fallback while the overlay renders a different width.
+  const subtitleOverlayPath = isWon
+    ? 'overlays/matchreview/player_name_review_subtitle_win.xml'
     : isLost
-      ? `${opponentName} defeated you`
+      ? 'overlays/matchreview/player_name_review_subtitle_loss.xml'
       : isDraw
-        ? `Match with ${opponentName} ended in a draw`
-        : `Match with ${opponentName} is currently in progress`;
+        ? 'overlays/matchreview/player_name_review_subtitle_draw.xml'
+        : 'overlays/matchreview/player_name_review_subtitle_progress.xml';
+  const outcomeSubtitle = (
+    <FacebookPlayerName
+      isMe={false}
+      initialData={opponentInitialData}
+      fallbackName={
+        isWon
+          ? `You defeated ${oppDisplayName}`
+          : isLost
+            ? `${oppDisplayName} defeated you`
+            : isDraw
+              ? `Match with ${oppDisplayName} ended in a draw`
+              : `Match with ${oppDisplayName} is currently in progress`
+      }
+      className="w-full h-5.5"
+      textClassName="truncate text-sm"
+      overlayPath={subtitleOverlayPath}
+      overlayCassPath="overlays/matchreview/match_review_outcome_name.css"
+    />
+  );
+  const opponentStatInitialData = opponentFbId
+    ? { playerId: opponentFbId, count: opponentQuestionCount }
+    : undefined;
 
   const totalQuestions = questionCount || (playerQuestionCount + opponentQuestionCount) || 1;
   const playerPercent = Math.round((playerQuestionCount / totalQuestions) * 100);
@@ -224,7 +240,17 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
               {isWon
                 ? 'You guessed correctly first.'
                 : isLost
-                  ? `${opponentName} guessed your secret first.`
+                  ? (
+                    <FacebookPlayerName
+                      isMe={false}
+                      initialData={opponentInitialData}
+                      fallbackName={`${oppDisplayName} guessed your secret first.`}
+                      className="w-full h-4.5 justify-center"
+                      textClassName="truncate text-xs font-semibold text-center"
+                      overlayPath="overlays/matchreview/player_name_review_banner_loss.xml"
+                      overlayCassPath="overlays/matchreview/match_review_banner_name.css"
+                    />
+                  )
                   : isDraw
                     ? 'Match ended in a draw.'
                     : 'Match is currently in progress.'}
@@ -249,7 +275,15 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
                     <p className="match-review-stat-label">Question Split</p>
                     <div className="match-review-split-tags">
                       <span className="match-review-split-tag-me">You: {playerQuestionCount}</span>
-                      <span className="match-review-split-tag-opp">{opponentName}: {opponentQuestionCount}</span>
+                      <FacebookPlayerName
+                        isMe={false}
+                        initialData={opponentStatInitialData}
+                        fallbackName={`${oppDisplayName}: ${opponentQuestionCount}`}
+                        className="w-[110px] shrink-0 h-4.5"
+                        textClassName="truncate text-xs font-semibold text-[#904d00]"
+                        overlayPath="overlays/matchreview/player_name_review_stat.xml"
+                        overlayCassPath="overlays/matchreview/match_review_stat_name.css"
+                      />
                     </div>
                   </div>
                   <div className="match-review-progress-track">
@@ -271,29 +305,56 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
               <div className="match-review-players-row">
                 <div className="match-review-player-item">
                   <PlayerAvatar
+                    isMe={amPlayer}
+                    initialData={playerInitialData}
                     imageUrl={userAvatarUrl}
                     name="You"
-                    className="match-review-avatar--me"
+                    className="size-10 shrink-0 rounded-full bg-[#eff4f7] text-[#006875] match-review-avatar--me"
+                    iconSize="size-5"
+                    xmlPath="overlays/profile_pic.xml"
+                    cssPath="overlays/profile_pic.css"
                   />
-                  <div className="match-review-player-details">
-                    <span className="match-review-player-role-me">YOU</span>
+                  <div className="match-review-player-details flex-1">
+                    <FacebookPlayerName
+                      isMe={amPlayer}
+                      initialData={playerInitialData}
+                      fallbackName="You"
+                      uppercase
+                      className="w-full h-3.5"
+                      textClassName="truncate text-[10px] font-bold uppercase tracking-[0.05em] text-[#006875]"
+                      textStyle={REVIEW_ME_NAME_TEXT_STYLE}
+                      overlayPath="overlays/player_name.xml"
+                      overlayCassPath="overlays/matchreview/match_review_player_name_me.css"
+                    />
                     <span className="match-review-secret-text">{playerSecret || '—'}</span>
                   </div>
                 </div>
 
                 <div className="match-review-player-item--right">
-                  <div className="match-review-player-details">
-                    <span className="match-review-player-role-opp">
-                      {opponentName.toUpperCase()}
-                    </span>
+                  <div className="match-review-player-details flex-1">
+                    <FacebookPlayerName
+                      isMe={false}
+                      initialData={opponentInitialData}
+                      fallbackName={opponentName}
+                      uppercase
+                      className="w-full h-3.5 justify-end"
+                      textClassName="truncate text-[10px] font-bold uppercase tracking-[0.05em] text-[#904d00] text-right"
+                      overlayPath="overlays/player_name.xml"
+                      overlayCassPath="overlays/matchreview/match_review_player_name_opp.css"
+                    />
                     <span className={`match-review-secret-text--opp ${isWon ? 'match-review-secret-text--struck' : ''}`}>
                       {opponentSecret || '—'}
                     </span>
                   </div>
                   <PlayerAvatar
+                    isMe={false}
+                    initialData={opponentInitialData}
                     imageUrl={opponentImageUrl}
                     name={opponentName}
-                    className={`match-review-avatar--opp ${isWon ? 'match-review-avatar--opp-won' : ''}`}
+                    className={`size-10 shrink-0 rounded-full bg-[#eff4f7] text-[#006875] match-review-avatar--opp ${isWon ? 'match-review-avatar--opp-won' : ''}`}
+                    iconSize="size-5"
+                    xmlPath="overlays/profile_pic.xml"
+                    cssPath="overlays/profile_pic.css"
                   />
                 </div>
               </div>
@@ -370,9 +431,6 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
                 ? q.askedBy?.playerId !== opponentId
                 : Boolean(matchSummary?.player?.playerId && q.askedBy?.playerId === matchSummary.player.playerId);
               const isAnswered = Boolean(q.answerText);
-              const waitingText = isAskedByMe
-                ? `Waiting for ${opponentName}...`
-                : 'Waiting for answer...';
 
               return (
                 <div
@@ -385,7 +443,21 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
                   {isAnswered ? (
                     <div className="review-qa-answer">{q.answerText}</div>
                   ) : (
-                    <div className="review-qa-waiting">{waitingText}</div>
+                    <div className="review-qa-waiting">
+                      {isAskedByMe ? (
+                        <FacebookPlayerName
+                          isMe={false}
+                          initialData={opponentInitialData}
+                          fallbackName={`Waiting for ${oppDisplayName}...`}
+                          className="w-full h-5"
+                          textClassName="truncate text-[0.9rem] italic"
+                          overlayPath="overlays/matchreview/player_name_review_waiting.xml"
+                          overlayCassPath="overlays/matchreview/match_review_waiting_name.css"
+                        />
+                      ) : (
+                        'Waiting for answer...'
+                      )}
+                    </div>
                   )}
                 </div>
               );

@@ -1,0 +1,33 @@
+/* ==========================================================================
+   Match Review Outcome Banner Name Overlay Stylesheet
+   Reuses overlays/player_name.xml (.playerNameContainer / .playerName) but
+   matches .match-review-outcome-banner--lost: 12px semibold #93000a,
+   single-line ellipsis. Used for "<name> guessed your secret first."
+   ========================================================================== */
+
+.playerNameContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  margin: -8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.playerName {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #93000a !important;
+  letter-spacing: 0em !important;
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  max-width: 100% !important;
+}
