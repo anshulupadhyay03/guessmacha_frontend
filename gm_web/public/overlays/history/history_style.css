@@ -28,6 +28,15 @@ body {
   margin: -8px;
   overflow: hidden;
 }
+
+/* Shrinkable name slot: lets a long FB name ellipsis instead of overflowing
+   the narrow secret column (centered overflow clips BOTH edges on small
+   screens: "ANSHUL'S SECRET" -> "NSHUL'S SECRE"). */
+.playerNameWrapper_label {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+}
  
 .playerName_label {
   margin: 0;
@@ -80,6 +89,17 @@ body {
   overflow: hidden;
 }
 
+/* Shrinkable name slot so long names ellipsis instead of overflowing. */
+.playerNameWrapper_outcome {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+}
+
+.playerSuffixWrapper_outcome {
+  flex-shrink: 0;
+}
+
 .playerName_outcome {
   margin: 0;
   padding: 0;
@@ -117,6 +137,18 @@ body {
   flex: 1;
   margin: -8px;
   overflow: hidden;
+}
+
+/* Shrinkable name slot so long names ellipsis instead of pushing the
+   count suffix out on small screens. */
+.playerNameWrapper_stat {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+}
+
+.playerSuffixWrapper_stat {
+  flex-shrink: 0;
 }
 
 .playerName_stat {

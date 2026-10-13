@@ -240,8 +240,8 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                 {hasSecrets && (
                   <div className="p-4 bg-[#eff4f7]/60">
                     <div className="flex items-center justify-between rounded-xl border border-[#bbc9cc] bg-white p-3.5">
-                      <div className="flex flex-1 flex-col text-center">
-                        <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#6c797c]">
+                      <div className="flex min-w-0 flex-1 flex-col text-center">
+                        <span className="mb-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-[#6c797c]">
                           Your Secret
                         </span>
                         <span className="text-base sm:text-lg font-bold text-[#171d1e] truncate px-1">
@@ -251,12 +251,12 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
 
                       <div className="mx-3 h-10 w-px bg-[#bbc9cc]" aria-hidden="true" />
 
-                      <div className="flex flex-1 flex-col text-center">
+                      <div className="flex min-w-0 flex-1 flex-col text-center">
                         <div className="mb-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-[#6c797c] truncate px-1">
                           <FacebookPlayerName
                             initialData={{ playerId: match.opponentName , extraText: "'S SECRET" }}
                             fallbackName="Opponent"
-                            className="w-full h-3"
+                            className="w-full h-3.5"
                             textClassName="text-[10px] font-bold uppercase tracking-widest text-[#6c797c]"
                             uppercase={true}
                             overlayPath="overlays/history/player_name_label.xml"
@@ -293,7 +293,7 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                     <span>{match.questionCount} questions asked • </span>
                     <span className="text-[#171d1e] font-semibold">You {match.playerQuestionCount}</span>
                     <span>•</span>
-                    <span className="text-[#171d1e] font-semibold inline-flex items-center gap-1">
+                    <span className="text-[#171d1e] font-semibold inline-flex min-w-0 items-center gap-1">
                       <FacebookPlayerName
                         initialData={{ playerId: match.opponentName , extraText:`${match.opponentQuestionCount}` }}
                         fallbackName="Opponent"

@@ -1,11 +1,11 @@
 <View className="playerNameContainer_stat">
-  <View>
-  <Text
-    content="{{FBInstant.players[{{playerId}}].name}}"
-    className="playerName_stat"
-  />
-</View>
-  <View>
-  <Text content="{{extraText}}" className="playerSuffix_stat" />
+  <View className="playerNameWrapper_stat">
+    <Text
+      content="{{FBInstant.players[{{playerId}}].name}}"
+      className="playerName_stat"
+    />
+  </View>
+  <View className="playerSuffixWrapper_stat">
+    <Text content="{{extraText}}" className="playerSuffix_stat" />
   </View>
 </View>
