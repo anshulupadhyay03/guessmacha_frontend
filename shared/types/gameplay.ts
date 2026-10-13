@@ -8,6 +8,7 @@ export interface GameStatePlayer {
   isCompleted: boolean;
   isMyTurn: boolean | null;
   isBonusTurn: boolean;
+  forcedGuess?: boolean;
 }
 
 export interface GameStateQuestion {

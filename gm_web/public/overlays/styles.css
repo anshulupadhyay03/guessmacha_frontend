@@ -6,6 +6,41 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/* Import matching Google fonts from index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Manrope:wght@600;700;800&display=swap');
+
+/* ---------- Design tokens inheriting from index.css & App.css ---------- */
+:root {
+  /* Fonts from index.css */
+  --font-lobby-display: 'Manrope', 'Segoe UI', sans-serif;
+  --font-lobby-body: 'Inter', 'Segoe UI', sans-serif;
+  --font: var(--font-lobby-body, Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  --font-display: var(--font-lobby-display, 'Manrope', 'Segoe UI', sans-serif);
+
+  /* Theme colors from index.css & App.css (Light Theme) */
+  --color-lobby-background: #f5fafc;
+  --text-primary: #171d1e;
+  --text-secondary: #3c494c;
+  --text-muted: #6c797c;
+  --ink: #171d1e;
+
+  /* Card aesthetic from App.css */
+  --card-bg: #ffffff;
+  --card-border: 1px solid #bbc9cc;
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  /* Brand accents from App.css / GuessMacha */
+  --accent-cyan: #02c2d9;
+  --accent-blue: #006875;
+  --yellow: #ffd23f;
+  --yellow-deep: #ff9f1c;
+  --pink: #ff4d8d;
+  --mint: #2ee6a6;
+  --white: #ffffff;
+  --shadow-pop: 0 4px 0 #171d1e, 0 8px 16px rgba(0, 104, 117, 0.15);
+}
+
+/* ---------- Header ---------- */
 .header {
   align-items: center;
   display: flex;
@@ -18,14 +53,37 @@
   z-index: 1;
 }
 
+/* ---------- Profile card ---------- */
+.profileCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px 8px 10px;
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: 999px;
+  box-shadow: var(--card-shadow);
+  box-sizing: border-box;
+  font-family: var(--font, inherit);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
 
-.profilePicture {
-  border: 3px solid #07405c;
+.profileCard:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 6px 20px rgba(0, 104, 117, 0.12);
+  transform: translateY(-1px);
+}
+
+.avatarRing {
+  position: relative;
+  flex-shrink: 0;
+  padding: 3px;
   border-radius: 50%;
-  cursor: pointer;
-  height: 80px;
-  margin-right: 20px;
-  width: 80px; /* Blue border color */
+  background: conic-gradient(var(--accent-cyan), var(--accent-blue), var(--pink), var(--yellow), var(--accent-cyan));
 }
 
 .avatar {
@@ -35,6 +93,39 @@
   object-fit: cover;
   display: block;
   flex-shrink: 0;
+  border: 2px solid rgba(0, 104, 117, 0.2);
+  background: #eff4f7;
+}
+
+.playerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  justify-content: center;
+}
+
+.playerName {
+  font-family: var(--font-display, var(--font, inherit));
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* Legacy classes kept for compatibility */
+.profilePicture {
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  cursor: pointer;
+  height: 80px;
+  margin-right: 20px;
+  width: 80px;
+  box-shadow: var(--shadow-pop);
 }
 
 .opponentProfileCard {
@@ -45,17 +136,16 @@
   height: 100%;
   box-sizing: border-box;
   padding: 12px 16px;
+  background: linear-gradient(135deg, #fff0f6 0%, #ffe0ee 100%);
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: var(--shadow-pop);
 }
 
-.playerName {
-  font-family: "Sobread";
-  font-size: 14px;
-}
-
+/* ---------- Layout helpers ---------- */
 .image-column {
   display: flex;
   flex-direction: column;
-  /* gap: 20px;  */
   align-items: center;
 }
 
@@ -73,13 +163,13 @@
   display: block;
   width: 100%;
   height: auto;
+  filter: drop-shadow(0 6px 0 rgba(27, 20, 100, 0.3));
 }
 
 .image-elements {
   position: absolute;
   top: 10%;
   left: 20%;
-  /* transform: translate(-50%, -50%); */
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -93,50 +183,14 @@
   justify-content: center;
 }
 
+/* ---------- Text ---------- */
 .name-text {
-  color: rgb(37, 37, 111);
+  color: var(--ink);
   font-size: 22px;
   font-weight: bold;
-  top: 50%;
-  left: 50%;
-  font-family: "Sobread";
+  font-family: var(--font);
   border-radius: 5px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.8);
 }
 
-.score-text {
-  color: white;
-  font-size: 20px;
-  text-shadow:
-    -1px -1px 0 red,
-    1px -1px 0 red,
-    -1px 1px 0 red,
-    1px 1px 0 red;
-  padding: 10px;
-  font-weight: bold;
-  font-family: "Sobread";
-}
-
-.button-div {
-  position: absolute;
-  font-size: 16px;
-  cursor: pointer;
-  right: -90px;
-}
-
-.button-image {
-  width: 80px;
-  height: 60px;
-}
-
-.button-text {
-  position: absolute;
-  top: 10%;
-  left: 20%;
-  color: white;
-  font-family: "Sobread";
-}
-
-@font-face {
-  font-family: "Sobread";
-  src: url("Sobread.ttf");
-}

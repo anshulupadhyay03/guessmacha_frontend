@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { HistoryFilter } from '../features/history/types';
 import { useHistory } from '../hooks/useHistory';
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
+import { ArrowRightIcon } from '../components/icons';
 
 interface HistoryScreenProps {
   onSelectMatch?: (gameId: string) => void;
@@ -19,28 +21,28 @@ function getResultDetails(result: string) {
     return {
       type: 'win' as const,
       badgeText: 'VICTORY',
-      badgeClass: 'bg-[#63d6ea]/10 text-[#63d6ea] border-[#63d6ea]/30',
+      badgeClass: 'bg-[#e6f6ee] text-[#0b6b45] border-[#0b6b45]/30',
       outcomeText: 'You guessed correctly',
-      outcomeColor: 'text-[#63d6ea]',
-      avatarDotClass: 'bg-[#63d6ea]',
+      outcomeColor: 'text-[#006875]',
+      avatarDotClass: 'bg-[#006875]',
     };
   }
   if (lower === 'lost' || lower === 'defeat' || lower === 'loss') {
     return {
       type: 'loss' as const,
       badgeText: 'DEFEAT',
-      badgeClass: 'bg-red-500/10 text-red-300 border-red-500/30',
+      badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
       outcomeText: 'guessed your secret',
-      outcomeColor: 'text-[#f5f7fb]',
+      outcomeColor: 'text-[#171d1e]',
       avatarDotClass: '',
     };
   }
   return {
     type: 'draw' as const,
     badgeText: 'DRAW',
-    badgeClass: 'bg-amber-400/10 text-amber-300 border-amber-400/30',
+    badgeClass: 'bg-[#ffeccf] text-[#904d00] border-[#904d00]/30',
     outcomeText: 'Game ended in a draw',
-    outcomeColor: 'text-[#c5cad4]',
+    outcomeColor: 'text-[#3c494c]',
     avatarDotClass: '',
   };
 }
@@ -76,13 +78,6 @@ function formatDuration(seconds: number): string {
   return `${mins}m ${secs}s`;
 }
 
-function DefaultAvatarIcon() {
-  return (
-    <svg className="size-6 text-[#9ca3af]" viewBox="0 0 24 24" fill="currentColor">
-      <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
-    </svg>
-  );
-}
 
 export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
   const [filter, setFilter] = useState<HistoryFilter>('all');
@@ -117,17 +112,17 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
   }, [hasMore, loading, loadingMore, loadMore]);
 
   return (
-    <section className="relative mx-auto flex w-full max-w-[640px] flex-col px-4 pt-3 pb-8 text-left text-[#f5f7fb]">
+    <section className="relative mx-auto flex w-full max-w-160 flex-col px-4 pt-3 pb-8 text-left text-[#171d1e]">
       {/* Top Header */}
-      <div className="relative mb-4 flex items-center justify-center border-b border-white/8 pb-3">
-        <h1 className="text-xl font-bold tracking-tight text-white">History</h1>
+      <div className="relative mb-4 flex items-center justify-center border-b border-[#bbc9cc] pb-3">
+        <h1 className="text-xl font-bold tracking-tight text-[#171d1e]">History</h1>
       </div>
 
       {/* Segmented Filter Control */}
       <div
         role="tablist"
         aria-label="Filter match history"
-        className="mx-auto mb-6 flex w-full max-w-md rounded-xl bg-[#241c24] p-1 border border-white/8 shadow-inner"
+        className="mx-auto mb-6 flex w-full max-w-md rounded-xl bg-[#eff4f7] p-1 border border-[#bbc9cc] shadow-inner"
       >
         {FILTER_OPTIONS.map((tab) => {
           const isActive = filter === tab.key;
@@ -138,11 +133,10 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
               role="tab"
               aria-selected={isActive}
               onClick={() => setFilter(tab.key)}
-              className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition select-none cursor-pointer ${
-                isActive
-                  ? 'bg-[#63d6ea] text-[#00363e] shadow-[0_2px_8px_rgba(99,214,234,0.35)]'
-                  : 'text-[#c4cbd4] hover:bg-white/6 hover:text-white'
-              }`}
+              className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition select-none cursor-pointer ${isActive
+                  ? 'bg-[#006875] text-white shadow-xs'
+                  : 'text-[#3c494c] hover:bg-white hover:text-[#171d1e]'
+                }`}
             >
               {tab.label}
             </button>
@@ -152,12 +146,12 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
 
       {/* Error state */}
       {error && (
-        <div className="my-4 rounded-xl bg-red-500/15 p-4 text-center text-sm text-[#ffd9d9] border border-red-500/25" role="alert">
+        <div className="my-4 rounded-xl bg-[#ffdad6] p-4 text-center text-sm text-[#93000a] border border-[#ba1a1a]/25" role="alert">
           <p>{error.message || 'Failed to load match history.'}</p>
           <button
             type="button"
             onClick={() => void refresh()}
-            className="mt-2 text-xs font-bold text-cyan-300 underline cursor-pointer"
+            className="mt-2 text-xs font-bold text-[#006875] underline cursor-pointer"
           >
             Try Again
           </button>
@@ -168,19 +162,19 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
       {loading && (
         <div className="flex flex-col gap-4">
           {[1, 2].map((i) => (
-            <div key={i} className="animate-pulse rounded-2xl border border-white/8 bg-[#1e1924] p-4">
-              <div className="flex items-center justify-between pb-3 border-b border-white/8">
+            <div key={i} className="animate-pulse rounded-2xl border border-[#bbc9cc] bg-white p-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#bbc9cc]">
                 <div className="flex items-center gap-3">
-                  <div className="size-12 rounded-full bg-white/10" />
+                  <div className="size-12 rounded-full bg-[#eff4f7]" />
                   <div className="flex flex-col gap-2">
-                    <div className="h-4 w-24 rounded bg-white/10" />
-                    <div className="h-3 w-16 rounded bg-white/10" />
+                    <div className="h-4 w-24 rounded bg-[#eff4f7]" />
+                    <div className="h-3 w-16 rounded bg-[#eff4f7]" />
                   </div>
                 </div>
-                <div className="h-6 w-16 rounded-full bg-white/10" />
+                <div className="h-6 w-16 rounded-full bg-[#eff4f7]" />
               </div>
-              <div className="my-4 h-16 rounded-xl bg-white/5" />
-              <div className="h-4 w-40 mx-auto rounded bg-white/10" />
+              <div className="my-4 h-16 rounded-xl bg-[#eff4f7]" />
+              <div className="h-4 w-40 mx-auto rounded bg-[#eff4f7]" />
             </div>
           ))}
         </div>
@@ -189,15 +183,15 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
       {/* Empty State */}
       {!loading && !error && matches.length === 0 && (
         <div className="my-12 flex flex-col items-center justify-center text-center px-4">
-          <div className="mb-4 grid size-16 place-items-center rounded-2xl bg-white/4 border border-white/8 text-[#63d6ea]">
+          <div className="mb-4 grid size-16 place-items-center rounded-2xl bg-[#eff4f7] border border-[#bbc9cc] text-[#006875]">
             <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
               <path d="M3 3v5h5" />
               <path d="M12 7v5l4 2" />
             </svg>
           </div>
-          <h2 className="text-lg font-bold text-white">No matches found</h2>
-          <p className="mt-1 max-w-xs text-xs text-[#a9afbc]">
+          <h2 className="text-lg font-bold text-[#171d1e]">No matches found</h2>
+          <p className="mt-1 max-w-xs text-xs text-[#3c494c]">
             {filter === 'all'
               ? 'You have not played any matches yet. Start a new match to build your history!'
               : `No matches found for the "${filter}" filter.`}
@@ -215,48 +209,28 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
             return (
               <article
                 key={match.gameId}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1e1924] shadow-md transition hover:border-[#63d6ea]/35"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-[#bbc9cc] bg-white shadow-xs transition hover:border-[#006875] hover:shadow-md"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-white/8 bg-white/2 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      {match.opponentImageUrl ? (
-                        <img
-                          src={match.opponentImageUrl}
-                          alt={match.opponentName || 'Opponent'}
-                          className="size-12 rounded-full object-cover border-2 border-white/15"
-                        />
-                      ) : (
-                        <div className="grid size-12 place-items-center rounded-full bg-white/8 border-2 border-white/15">
-                          <DefaultAvatarIcon />
-                        </div>
-                      )}
-                      {resultDetails.avatarDotClass && (
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-[#1e1924] ${resultDetails.avatarDotClass}`}
-                          aria-hidden="true"
-                        />
-                      )}
-                    </div>
-
-                    <div className="flex flex-col">
-                      <span className="text-base font-bold text-white leading-tight">
-                        {match.opponentName || 'Opponent'}
-                      </span>
-                      <span className="text-[11px] font-bold tracking-wider text-[#a9afbc] uppercase">
-                        {match.categoryName || 'General'}
-                      </span>
-                    </div>
+                <div className="flex items-center justify-between border-b border-[#bbc9cc] bg-[#eff4f7]/40 p-3 sm:p-4">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {/*<FacebookOpponentProfile
+                      opponentId={match.opponentName}
+                      fallbackName={match.opponentName || 'Opponent'}
+                      fallbackImageUrl={match.opponentImageUrl}
+                    />*/}
+                    <span className="inline-block rounded-md bg-[#eff4f7] border border-[#bbc9cc] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#3c494c] uppercase shrink-0">
+                      {match.categoryName || 'General'}
+                    </span>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex shrink-0 flex-col items-end gap-1 ml-2">
                     <span
-                      className={`rounded-full border px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-widest ${resultDetails.badgeClass}`}
+                      className={`rounded-full border px-2.5 sm:px-3 py-0.5 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest ${resultDetails.badgeClass}`}
                     >
                       {resultDetails.badgeText}
                     </span>
-                    <span className="text-[11px] text-[#9ca3af]">
+                    <span className="text-[11px] text-[#6c797c]">
                       {formatRelativeTime(match.playedAt)}
                     </span>
                   </div>
@@ -264,24 +238,32 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
 
                 {/* Secrets Comparison (if present) */}
                 {hasSecrets && (
-                  <div className="p-4 bg-[#141018]">
-                    <div className="flex items-center justify-between rounded-xl border border-white/8 bg-[#18131e] p-3.5">
-                      <div className="flex flex-1 flex-col text-center">
-                        <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#a88a87]">
+                  <div className="p-4 bg-[#eff4f7]/60">
+                    <div className="flex items-center justify-between rounded-xl border border-[#bbc9cc] bg-white p-3.5">
+                      <div className="flex min-w-0 flex-1 flex-col text-center">
+                        <span className="mb-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-[#6c797c]">
                           Your Secret
                         </span>
-                        <span className="text-base sm:text-lg font-bold text-white truncate px-1">
+                        <span className="text-base sm:text-lg font-bold text-[#171d1e] truncate px-1">
                           {match.playerSecret || '—'}
                         </span>
                       </div>
 
-                      <div className="mx-3 h-10 w-px bg-white/10" aria-hidden="true" />
+                      <div className="mx-3 h-10 w-px bg-[#bbc9cc]" aria-hidden="true" />
 
-                      <div className="flex flex-1 flex-col text-center">
-                        <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#a88a87] truncate px-1">
-                          {match.opponentName ? `${match.opponentName.toUpperCase()}'S SECRET` : "OPPONENT'S SECRET"}
-                        </span>
-                        <span className="text-base sm:text-lg font-bold text-white truncate px-1">
+                      <div className="flex min-w-0 flex-1 flex-col text-center">
+                        <div className="mb-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-[#6c797c] truncate px-1">
+                          <FacebookPlayerName
+                            initialData={{ playerId: match.opponentName, extraText: "'S SECRET" }}
+                            fallbackName="Opponent"
+                            className="w-full h-3.5"
+                            textClassName="text-[10px] font-bold uppercase tracking-widest text-[#6c797c]"
+                            uppercase={true}
+                            overlayPath="overlays/history/player_name_label.xml"
+                            overlayCassPath="overlays/history/history_style.css"
+                          />
+                        </div>
+                        <span className="text-base sm:text-lg font-bold text-[#171d1e] truncate px-1">
                           {match.opponentSecret || '—'}
                         </span>
                       </div>
@@ -290,20 +272,43 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                 )}
 
                 {/* Outcome Statement & Question Stats */}
-                <div className="px-4 py-3.5 text-center bg-[#1e1924]">
-                  <p className={`text-base font-bold ${resultDetails.outcomeColor}`}>
-                    {resultDetails.type === 'loss'
-                      ? `${match.opponentName || 'Opponent'} guessed your secret`
-                      : resultDetails.outcomeText}
+                <div className="px-4 py-3.5 text-center bg-white">
+                  <p className={`text-base font-bold ${resultDetails.outcomeColor} flex items-center justify-center gap-1 flex-wrap`}>
+                    {resultDetails.type === 'loss' ? (
+                      <>
+                        <FacebookPlayerName
+                          initialData={{ playerId: match.opponentName, extraText: "guessed your secret" }}
+                          fallbackName="Opponent"
+                          className="w-full h-5.5"
+                          textClassName={`text-base font-bold ${resultDetails.outcomeColor}`}
+                          overlayPath="overlays/history/player_name_outcome.xml"
+                          overlayCassPath="overlays/history/history_style.css"
+                        />
+                      </>
+                    ) : (
+                      resultDetails.outcomeText
+                    )}
                   </p>
-                  <p className="mt-1 text-xs text-[#a9afbc]">
-                    {match.questionCount} questions asked • <span className="text-white font-medium">You {match.playerQuestionCount}</span> • <span className="text-white font-medium">{match.opponentName || 'Opponent'} {match.opponentQuestionCount}</span>
+                  <p className="mt-1 text-xs text-[#3c494c] flex items-center justify-center gap-1 flex-wrap">
+                    <span>{match.questionCount} questions asked • </span>
+                    <span className="text-[#171d1e] font-semibold">You {match.playerQuestionCount}</span>
+                    <span>•</span>
+                    <span className="text-[#171d1e] font-semibold inline-flex min-w-0 items-center gap-1">
+                      <FacebookPlayerName
+                        initialData={{ playerId: match.opponentName, extraText: `${match.opponentQuestionCount}` }}
+                        fallbackName="Opponent"
+                        className="max-w-22.5 h-4"
+                        textClassName="text-[#171d1e] font-semibold text-xs"
+                        overlayPath="overlays/history/player_name_stat.xml"
+                        overlayCassPath="overlays/history/history_style.css"
+                      />
+                    </span>
                   </p>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between border-t border-white/8 bg-white/2 px-4 py-3 text-xs">
-                  <span className="flex items-center gap-1.5 text-[#a9afbc]">
+                <div className="flex items-center justify-between border-t border-[#bbc9cc] bg-[#eff4f7]/30 px-4 py-3 text-xs">
+                  <span className="flex items-center gap-1.5 text-[#3c494c]">
                     <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <circle cx="12" cy="12" r="10" />
                       <polyline points="12 6 12 12 16 14" />
@@ -314,10 +319,10 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
                   <button
                     type="button"
                     onClick={() => onSelectMatch?.(match.gameId)}
-                    className="flex items-center gap-1 font-bold text-[#63d6ea] transition hover:gap-1.5 cursor-pointer"
+                    className="group inline-flex cursor-pointer items-center gap-1 rounded-md font-bold text-[#006875] transition-colors hover:text-[#004b55] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
                   >
                     <span>Review Match</span>
-                    <span aria-hidden="true">→</span>
+                    <ArrowRightIcon className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </button>
                 </div>
               </article>
@@ -331,19 +336,20 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
 
       {/* Loading More Indicator */}
       {loadingMore && (
-        <div className="my-4 flex items-center justify-center gap-2 text-xs font-semibold text-[#63d6ea]">
-          <span className="size-3 animate-spin rounded-full border-2 border-[#63d6ea] border-t-transparent" />
+        <div className="my-4 flex items-center justify-center gap-2 text-xs font-semibold text-[#006875]">
+          <span className="size-3 animate-spin rounded-full border-2 border-[#006875] border-t-transparent" />
           <span>Loading more matches…</span>
         </div>
       )}
 
       {/* End of list message */}
       {!loading && !hasMore && matches.length > 0 && (
-        <p className="mt-6 text-center text-xs text-[#71717a]">
+        <p className="mt-6 text-center text-xs text-[#6c797c]">
           You have reached the end of your match history.
         </p>
       )}
     </section>
   );
 }
+
 

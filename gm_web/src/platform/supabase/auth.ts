@@ -73,26 +73,31 @@ export async function authenticateFacebookInstant(): Promise<Session | null> {
 }
 
 export async function initializeAuth(): Promise<Session | null> {
-  const developmentSession = await initializeDevelopmentSession();
+  try {
+    const developmentSession = await initializeDevelopmentSession();
 
-  if (developmentSession) {
-    return developmentSession;
+    if (developmentSession) {
+      return developmentSession;
+    }
+
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+
+    if (error) {
+      console.warn('Supabase getSession warning:', error);
+    }
+
+    if (session) {
+      return session;
+    }
+
+    return await authenticateFacebookInstant();
+  } catch (error) {
+    console.warn('Failed to complete background auth initialization:', error);
+    return null;
   }
-
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error) {
-    throw error;
-  }
-
-  if (session) {
-    return session;
-  }
-
-  return authenticateFacebookInstant();
 }
 
 export async function getSession(): Promise<Session | null> {

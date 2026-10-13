@@ -2,7 +2,16 @@ import { useState } from 'react';
 import type { HistoryMatchItem } from '../features/history/types';
 import { useAuth } from '../hooks/useAuth';
 import { useMatchReview } from '../hooks/useMatchReview';
-import './GameZoneScreen.css';
+import PlayerAvatar from '../components/PlayerAvatar';
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
+import './MatchReviewScreen.css';
+
+// Inline text style for the isMe profile-name overlay (your own name).
+// Mirrors public/overlays/matchreview/match_review_player_name_me.css;
+// margin:-8px offsets the overlay iframe's default 8px body margin so the
+// name never gets clipped into a scroller.
+const REVIEW_ME_NAME_TEXT_STYLE =
+  'font-family: Manrope, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 10px; font-weight: 700; color: #006875; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; line-height: 1.4; margin: -8px; padding: 0;'
 
 interface MatchReviewScreenProps {
   gameId: string;
@@ -16,52 +25,6 @@ function formatDuration(seconds: number): string {
   const secs = seconds % 60;
   if (mins === 0) return `${secs}s`;
   return `${mins}m ${secs}s`;
-}
-
-function DefaultAvatarIcon({ className = 'size-5' }: { className?: string }) {
-  return (
-    <svg className={`${className} text-[#a9afbc]`} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function PlayerAvatar({
-  imageUrl,
-  name,
-  sizeClass = 'size-10',
-  iconSizeClass = 'size-5',
-  borderClass = 'border border-white/20',
-  className = '',
-}: {
-  imageUrl?: string | null;
-  name?: string;
-  sizeClass?: string;
-  iconSizeClass?: string;
-  borderClass?: string;
-  className?: string;
-}) {
-  const [hasError, setHasError] = useState(false);
-
-  if (imageUrl && !hasError) {
-    return (
-      <img
-        src={imageUrl}
-        alt={name || 'Player'}
-        onError={() => setHasError(true)}
-        className={`${sizeClass} rounded-full object-cover shrink-0 ${borderClass} ${className}`}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`grid ${sizeClass} place-items-center rounded-full bg-white/8 shrink-0 ${borderClass} ${className}`}
-      aria-label={name || 'Player'}
-    >
-      <DefaultAvatarIcon className={iconSizeClass} />
-    </div>
-  );
 }
 
 export default function MatchReviewScreen({ gameId, onBack, match: initialMatch }: MatchReviewScreenProps) {
@@ -80,6 +43,27 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
     matchSummary?.opponent?.questionsAsked ??
     initialMatch?.opponentQuestionCount ??
     0;
+
+  const currentUserId = session?.user?.id;
+  // match.player is the requesting (logged-in) user by construction
+  // (match_review RPC builds it from p_player_id = auth UUID), verified
+  // against the session id so `isMe` unambiguously means the logged-in
+  // player and routes to the profile overlays (no id needed).
+  const playerId = matchSummary?.player?.playerId;
+  const playerFbName = matchSummary?.player?.playerName || null;
+  const amPlayer = Boolean(currentUserId && playerId && currentUserId === playerId);
+  // Overlay ids must be numeric FB ids: a non-numeric display name is already
+  // human-readable, so skip the overlay and let the fallback render it.
+  // (An overlay mounted with a bogus id would hide the fallback and render blank.)
+  const playerFbId = playerFbName && /^\d{10,}$/.test(playerFbName) ? playerFbName : undefined;
+  const playerInitialData = !amPlayer && playerFbId ? { playerId: playerFbId } : undefined;
+  // FB-scoped id for the opponent overlay: playerName carries the FB id
+  // (profiles.display_name). Never feed the 'Opponent' display default.
+  const opponentFbName = matchSummary?.opponent?.playerName || initialMatch?.opponentName || null;
+  const opponentFbId = opponentFbName && /^\d{10,}$/.test(opponentFbName) ? opponentFbName : undefined;
+  const opponentInitialData = opponentFbId ? { playerId: opponentFbId } : undefined;
+  // Human-readable name for sentence fallbacks (raw numeric ids never print).
+  const oppDisplayName = opponentName && !/^\d{10,}$/.test(opponentName) ? opponentName : 'Opponent';
 
   const playerSecret = matchSummary?.player?.secret ?? initialMatch?.playerSecret ?? null;
   const playerQuestionCount =
@@ -118,21 +102,47 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
         ? 'DRAW'
         : 'IN PROGRESS';
 
-  const outcomeColor = isWon
-    ? 'text-[#63d6ea]'
+  const outcomeModifier = isWon
+    ? 'won'
     : isLost
-      ? 'text-[#ffb4ab]'
+      ? 'lost'
       : isDraw
-        ? 'text-[#f59e0b]'
-        : 'text-[#63d6ea]';
+        ? 'draw'
+        : 'progress';
 
-  const outcomeSubtitle = isWon
-    ? `You defeated ${opponentName}`
+  // Outcome subtitle as ONE overlay text (whole sentence measured together),
+  // gamezone game-result style. Split static+overlay compositions leave
+  // fallback/overlay width gaps ("Paridhi   defeated you") because the host
+  // sizes to the fallback while the overlay renders a different width.
+  const subtitleOverlayPath = isWon
+    ? 'overlays/matchreview/player_name_review_subtitle_win.xml'
     : isLost
-      ? `${opponentName} defeated you`
+      ? 'overlays/matchreview/player_name_review_subtitle_loss.xml'
       : isDraw
-        ? `Match with ${opponentName} ended in a draw`
-        : `Match with ${opponentName} is currently in progress`;
+        ? 'overlays/matchreview/player_name_review_subtitle_draw.xml'
+        : 'overlays/matchreview/player_name_review_subtitle_progress.xml';
+  const outcomeSubtitle = (
+    <FacebookPlayerName
+      isMe={false}
+      initialData={opponentInitialData}
+      fallbackName={
+        isWon
+          ? `You defeated ${oppDisplayName}`
+          : isLost
+            ? `${oppDisplayName} defeated you`
+            : isDraw
+              ? `Match with ${oppDisplayName} ended in a draw`
+              : `Match with ${oppDisplayName} is currently in progress`
+      }
+      className="w-full h-5.5"
+      textClassName="truncate text-sm"
+      overlayPath={subtitleOverlayPath}
+      overlayCassPath="overlays/matchreview/match_review_outcome_name.css"
+    />
+  );
+  const opponentStatInitialData = opponentFbId
+    ? { playerId: opponentFbId, count: opponentQuestionCount }
+    : undefined;
 
   const totalQuestions = questionCount || (playerQuestionCount + opponentQuestionCount) || 1;
   const playerPercent = Math.round((playerQuestionCount / totalQuestions) * 100);
@@ -148,39 +158,39 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
     null;
 
   return (
-    <section className="relative mx-auto flex w-full max-w-[640px] flex-col px-4 pt-3 pb-8 text-left text-[#f5f7fb]">
+    <section className="match-review-screen">
       {/* Top Header */}
-      <div className="relative mb-4 flex items-center justify-between border-b border-white/8 pb-3">
+      <div className="match-review-header">
         <button
           type="button"
           onClick={onBack}
-          className="grid size-10 place-items-center rounded-xl bg-white/4 text-[#edf3ff] transition hover:-translate-y-px hover:bg-white/8 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
+          className="match-review-back-btn"
           aria-label="Back to match history"
         >
-          <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="match-review-back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12" />
             <polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
 
-        <h1 className="text-xl font-bold tracking-tight text-white">Review Match</h1>
+        <h1 className="match-review-title">Review Match</h1>
 
-        <div className="size-10" aria-hidden="true" />
+        <div className="match-review-header-spacer" aria-hidden="true" />
       </div>
 
       {/* Initial Loading Skeleton */}
       {loading && !matchSummary && !initialMatch && (
-        <div className="flex flex-col gap-4">
-          <div className="animate-pulse rounded-2xl border border-white/10 bg-[#1e1924] p-5">
-            <div className="flex items-center justify-between">
-              <div className="h-6 w-32 rounded bg-white/10" />
-              <div className="h-5 w-24 rounded-full bg-white/10" />
+        <div className="match-review-skeleton-container">
+          <div className="match-review-skeleton-card">
+            <div className="match-review-skeleton-row">
+              <div className="match-review-skeleton-bar match-review-skeleton-bar--title" />
+              <div className="match-review-skeleton-bar match-review-skeleton-bar--badge" />
             </div>
-            <div className="mt-3 h-4 w-48 rounded bg-white/10" />
-            <div className="mt-4 h-10 rounded-xl bg-white/5" />
+            <div className="match-review-skeleton-bar match-review-skeleton-bar--subtitle" />
+            <div className="match-review-skeleton-bar match-review-skeleton-bar--banner" />
           </div>
-          <div className="flex h-[280px] flex-col items-center justify-center gap-2 text-xs text-[#63d6ea]">
-            <span className="size-4 animate-spin rounded-full border-2 border-[#63d6ea] border-t-transparent" />
+          <div className="match-review-loading-view">
+            <span className="match-review-spinner" />
             <span>Loading match details…</span>
           </div>
         </div>
@@ -188,12 +198,12 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
 
       {/* Initial Error State */}
       {error && !matchSummary && !initialMatch && (
-        <div className="my-4 rounded-xl border border-red-500/25 bg-red-500/15 p-4 text-center text-sm text-[#ffd9d9]">
+        <div className="match-review-error-box">
           <p>{error.message || 'Unable to load match review details.'}</p>
           <button
             type="button"
             onClick={() => void refresh()}
-            className="mt-2 text-xs font-bold text-cyan-300 underline cursor-pointer"
+            className="match-review-retry-btn"
           >
             Try Again
           </button>
@@ -202,20 +212,20 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
 
       {/* Match Dashboard Summary Card */}
       {(matchSummary || initialMatch) && (
-        <div className="relative mb-4 overflow-hidden rounded-2xl border border-white/10 bg-[#1e1924] p-4 shadow-md">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="match-review-card">
+          <div className="match-review-card-top">
             <div>
-              <h2 className={`text-2xl font-black tracking-tight ${outcomeColor}`}>
+              <h2 className={`match-review-outcome-title match-review-outcome-title--${outcomeModifier}`}>
                 {outcomeTitle}
               </h2>
-              <p className="text-sm text-[#c5cad4]">{outcomeSubtitle}</p>
+              <p className="match-review-outcome-subtitle">{outcomeSubtitle}</p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-bold text-[#e1bfbc]">
+            <div className="match-review-badges-row">
+              <span className="match-review-badge">
                 {categoryName}
               </span>
-              <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-bold text-[#e1bfbc]">
+              <span className="match-review-badge">
                 {formatDuration(durationSeconds)} • {questionCount} Qs
               </span>
             </div>
@@ -223,22 +233,24 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
 
           {/* Outcome Status Banner */}
           <div
-            className={`mt-3 flex items-center justify-center gap-2 rounded-xl p-2.5 text-xs font-semibold ${
-              isWon
-                ? 'bg-[#63d6ea]/10 border border-[#63d6ea]/25 text-[#63d6ea]'
-                : isLost
-                  ? 'bg-red-500/10 border border-red-500/25 text-[#ffdad6]'
-                  : isDraw
-                    ? 'bg-amber-400/10 border border-amber-400/25 text-[#fef3c7]'
-                    : 'bg-[#63d6ea]/10 border border-[#63d6ea]/25 text-[#63d6ea]'
-            }`}
+            className={`match-review-outcome-banner match-review-outcome-banner--${outcomeModifier}`}
           >
             <span aria-hidden="true">{isWon ? '✓' : isLost ? '✕' : '•'}</span>
             <span>
               {isWon
                 ? 'You guessed correctly first.'
                 : isLost
-                  ? `${opponentName} guessed your secret first.`
+                  ? (
+                    <FacebookPlayerName
+                      isMe={false}
+                      initialData={opponentInitialData}
+                      fallbackName={`${oppDisplayName} guessed your secret first.`}
+                      className="w-full h-4.5 justify-center"
+                      textClassName="truncate text-xs font-semibold text-center"
+                      overlayPath="overlays/matchreview/player_name_review_banner_loss.xml"
+                      overlayCassPath="overlays/matchreview/match_review_banner_name.css"
+                    />
+                  )
                   : isDraw
                     ? 'Match ended in a draw.'
                     : 'Match is currently in progress.'}
@@ -247,33 +259,41 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
 
           {/* Collapsible Details */}
           {isDetailsOpen && (
-            <div className="mt-3.5 flex flex-col gap-3 border-t border-white/8 pt-3 text-xs">
+            <div className="match-review-details-section">
               {/* Integrated Stats Grid matching design reference */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 rounded-lg border border-white/10 bg-white/3 p-4 mt-2">
+              <div className="match-review-stats-grid">
                 <div>
-                  <p className="text-xs font-semibold text-[#a9afbc]">Total Questions</p>
-                  <p className="text-lg sm:text-xl font-bold text-white mt-1">{questionCount}</p>
+                  <p className="match-review-stat-label">Total Questions</p>
+                  <p className="match-review-stat-val">{questionCount}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#a9afbc]">Duration</p>
-                  <p className="text-lg sm:text-xl font-bold text-white mt-1">{formatDuration(durationSeconds)}</p>
+                  <p className="match-review-stat-label">Duration</p>
+                  <p className="match-review-stat-val">{formatDuration(durationSeconds)}</p>
                 </div>
-                <div className="col-span-2 flex flex-col justify-center">
-                  <div className="flex justify-between items-end mb-2">
-                    <p className="text-xs font-semibold text-[#a9afbc]">Question Split</p>
-                    <div className="flex gap-3 text-xs font-semibold">
-                      <span className="text-[#63d6ea]">You: {playerQuestionCount}</span>
-                      <span className="text-[#e5a93c]">{opponentName}: {opponentQuestionCount}</span>
+                <div className="match-review-split-col">
+                  <div className="match-review-split-header">
+                    <p className="match-review-stat-label">Question Split</p>
+                    <div className="match-review-split-tags">
+                      <span className="match-review-split-tag-me">You: {playerQuestionCount}</span>
+                      <FacebookPlayerName
+                        isMe={false}
+                        initialData={opponentStatInitialData}
+                        fallbackName={`${oppDisplayName}: ${opponentQuestionCount}`}
+                        className="w-[110px] shrink-0 h-4.5"
+                        textClassName="truncate text-xs font-semibold text-[#904d00]"
+                        overlayPath="overlays/matchreview/player_name_review_stat.xml"
+                        overlayCassPath="overlays/matchreview/match_review_stat_name.css"
+                      />
                     </div>
                   </div>
-                  <div className="flex h-2 rounded-full overflow-hidden bg-white/10 w-full">
+                  <div className="match-review-progress-track">
                     <div
-                      className="bg-[#63d6ea] h-full transition-all"
+                      className="match-review-progress-fill-me"
                       style={{ width: `${playerPercent}%` }}
                       aria-label={`You asked ${playerPercent}% of questions`}
                     />
                     <div
-                      className="bg-[#e5a93c] h-full transition-all"
+                      className="match-review-progress-fill-opp"
                       style={{ width: `${100 - playerPercent}%` }}
                       aria-label={`Opponent asked ${100 - playerPercent}% of questions`}
                     />
@@ -282,37 +302,59 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
               </div>
 
               {/* Players Condensed matching design reference */}
-              <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4 mt-2">
-                <div className="flex items-center gap-3">
+              <div className="match-review-players-row">
+                <div className="match-review-player-item">
                   <PlayerAvatar
+                    isMe={amPlayer}
+                    initialData={playerInitialData}
                     imageUrl={userAvatarUrl}
                     name="You"
-                    sizeClass="size-10"
-                    iconSizeClass="size-5"
-                    borderClass="border-2 border-[#63d6ea]/70"
+                    className="size-10 shrink-0 rounded-full bg-[#eff4f7] text-[#006875] match-review-avatar--me"
+                    iconSize="size-5"
+                    xmlPath="overlays/profile_pic.xml"
+                    cssPath="overlays/profile_pic.css"
                   />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] font-bold text-[#63d6ea] uppercase tracking-wider">YOU</span>
-                    <span className="text-sm font-semibold text-white truncate">{playerSecret || '—'}</span>
+                  <div className="match-review-player-details flex-1">
+                    <FacebookPlayerName
+                      isMe={amPlayer}
+                      initialData={playerInitialData}
+                      fallbackName="You"
+                      uppercase
+                      className="w-full h-3.5"
+                      textClassName="truncate text-[10px] font-bold uppercase tracking-[0.05em] text-[#006875]"
+                      textStyle={REVIEW_ME_NAME_TEXT_STYLE}
+                      overlayPath="overlays/player_name.xml"
+                      overlayCassPath="overlays/matchreview/match_review_player_name_me.css"
+                    />
+                    <span className="match-review-secret-text">{playerSecret || '—'}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 text-right">
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] font-bold text-[#e5a93c] uppercase tracking-wider truncate">
-                      {opponentName.toUpperCase()}
-                    </span>
-                    <span className={`text-sm font-semibold text-[#c5cad4] truncate ${isWon ? 'line-through opacity-75' : ''}`}>
+                <div className="match-review-player-item--right">
+                  <div className="match-review-player-details flex-1">
+                    <FacebookPlayerName
+                      isMe={false}
+                      initialData={opponentInitialData}
+                      fallbackName={opponentName}
+                      uppercase
+                      className="w-full h-3.5 justify-end"
+                      textClassName="truncate text-[10px] font-bold uppercase tracking-[0.05em] text-[#904d00] text-right"
+                      overlayPath="overlays/player_name.xml"
+                      overlayCassPath="overlays/matchreview/match_review_player_name_opp.css"
+                    />
+                    <span className={`match-review-secret-text--opp ${isWon ? 'match-review-secret-text--struck' : ''}`}>
                       {opponentSecret || '—'}
                     </span>
                   </div>
                   <PlayerAvatar
+                    isMe={false}
+                    initialData={opponentInitialData}
                     imageUrl={opponentImageUrl}
                     name={opponentName}
-                    sizeClass="size-10"
-                    iconSizeClass="size-5"
-                    borderClass="border-2 border-[#e5a93c]/70"
-                    className={isWon ? 'grayscale-[25%]' : ''}
+                    className={`size-10 shrink-0 rounded-full bg-[#eff4f7] text-[#006875] match-review-avatar--opp ${isWon ? 'match-review-avatar--opp-won' : ''}`}
+                    iconSize="size-5"
+                    xmlPath="overlays/profile_pic.xml"
+                    cssPath="overlays/profile_pic.css"
                   />
                 </div>
               </div>
@@ -320,17 +362,17 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
           )}
 
           {/* Details Toggle Button */}
-          <div className="mt-2.5 flex justify-center">
+          <div className="match-review-details-toggle-row">
             <button
               type="button"
               onClick={() => setIsDetailsOpen((prev) => !prev)}
-              className="flex items-center gap-1 text-xs font-bold tracking-wider text-[#63d6ea] uppercase transition hover:text-[#63d6ea]/80 cursor-pointer"
+              className="match-review-details-toggle-btn"
               aria-expanded={isDetailsOpen}
             >
               <span>Match Details</span>
               <span
-                className={`inline-block transition-transform duration-200 ${
-                  isDetailsOpen ? 'rotate-180' : 'rotate-0'
+                className={`match-review-toggle-icon ${
+                  isDetailsOpen ? 'match-review-toggle-icon--open' : ''
                 }`}
                 aria-hidden="true"
               >
@@ -342,32 +384,32 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
       )}
 
       {/* Tactical Replay Timeline Card - Fixed Height with Internal Scroll */}
-      <div className="mb-4 flex flex-col rounded-2xl border border-white/10 bg-[#1e1924] p-4 shadow-md">
-        <div className="flex shrink-0 items-center justify-between border-b border-white/8 pb-2.5 mb-3">
-          <h3 className="text-xs font-bold tracking-wider text-[#a9afbc] uppercase">
+      <div className="match-review-timeline-card">
+        <div className="match-review-timeline-header">
+          <h3 className="match-review-timeline-heading">
             REPLAY TIMELINE
           </h3>
-          <span className="text-xs text-[#a9afbc]" title="Chronological questions">
+          <span className="match-review-timeline-clock" title="Chronological questions">
             🕒
           </span>
         </div>
 
         {/* Loading State */}
         {loading && (
-          <div className="flex h-[360px] flex-col items-center justify-center gap-2 text-xs text-[#63d6ea]">
-            <span className="size-4 animate-spin rounded-full border-2 border-[#63d6ea] border-t-transparent" />
+          <div className="match-review-timeline-loading">
+            <span className="match-review-spinner" />
             <span>Loading match replay…</span>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="my-4 rounded-xl border border-red-500/25 bg-red-500/15 p-3.5 text-center text-xs text-[#ffd9d9]">
+          <div className="match-review-timeline-error">
             <p>{error.message || 'Unable to load question history.'}</p>
             <button
               type="button"
               onClick={() => void refresh()}
-              className="mt-1.5 font-bold text-cyan-300 underline cursor-pointer"
+              className="match-review-retry-btn"
             >
               Retry
             </button>
@@ -376,35 +418,46 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
 
         {/* Empty State */}
         {!loading && !error && questions.length === 0 && (
-          <div className="flex h-[200px] items-center justify-center text-center text-xs text-[#a9afbc]">
+          <div className="match-review-timeline-empty">
             No question history recorded for this match.
           </div>
         )}
 
-        {/* Q&A List with fixed height & scrolling - matching GameZoneScreen */}
+        {/* Q&A List with fixed height & scrolling */}
         {!loading && questions.length > 0 && (
-          <div className="gamezone-qa-container h-[380px] max-h-[380px] overflow-y-auto pr-1">
+          <div className="match-review-qa-scroll">
             {questions.map((q) => {
               const isAskedByMe = opponentId
                 ? q.askedBy?.playerId !== opponentId
                 : Boolean(matchSummary?.player?.playerId && q.askedBy?.playerId === matchSummary.player.playerId);
               const isAnswered = Boolean(q.answerText);
-              const waitingText = isAskedByMe
-                ? `Waiting for ${opponentName}...`
-                : 'Waiting for answer...';
 
               return (
                 <div
                   key={q.id}
-                  className={`gamezone-qa-card ${
-                    isAskedByMe ? 'gamezone-qa-card--me' : 'gamezone-qa-card--opponent'
-                  } ${!isAnswered ? 'gamezone-qa-card--waiting' : ''}`}
+                  className={`review-qa-card ${
+                    isAskedByMe ? 'review-qa-card--me' : 'review-qa-card--opponent'
+                  } ${!isAnswered ? 'review-qa-card--waiting' : ''}`}
                 >
-                  <div className="gamezone-qa-question">{q.questionText}</div>
+                  <div className="review-qa-question">{q.questionText}</div>
                   {isAnswered ? (
-                    <div className="gamezone-qa-answer">{q.answerText}</div>
+                    <div className="review-qa-answer">{q.answerText}</div>
                   ) : (
-                    <div className="gamezone-qa-waiting">{waitingText}</div>
+                    <div className="review-qa-waiting">
+                      {isAskedByMe ? (
+                        <FacebookPlayerName
+                          isMe={false}
+                          initialData={opponentInitialData}
+                          fallbackName={`Waiting for ${oppDisplayName}...`}
+                          className="w-full h-5"
+                          textClassName="truncate text-[0.9rem] italic"
+                          overlayPath="overlays/matchreview/player_name_review_waiting.xml"
+                          overlayCassPath="overlays/matchreview/match_review_waiting_name.css"
+                        />
+                      ) : (
+                        'Waiting for answer...'
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -414,20 +467,20 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
       </div>
 
       {/* AI Fair Play Review Card */}
-      <div className="flex flex-col rounded-2xl border border-white/10 bg-[#1e1924] p-4 shadow-md">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-lg" aria-hidden="true">🤖</span>
-          <h3 className="text-sm font-bold text-white">AI Fair Play Review</h3>
+      <div className="match-review-fairplay-card">
+        <div className="match-review-fairplay-header">
+          <span className="match-review-fairplay-icon" aria-hidden="true">🤖</span>
+          <h3 className="match-review-fairplay-title">AI Fair Play Review</h3>
         </div>
 
-        <p className="text-xs text-[#a9afbc] leading-relaxed">
+        <p className="match-review-fairplay-desc">
           Let AI analyse the complete question and answer history for unusual or potentially suspicious behaviour.
         </p>
 
         <button
           type="button"
           onClick={() => setIsComingSoonOpen(true)}
-          className="mt-3.5 flex w-full items-center justify-center rounded-xl bg-[#63d6ea] py-3 text-xs font-extrabold text-[#00363e] transition hover:opacity-90 active:scale-[0.99] cursor-pointer shadow-[0_4px_16px_rgba(99,214,234,0.2)]"
+          className="match-review-fairplay-btn"
         >
           Run Fair AI Play Review
         </button>
@@ -436,25 +489,25 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
       {/* Coming Soon Pop-up Dialog */}
       {isComingSoonOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          className="match-review-modal-backdrop"
           role="dialog"
           aria-modal="true"
           aria-labelledby="coming-soon-title"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-white/12 bg-[#141218] p-6 text-center shadow-2xl">
-            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-[#63d6ea]/15 border border-[#63d6ea]/30 text-2xl text-[#63d6ea]">
+          <div className="match-review-modal-card">
+            <div className="match-review-modal-icon-badge">
               🤖
             </div>
-            <h2 id="coming-soon-title" className="text-xl font-bold text-white">
+            <h2 id="coming-soon-title" className="match-review-modal-title">
               Coming Soon
             </h2>
-            <p className="mt-2 text-sm text-[#c4c7d0] leading-relaxed">
+            <p className="match-review-modal-desc">
               This feature is coming soon! AI Fair Play Review will be available in an upcoming update.
             </p>
             <button
               type="button"
               onClick={() => setIsComingSoonOpen(false)}
-              className="mt-5 w-full cursor-pointer rounded-xl bg-[#63d6ea] py-3 text-base font-extrabold text-[#00363e] transition hover:opacity-90 shadow-[0_4px_16px_rgba(99,214,234,0.2)]"
+              className="match-review-modal-btn"
             >
               OK
             </button>

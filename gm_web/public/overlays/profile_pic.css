@@ -1,0 +1,38 @@
+html,
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box !important;
+}
+
+.profile-pic-container {
+  width: 100%; 
+  height: 100%; 
+  border: none; 
+  overflow: hidden; 
+  display: block; 
+  background: transparent; 
+  margin: 0; 
+  padding: 0;
+}
+
+.avatar {
+  position: fixed;
+  top: 0; 
+  left: 0;
+  width: 100%; 
+  height: 100%; 
+  border-radius: 50%; 
+  object-fit: cover; 
+  margin: 0; 
+  display: block;
+}

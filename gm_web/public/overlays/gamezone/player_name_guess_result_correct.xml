@@ -1,0 +1,7 @@
+<View className="guessResultContainer">
+  <Text
+    content="Outstanding! You successfully deduced that {{FBInstant.players[{{playerId}}].name}}&apos;s secret is {{secretName}}. Opponent now has one final chance to guess your secret!"
+    className="guessResultText"
+  />
+</View>
+

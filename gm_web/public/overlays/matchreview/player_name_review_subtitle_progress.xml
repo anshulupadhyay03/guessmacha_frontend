@@ -1,0 +1,6 @@
+<View className="playerNameContainer">
+  <Text
+    content="Match with {{FBInstant.players[{{playerId}}].name}} is currently in progress"
+    className="playerName"
+  />
+</View>

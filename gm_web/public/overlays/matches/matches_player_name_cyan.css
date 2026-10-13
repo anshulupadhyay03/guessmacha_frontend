@@ -1,0 +1,34 @@
+/* ==========================================================================
+   Matches Screen Player Name Overlay Stylesheet (cyan state)
+   Reuses overlays/player_name.xml (.playerNameContainer / .playerName) but
+   matches .card-participant-info.cyan: 12px bold #006875, right-aligned,
+   single-line ellipsis. Used for "<name> joined".
+   See matches_player_name.css for the default ("You vs <name>") variant.
+   ========================================================================== */
+
+.playerNameContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  margin: -8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.playerName {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #006875 !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: right !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  max-width: 100% !important;
+}

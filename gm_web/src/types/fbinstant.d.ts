@@ -1,6 +1,11 @@
 declare global {
   interface FBInstantPlayer {
     getID(): string;
+    getName?(): string;
+    getPhoto?(): string;
+    getDataAsync?(keys?: string[]): Promise<Record<string, unknown>>;
+    setDataAsync?(data: Record<string, unknown>): Promise<void>;
+    getConnectedPlayersAsync?(): Promise<unknown[]>;
     getASIDAsync?(): Promise<string>;
     getAssociatedAppsASIDAsync?(): Promise<string>;
     getSignedAssociatedAppsASIDAsync?(): Promise<string>;
@@ -9,7 +14,8 @@ declare global {
     getSignedPlayerInfoAsync(
       nonce?: string,
     ): Promise<{
-      getPlayerId(): string;
+      getPlayerID(): string;
+      getPlayerId?(): string;
       getSignature(): string;
     }>;
     canSubscribeBotAsync?(): Promise<boolean>;
@@ -21,6 +27,7 @@ declare global {
     showAsync(): Promise<void>;
     hideAsync?(): Promise<void>;
     destroyAsync?(): Promise<void>;
+    dismissAsync?(): Promise<void>;
   }
 
   interface FBInstantOverlayViews {
@@ -29,7 +36,24 @@ declare global {
       container: HTMLElement,
       style?: string,
       stylesheet?: string,
+      initialData?: Record<string, unknown>,
     ): Promise<FBInstantOverlayView>;
+    createProfilePictureOverlayViewAsync?(
+      container: HTMLElement,
+      imageStyle?: string,
+      iFrameStyle?: string,
+    ): Promise<FBInstantOverlayView>;
+    createProfileNameOverlayViewAsync?(
+      container: HTMLElement,
+      textStyle?: string,
+      iFrameStyle?: string,
+      pathToCss?: string,
+    ): Promise<FBInstantOverlayView>;
+  }
+
+  interface FBInstantContext {
+    getID(): string | null;
+    getType(): string;
   }
 
   interface FBInstantAPI {
@@ -40,10 +64,18 @@ declare global {
     getPlatform(): string;
     getSDKVersion(): string;
     player: FBInstantPlayer;
-    overlayViews: FBInstantOverlayViews;
+    context?: FBInstantContext;
+    overlayViews?: FBInstantOverlayViews;
+    performHapticFeedbackAsync?(): Promise<void>;
+    getSupportedAPIs?(): string[];
+    quit?(): void;
   }
 
   const FBInstant: FBInstantAPI;
+
+  interface Window {
+    FBInstant?: FBInstantAPI;
+  }
 }
 
 export interface PlatformPlayer {

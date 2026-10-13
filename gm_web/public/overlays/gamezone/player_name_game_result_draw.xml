@@ -1,0 +1,7 @@
+<View className="gameResultContainer">
+  <Text
+    content="Match with {{FBInstant.players[{{playerId}}].name}} ended in a draw!"
+    className="gameResultText"
+  />
+</View>
+

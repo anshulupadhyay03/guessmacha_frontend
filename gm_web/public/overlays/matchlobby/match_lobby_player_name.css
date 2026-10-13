@@ -1,0 +1,35 @@
+/* ==========================================================================
+   Match Lobby Player Name Overlay Stylesheet
+   Reuses overlays/player_name.xml (.playerNameContainer / .playerName) but
+   matches the lobby <strong> name styling: 16px bold #171d1e, left-aligned,
+   single-line ellipsis. Kept separate from overlays/styles.css so lobby
+   typography stays in sync with MatchLobbyScreen without affecting other
+   player_name.xml consumers.
+   ========================================================================== */
+
+.playerNameContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  margin: -8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.playerName {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #171d1e !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: left !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  max-width: 100% !important;
+}

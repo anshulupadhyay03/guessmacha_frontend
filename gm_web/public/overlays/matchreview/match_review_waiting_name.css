@@ -1,0 +1,34 @@
+/* ==========================================================================
+   Match Review Timeline Waiting-Text Name Overlay Stylesheet
+   Reuses overlays/player_name.xml (.playerNameContainer / .playerName) but
+   matches .review-qa-waiting: 14.4px italic #6c797c, single-line ellipsis.
+   Used for "Waiting for <name>...".
+   ========================================================================== */
+
+.playerNameContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  margin: -8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.playerName {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 14.4px !important;
+  font-weight: 400 !important;
+  font-style: italic !important;
+  color: #6c797c !important;
+  letter-spacing: 0em !important;
+  line-height: 1.35 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: left !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  max-width: 100% !important;
+}

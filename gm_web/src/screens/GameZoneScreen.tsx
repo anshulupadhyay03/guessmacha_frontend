@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
+import PlayerAvatar from '../components/PlayerAvatar';
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
+import { triggerHapticFeedback } from '../platform/facebook/fbInstant';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
 import { useGameDetails } from '../hooks/useGameDetails';
 import { useGameState } from '../hooks/useGameState';
+import {
+  clearGameSecretFiltersAndCache,
+  loadGameLessLikelyIds,
+  saveGameLessLikelyIds,
+} from '../platform/storage/gameSecretsStorage';
 import './GameZoneScreen.css';
 
 interface GameZoneScreenProps {
@@ -11,7 +19,7 @@ interface GameZoneScreenProps {
   roomCode: string;
   categoryId?: string;
   categoryName?: string;
-  onBackToLobby?: () => void;
+  onBackToMatches?: () => void;
   onLeave?: () => void;
   onGoHome?: () => void;
   onReviewMatch?: (gameId: string) => void;
@@ -19,78 +27,51 @@ interface GameZoneScreenProps {
 
 type ActionMode = 'ask' | 'answer' | 'disabled';
 
-function DefaultAvatarIcon({ className = 'size-5' }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function PlayerAvatar({
-  imageUrl,
-  name,
-  className = 'gamezone-player-avatar',
-  iconSize = 'size-5',
-}: {
-  imageUrl?: string | null;
-  name?: string;
-  className?: string;
-  iconSize?: string;
-}) {
-  const [hasError, setHasError] = useState(false);
-
-  if (imageUrl && !hasError) {
-    return (
-      <div className={className} aria-label={name || 'Player'}>
-        <img
-          src={imageUrl}
-          alt={name || 'Player'}
-          onError={() => setHasError(true)}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className={className} aria-label={name || 'Player'}>
-      <DefaultAvatarIcon className={iconSize} />
-    </div>
-  );
-}
-
 interface GameOutcome {
   isFinished: boolean;
   resultType: 'win' | 'loss' | 'draw' | null;
   title: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
+  subtitleText: string;
   badgeClass: string;
   textColor: string;
+  overlayPath?: string;
+  initialData?: Record<string, unknown>;
 }
 
 function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
   if (!gameState) {
-    return { isFinished: false, resultType: null, title: '', subtitle: '', badgeClass: '', textColor: '' };
+    return {
+      isFinished: false,
+      resultType: null,
+      title: '',
+      subtitle: '',
+      subtitleText: '',
+      badgeClass: '',
+      textColor: '',
+    };
   }
 
   const isFinished = gameState.status === 'finished' || gameState.status === 'completed';
   if (!isFinished) {
-    return { isFinished: false, resultType: null, title: '', subtitle: '', badgeClass: '', textColor: '' };
+    return {
+      isFinished: false,
+      resultType: null,
+      title: '',
+      subtitle: '',
+      subtitleText: '',
+      badgeClass: '',
+      textColor: '',
+    };
   }
 
   const me = gameState.players?.me;
   const opponent = gameState.players?.opponent;
-  const opponentName = opponent?.playerName || 'Opponent';
+  const opponentDisplayName =
+    opponent?.playerName && !/^\d{10,}$/.test(opponent.playerName)
+      ? opponent.playerName
+      : 'Opponent';
+  const opponentInitialData = opponent?.playerName ? { playerId: opponent.playerName } : undefined;
 
   const rawResult = gameState.gameResult;
   let winnerId: string | null = null;
@@ -103,71 +84,121 @@ function resolveGameOutcome(gameState: GameStateData | null): GameOutcome {
     resultStatus = rawResult.toLowerCase();
   }
 
-  // 1. Authoritative resolution based on winnerId
+  // 1. Authoritative resolution for draw
+  if (resultStatus === 'draw' || resultStatus === 'tie') {
+    const subtitleText = opponentInitialData
+      ? `Match with ${opponentDisplayName} ended in a draw!`
+      : 'Match ended in a draw! Both players guessed correctly!';
+    return {
+      isFinished: true,
+      resultType: 'draw',
+      title: 'DRAW',
+      subtitle: subtitleText,
+      subtitleText,
+      badgeClass: 'bg-[#ffeccf] text-[#904d00] border-[#904d00]/30',
+      textColor: 'text-[#904d00]',
+      overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_draw.xml' : undefined,
+      initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'draw' } : undefined,
+    };
+  }
+
+  // 2. Authoritative resolution based on winnerId
   if (winnerId) {
     if (winnerId === me?.playerId) {
+      const isForced = Boolean(opponent?.forcedGuess);
+      const subtitleText = isForced
+        ? 'Opponent missed their final guess! You win!'
+        : `You defeated ${opponentDisplayName}!`;
       return {
         isFinished: true,
         resultType: 'win',
         title: 'VICTORY',
-        subtitle: `You defeated ${opponentName}!`,
-        badgeClass: 'bg-[#63d6ea]/15 text-[#63d6ea] border-[#63d6ea]/30',
-        textColor: 'text-[#63d6ea]',
+        subtitle: subtitleText,
+        subtitleText,
+        badgeClass: 'bg-[#e6f6ee] text-[#0b6b45] border-[#0b6b45]/30',
+        textColor: 'text-[#006875]',
+        overlayPath: !isForced && opponentInitialData ? 'overlays/gamezone/player_name_game_result_win.xml' : undefined,
+        initialData: !isForced && opponentInitialData ? { ...opponentInitialData, game_result: 'win' } : undefined,
       };
     }
     if (winnerId === opponent?.playerId) {
+      const isForced = Boolean(me?.forcedGuess);
+      const subtitleText = isForced
+        ? 'You missed your final guess! Match lost.'
+        : `${opponentDisplayName} won the match!`;
       return {
         isFinished: true,
         resultType: 'loss',
         title: 'DEFEAT',
-        subtitle: `${opponentName} won the match!`,
-        badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
-        textColor: 'text-red-400',
+        subtitle: subtitleText,
+        subtitleText,
+        badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
+        textColor: 'text-[#ba1a1a]',
+        overlayPath: !isForced && opponentInitialData ? 'overlays/gamezone/player_name_game_result_loss.xml' : undefined,
+        initialData: !isForced && opponentInitialData ? { ...opponentInitialData, game_result: 'loss' } : undefined,
       };
     }
   }
 
-  // 2. Fallback resolution based on result status
+  // 3. Fallback resolution based on result status
   if (resultStatus === 'won' || resultStatus === 'win' || resultStatus === 'victory') {
     if (gameState.endedByPlayerId && gameState.endedByPlayerId === opponent?.playerId) {
+      const subtitleText = `${opponentDisplayName} won the match!`;
       return {
         isFinished: true,
         resultType: 'loss',
         title: 'DEFEAT',
-        subtitle: `${opponentName} outsmarted you!`,
-        badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
-        textColor: 'text-red-400',
+        subtitle: subtitleText,
+        subtitleText,
+        badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
+        textColor: 'text-[#ba1a1a]',
+        overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_loss.xml' : undefined,
+        initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'loss' } : undefined,
       };
     }
+    const subtitleText = `You defeated ${opponentDisplayName}!`;
     return {
       isFinished: true,
       resultType: 'win',
       title: 'VICTORY',
-      subtitle: `You outsmarted ${opponentName}!`,
-      badgeClass: 'bg-[#63d6ea]/15 text-[#63d6ea] border-[#63d6ea]/30',
-      textColor: 'text-[#63d6ea]',
+      subtitle: subtitleText,
+      subtitleText,
+      badgeClass: 'bg-[#e6f6ee] text-[#0b6b45] border-[#0b6b45]/30',
+      textColor: 'text-[#006875]',
+      overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_win.xml' : undefined,
+      initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'win' } : undefined,
     };
   }
 
   if (resultStatus === 'lost' || resultStatus === 'loss' || resultStatus === 'defeat') {
+    const subtitleText = `${opponentDisplayName} won the match!`;
     return {
       isFinished: true,
       resultType: 'loss',
       title: 'DEFEAT',
-      subtitle: `${opponentName} outsmarted you!`,
-      badgeClass: 'bg-red-500/15 text-red-300 border-red-500/30',
-      textColor: 'text-red-400',
+      subtitle: subtitleText,
+      subtitleText,
+      badgeClass: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]/30',
+      textColor: 'text-[#ba1a1a]',
+      overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_loss.xml' : undefined,
+      initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'loss' } : undefined,
     };
   }
 
-  // 3. Draw fallback
+  // 4. Draw fallback
+  const subtitleText = opponentInitialData
+    ? `Match with ${opponentDisplayName} ended in a draw!`
+    : 'Match ended in a draw! Both players guessed correctly!';
   return {
     isFinished: true,
     resultType: 'draw',
     title: 'DRAW',
-    subtitle: `Match with ${opponentName} ended in a draw`,
-    badgeClass: 'bg-amber-400/15 text-amber-300 border-amber-400/30',
-    textColor: 'text-amber-400',
+    subtitle: subtitleText,
+    subtitleText,
+    badgeClass: 'bg-[#ffeccf] text-[#904d00] border-[#904d00]/30',
+    textColor: 'text-[#904d00]',
+    overlayPath: opponentInitialData ? 'overlays/gamezone/player_name_game_result_draw.xml' : undefined,
+    initialData: opponentInitialData ? { ...opponentInitialData, game_result: 'draw' } : undefined,
   };
 }
 
@@ -186,38 +217,86 @@ function getTurnInfo(
     };
   }
 
-  const opponentName = opponent?.playerName || 'Opponent';
+  // Forced Guess priority check
+  if (me?.forcedGuess) {
+    return {
+      title: 'Your Turn: Guess secret to force a Draw!',
+      isMyTurn: true,
+      isBonus: false,
+    };
+  }
 
-  // Check if I am the active player
-  const isMyTurn = Boolean((currentPlayerId === me?.playerId || me?.isMyTurn === true) && !opponent?.isMyTurn);
+  if (opponent?.forcedGuess) {
+    return {
+      title: "Opponent's Turn: Waiting for final secret guess...",
+      isMyTurn: false,
+      isBonus: false,
+    };
+  }
 
-  if (isMyTurn) {
-    // If opponent asked a question and I must answer
-    if (currentQuestion && !currentQuestion.answerText && currentQuestion.askedByPlayerId === opponent?.playerId) {
-      return {
+  // 1. If an unanswered question exists, turn is defined by who must answer it
+  if (currentQuestion && !currentQuestion.answerText) {
+    // If opponent asked the question (or it's assigned to me to answer): It's my turn to ANSWER
+    if (
+      currentQuestion.askedByPlayerId === opponent?.playerId ||
+      currentQuestion.answeredByPlayerId === me?.playerId
+    ) {
+      /* return {
         title: `Your Turn: Answer ${opponentName}'s question`,
+        isMyTurn: true,
+        isBonus: me?.isBonusTurn ?? false,
+      }; */
+      return {
+        title: `Your Turn: Answer opponent's question`,
         isMyTurn: true,
         isBonus: me?.isBonusTurn ?? false,
       };
     }
-    return {
+
+    // If I asked the question (or it's assigned to opponent to answer): It's opponent's turn to ANSWER
+    if (
+      currentQuestion.askedByPlayerId === me?.playerId ||
+      currentQuestion.answeredByPlayerId === opponent?.playerId
+    ) {
+      /* return {
+        title: `${opponentName}'s Turn: Ready to Answer the question.`,
+        isMyTurn: false,
+        isBonus: opponent?.isBonusTurn ?? false,
+      }; */
+      return {
+        title: `Opponent's Turn: Wait for the question and answer it.`,
+        isMyTurn: false,
+        isBonus: opponent?.isBonusTurn ?? false,
+      };
+    }
+  }
+
+  // 2. No unanswered question pending: It is someone's turn to ASK a question
+  const isMyTurnToAsk = Boolean(
+    (currentPlayerId === me?.playerId || me?.isMyTurn === true) && !opponent?.isMyTurn
+  );
+
+  if (isMyTurnToAsk) {
+   /*  return {
       title: `Your Turn: Ask ${opponentName} one question.`,
+      isMyTurn: true,
+      isBonus: me?.isBonusTurn ?? false,
+    }; */
+    return {
+      title: `Your Turn: Ask opponent a question.`,
       isMyTurn: true,
       isBonus: me?.isBonusTurn ?? false,
     };
   }
 
-  // Opponent turn
-  if (currentQuestion && !currentQuestion.answerText && currentQuestion.askedByPlayerId === me?.playerId) {
-    return {
-      title: `${opponentName}'s Turn: Ready toAnswer the question.`,
-      isMyTurn: false,
-      isBonus: opponent?.isBonusTurn ?? false,
-    };
-  }
-
-  return {
+  // Opponent's turn to ask
+  /* return {
     title: `${opponentName}'s Turn: Waiting for question`,
+    isMyTurn: false,
+    isBonus: opponent?.isBonusTurn ?? false,
+  }; */
+  return {
+    title: `Opponent's Turn: Wait for the question and answer it.`,
     isMyTurn: false,
     isBonus: opponent?.isBonusTurn ?? false,
   };
@@ -236,26 +315,51 @@ function getActionMode(
   }
 
   const { me, opponent } = gameState.players;
-  const opponentName = opponent?.playerName || 'Opponent';
+  //const opponentName = opponent?.playerName || 'Opponent';
 
-  // Check if there is an active question waiting for my answer
-  const isWaitingMyAnswer =
-    (activeQuestion &&
-      !activeQuestion.answerText &&
-      activeQuestion.askedByPlayerId === opponent?.playerId) ||
-    (!me.isMyTurn && activeQuestion?.answeredByPlayerId === me.playerId && !activeQuestion?.answerText);
-
-  if (isWaitingMyAnswer) {
-    return { mode: 'answer', placeholder: 'Answer the question...' };
+  // Forced Guess priority check
+  if (me?.forcedGuess) {
+    return {
+      mode: 'disabled',
+      placeholder: 'Opponent found your secret! Use "Guess Secret" to force a Draw.',
+    };
   }
 
-  // Check if it's my turn to ask
+  if (opponent?.forcedGuess) {
+    return {
+      mode: 'disabled',
+      placeholder: 'Waiting for opponent to make their final guess...',
+    };
+  }
+
+  // 1. Check if there is an active unanswered question
+  if (activeQuestion && !activeQuestion.answerText) {
+    // Waiting for my answer
+    if (
+      activeQuestion.askedByPlayerId === opponent?.playerId ||
+      activeQuestion.answeredByPlayerId === me?.playerId
+    ) {
+      return { mode: 'answer', placeholder: 'Select Yes or No on the question above' };
+    }
+
+    // Question was asked by me, waiting for opponent's answer -> disable asking further questions
+    if (
+      activeQuestion.askedByPlayerId === me?.playerId ||
+      activeQuestion.answeredByPlayerId === opponent?.playerId
+    ) {
+      return { mode: 'disabled', placeholder: 'Type your next question...' };
+    }
+  }
+
+  // 2. No unanswered question pending: Check if it's my turn to ask
   const isMyTurnToAsk =
     (gameState.currentPlayerId === me.playerId || me.isMyTurn) &&
-    !me.isCompleted &&
-    me.questionsAsked < (gameState.questionLimit ?? 25);
+    !me.isCompleted;
 
   if (isMyTurnToAsk) {
+    if (me.questionsAsked >= (gameState.questionLimit ?? 25)) {
+      return { mode: 'disabled', placeholder: 'Question limit reached. Use Guess Secret!' };
+    }
     return { mode: 'ask', placeholder: 'Ask next question...' };
   }
 
@@ -263,14 +367,154 @@ function getActionMode(
     return { mode: 'disabled', placeholder: 'Question limit reached. Use Guess Secret!' };
   }
 
-  return { mode: 'disabled', placeholder: `Waiting for ${opponentName}...` };
+  return { mode: 'disabled', placeholder: 'Type your next question...' };
 }
+
+interface PlayersStatusGridProps {
+  me?: GameStatePlayer;
+  opponent?: GameStatePlayer;
+  mySecretName: string;
+  meQuestionsLeft: number;
+  opponentQuestionsLeft: number;
+  questionLimit: number;
+  isFinished: boolean;
+}
+
+const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
+  me,
+  opponent,
+  mySecretName,
+  meQuestionsLeft,
+  opponentQuestionsLeft,
+  questionLimit,
+  isFinished,
+}: PlayersStatusGridProps) {
+  const [isMySecretVisible, setIsMySecretVisible] = useState(true);
+  const opponentPlayerName = opponent?.playerName;
+  const opponentInitialData = useMemo(() => {
+    return opponentPlayerName ? { playerId: opponentPlayerName } : undefined;
+  }, [opponentPlayerName]);
+
+  return (
+    <div className="gamezone-players-grid">
+      {/* Me Player Card */}
+      <div className="gamezone-player-card gamezone-player-card--me">
+        <PlayerAvatar
+          isMe
+          imageUrl={me?.playerImageUrl}
+          name={me?.playerName || 'You'}
+          className="gamezone-player-avatar"
+          iconSize="size-5"
+        />
+
+        <div className="gamezone-player-info">
+          <div className="gamezone-player-name">
+            <span>You</span>
+          </div>
+          <div
+            className={`gamezone-player-secret ${
+              isFinished || isMySecretVisible
+                ? 'gamezone-player-secret--revealed'
+                : 'gamezone-player-secret--hidden'
+            }`}
+          >
+            {isFinished ? (
+              <span className="truncate">{mySecretName}</span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsMySecretVisible((prev) => !prev)}
+                className="gamezone-secret-toggle-btn"
+                aria-label={isMySecretVisible ? 'Hide secret' : 'Show secret'}
+                title={isMySecretVisible ? 'Hide secret' : 'Show secret'}
+              >
+                <span className="truncate max-w-[120px]">
+                  {isMySecretVisible ? mySecretName : 'Hidden'}
+                </span>
+                {isMySecretVisible ? (
+                  <svg
+                    className="size-3.5 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                    <line x1="2" y1="2" x2="22" y2="22" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="size-3.5 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            )}
+          </div>
+          <div className="gamezone-player-questions">
+            <span className="gamezone-player-questions-label">Questions left:</span>{' '}
+            <span className="gamezone-player-questions-count">{meQuestionsLeft}/{questionLimit}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Opponent Player Card */}
+      <div className="gamezone-player-card gamezone-player-card--opponent">
+        <PlayerAvatar
+          initialData={opponentInitialData}
+          imageUrl={opponent?.playerImageUrl}
+          name={opponent?.playerName || 'Opponent'}
+          className="gamezone-player-avatar"
+          iconSize="size-5"
+          xmlPath="overlays/profile_pic.xml"
+          cssPath="overlays/profile_pic.css"
+        />
+
+        <div className="gamezone-player-info">
+          <div className="gamezone-player-name">
+            <FacebookPlayerName
+              initialData={opponentInitialData}
+              fallbackName={opponent?.playerName || 'Opponent'}
+              className="w-full h-5 justify-end text-right"
+              textClassName="truncate font-bold text-[#171d1e] text-[14.7px] text-right"
+              overlayPath="overlays/player_name.xml"
+              overlayCassPath="overlays/gamezone/gamezone_profile_player_name.css"
+            />
+          </div>
+          <div className="gamezone-player-secret gamezone-player-secret--hidden">
+            <span>
+              {opponent?.secret ? opponent.secret : isFinished ? 'Revealed in Review' : 'Hidden'}
+            </span>
+          </div>
+          <div className="gamezone-player-questions">
+            <span className="gamezone-player-questions-label">Questions left:</span>{' '}
+            <span className="gamezone-player-questions-count">{opponentQuestionsLeft}/{questionLimit}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export default function GameZoneScreen({
   gameId,
   categoryId,
   categoryName,
-  onBackToLobby,
+  onBackToMatches,
   onLeave,
   onGoHome,
   onReviewMatch,
@@ -300,10 +544,35 @@ export default function GameZoneScreen({
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [isGuessModalOpen, setIsGuessModalOpen] = useState(false);
+  const [lessLikelyIds, setLessLikelyIds] = useState<Set<string>>(() => loadGameLessLikelyIds(gameId));
+  const [prevGameId, setPrevGameId] = useState(gameId);
+
+  if (prevGameId !== gameId) {
+    setPrevGameId(gameId);
+    setLessLikelyIds(loadGameLessLikelyIds(gameId));
+  }
+
+  const handleToggleLessLikely = useCallback(
+    (puzzleId: string) => {
+      setLessLikelyIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(puzzleId)) {
+          next.delete(puzzleId);
+        } else {
+          next.add(puzzleId);
+        }
+        saveGameLessLikelyIds(gameId, next);
+        return next;
+      });
+    },
+    [gameId],
+  );
+
   const [guessFeedback, setGuessFeedback] = useState<{
     isOpen: boolean;
     isCorrect: boolean;
     guessedName?: string;
+    wasForcedGuess?: boolean;
   }>({
     isOpen: false,
     isCorrect: false,
@@ -316,9 +585,96 @@ export default function GameZoneScreen({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [questions]);
 
+  // Haptic feedback tracking for opponent questions and opponent answers
+  const prevQuestionsRef = useRef<GameStateQuestion[] | null>(null);
+  const isInitialQuestionsLoadRef = useRef(true);
+
+  // Reset initial tracking flag whenever entering a different game
+  useEffect(() => {
+    isInitialQuestionsLoadRef.current = true;
+    prevQuestionsRef.current = null;
+  }, [gameId]);
+
+  useEffect(() => {
+    if (loading || !gameState) {
+      return;
+    }
+
+    const myPlayerId = gameState.players?.me?.playerId;
+    const opponentPlayerId = gameState.players?.opponent?.playerId;
+
+    // Skip haptic feedback on initial history load so we don't vibrate for existing questions
+    if (isInitialQuestionsLoadRef.current) {
+      prevQuestionsRef.current = questions;
+      isInitialQuestionsLoadRef.current = false;
+      return;
+    }
+
+    const prevQuestions = prevQuestionsRef.current || [];
+    const prevMap = new Map<string, GameStateQuestion>(prevQuestions.map((q) => [q.id, q]));
+
+    let opponentAsked = false;
+    let opponentAnswered = false;
+
+    for (const q of questions) {
+      const prevQ = prevMap.get(q.id);
+
+      if (!prevQ) {
+        // A new question was added
+        const isAskedByOpponent =
+          (opponentPlayerId && q.askedByPlayerId === opponentPlayerId) ||
+          (myPlayerId && q.askedByPlayerId && q.askedByPlayerId !== myPlayerId);
+
+        if (isAskedByOpponent) {
+          opponentAsked = true;
+        }
+      } else {
+        // An existing question was updated
+        const wasAnswered = Boolean(prevQ.answerText);
+        const isNowAnswered = Boolean(q.answerText);
+
+        if (!wasAnswered && isNowAnswered) {
+          const isAnsweredByOpponent =
+            (opponentPlayerId && q.answeredByPlayerId === opponentPlayerId) ||
+            (myPlayerId && q.answeredByPlayerId && q.answeredByPlayerId !== myPlayerId) ||
+            (myPlayerId && q.askedByPlayerId === myPlayerId);
+
+          if (isAnsweredByOpponent) {
+            opponentAnswered = true;
+          }
+        }
+      }
+    }
+
+    if (opponentAsked || opponentAnswered) {
+      triggerHapticFeedback();
+    }
+
+    prevQuestionsRef.current = questions;
+  }, [questions, gameState, loading]);
+
   const me = gameState?.players?.me;
   const opponent = gameState?.players?.opponent;
   const questionLimit = gameState?.questionLimit ?? 25;
+  const opponentPlayerName = opponent?.playerName;
+  const opponentInitialData = useMemo(() => {
+    return opponentPlayerName ? { playerId: opponentPlayerName } : undefined;
+  }, [opponentPlayerName]);
+
+  const opponentDisplayName = useMemo(() => {
+    return opponentPlayerName && !/^\d{10,}$/.test(opponentPlayerName)
+      ? opponentPlayerName
+      : 'Opponent';
+  }, [opponentPlayerName]);
+
+  const opponentQuestionsInitialData = useMemo(() => {
+    return opponentInitialData
+      ? {
+          ...opponentInitialData,
+          count: opponent?.questionsAsked ?? 0,
+        }
+      : undefined;
+  }, [opponentInitialData, opponent?.questionsAsked]);
 
   // Resolve player secret display name directly from API response
   const mySecretName = me?.secret || 'Secret Locked';
@@ -327,25 +683,29 @@ export default function GameZoneScreen({
   const guessNotificationMessage = useMemo(() => {
     if (!guessNotification) return null;
 
+    // Do not show guessNotificationMessage in case of forcedGuess for players
+    if (me?.forcedGuess || opponent?.forcedGuess) {
+      return null;
+    }
+
     const guesserId = guessNotification.guesserId;
     const isCorrect = guessNotification.isCorrect;
-    const oppName = opponent?.playerName || 'Opponent';
 
     const isOpponent = guesserId === opponent?.playerId || (!guesserId && me?.isBonusTurn);
     const isMe = guesserId === me?.playerId || (!guesserId && opponent?.isBonusTurn);
 
     if (isOpponent) {
       if (isCorrect) {
-        return `${oppName} guessed your secret correctly! You continue to ask Questions to guess ${oppName} secret.`;
+        return `Opponent guessed your secret correctly!`;
       }
-      return `${oppName}'s guess was incorrect! You receive a bonus turn.`;
+      return `Opponent's guess was incorrect! You receive a bonus turn.`;
     }
 
     if (isMe) {
       if (isCorrect) {
-        return 'Your guess was correct! You can only answer to help ${oppName} to guess your secret.';
+        return 'Your guess was correct!';
       }
-      return `Your guess was incorrect! ${oppName} receives a bonus turn.`;
+      return `Your guess was incorrect! Opponent receives a bonus turn.`;
     }
 
     // Generic fallback if guesser cannot be determined
@@ -353,41 +713,114 @@ export default function GameZoneScreen({
       return 'Secret guess was correct!';
     }
     return 'Secret guess was incorrect! Opponent receives a bonus turn.';
-  }, [guessNotification, me?.playerId, me?.isBonusTurn, opponent?.playerId, opponent?.playerName, opponent?.isBonusTurn]);
+  }, [guessNotification, me?.playerId, me?.isBonusTurn, me?.forcedGuess, opponent?.playerId, opponent?.isBonusTurn, opponent?.forcedGuess]);
+
+  // Guess secret result feedback overlay configuration
+  const guessFeedbackConfig = useMemo(() => {
+    if (!guessFeedback?.isOpen) return null;
+    const opponentFallback =
+      opponent?.playerName && !/^\d{10,}$/.test(opponent.playerName)
+        ? opponent.playerName
+        : 'your opponent';
+    const guessedSecret = guessFeedback.guessedName ? `"${guessFeedback.guessedName}"` : '';
+    const pid = opponentPlayerName || '';
+
+    if (guessFeedback.wasForcedGuess) {
+      if (guessFeedback.isCorrect) {
+        return {
+          overlayPath: 'overlays/gamezone/player_name_guess_result_forced_correct.xml',
+          initialData: { playerId: pid, secretName: guessedSecret},
+          fallbackText: `Great recovery! You deduced that ${opponentFallback}'s secret is ${guessedSecret || 'the secret'}. The match ends in a DRAW!`,
+          className: 'w-full h-[88px] min-[400px]:h-16 justify-center',
+        };
+      }
+      return {
+        overlayPath: 'overlays/gamezone/player_name_guess_result_forced_incorrect.xml',
+        initialData: { playerId: pid},
+        fallbackText: `That was not ${opponentFallback}'s secret! Because your final forced guess was incorrect, you LOSE the match.`,
+        className: 'w-full h-[88px] min-[400px]:h-16 justify-center',
+      };
+    }
+
+    if (guessFeedback.isCorrect) {
+      return {
+        overlayPath: 'overlays/gamezone/player_name_guess_result_correct.xml',
+        initialData: { playerId: pid, secretName: guessedSecret },
+        fallbackText: `Outstanding! You successfully deduced that ${opponentFallback}'s secret is ${guessedSecret || 'the secret'}. Opponent now has one final chance to guess your secret!`,
+        className: 'w-full h-[112px] min-[400px]:h-[88px] justify-center',
+      };
+    }
+
+    return {
+      overlayPath: 'overlays/gamezone/player_name_guess_result_incorrect.xml',
+      initialData: { playerId: pid },
+      fallbackText: `That was not ${opponentFallback}'s secret! As a penalty, they can ask 2 questions back to back.`,
+      className: 'w-full h-[68px] min-[400px]:h-12 justify-center',
+    };
+  }, [guessFeedback, opponent, opponentPlayerName]);
 
   // Turn calculations
-  const outcome = resolveGameOutcome(gameState);
-  const latestQuestion = questions.length > 0 ? questions[questions.length - 1] : gameState?.question;
+  const outcome = useMemo(() => resolveGameOutcome(gameState), [gameState]);
+
+  // When game outcome finishes, ensure guess feedback modal is never left open
+  if (outcome.isFinished && guessFeedback.isOpen) {
+    setGuessFeedback({ isOpen: false, isCorrect: false, wasForcedGuess: false });
+  }
+  const pendingQuestion = questions.find((q) => !q.answerText);
+  const latestQuestion =
+    pendingQuestion ||
+    (gameState?.question && !gameState.question.answerText ? gameState.question : null) ||
+    (questions.length > 0 ? questions[questions.length - 1] : (gameState?.question ?? null));
   const turnInfo = getTurnInfo(me, opponent, gameState?.currentPlayerId, latestQuestion, outcome.isFinished);
   const { mode: actionMode, placeholder: inputPlaceholder } = getActionMode(gameState, latestQuestion);
 
-  const turnAvatarUrl = turnInfo.isMyTurn ? me?.playerImageUrl : opponent?.playerImageUrl;
-  const turnPlayerName = turnInfo.isMyTurn ? (me?.playerName || 'You') : (opponent?.playerName || 'Opponent');
-
   // Guess Secret button enablement
-  const isGuessDisabled =
-    outcome.isFinished ||
-    Boolean(me?.isCompleted) ||
-    Boolean(me?.finalGuessUsed) ||
-    !me?.isMyTurn ||
+  const isGuessDisabled = Boolean(
+    submitting ||
     gameState?.status !== 'in_progress' ||
-    submitting;
+    opponent?.forcedGuess ||
+    (!me?.forcedGuess && me?.finalGuessUsed)
+  );
 
-  async function handleSendMessage(e: React.FormEvent) {
-    e.preventDefault();
-    const text = inputText.trim();
-    if (!text || submitting || actionMode === 'disabled') return;
+  // Question input field enablement: typing enabled at all times except when submitting, forced guess, or question limit reached
+  const isInputDisabled = Boolean(
+    submitting ||
+    gameState?.status !== 'in_progress' ||
+    me?.forcedGuess ||
+    (me && me.questionsAsked >= questionLimit)
+  );
+
+  // Send button enablement: only enabled when player has typed a question and it is their turn to ask
+  const isSendDisabled = Boolean(
+    !inputText.trim() ||
+    actionMode !== 'ask' ||
+    submitting
+  );
+
+  async function handleQuickAnswer(answer: 'Yes' | 'No') {
+    if (submitting) return;
 
     setSubmitting(true);
     setActionError(null);
     try {
-      if (actionMode === 'ask') {
-        await submitQuestion(text);
-        setInputText('');
-      } else if (actionMode === 'answer') {
-        await submitAnswer(text);
-        setInputText('');
-      }
+      await submitAnswer(answer);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to submit answer.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    const text = inputText.trim();
+    if (!text || submitting || actionMode !== 'ask') return;
+
+    setSubmitting(true);
+    setActionError(null);
+    try {
+      await submitQuestion(text);
+      setInputText('');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Action failed. Please try again.');
     } finally {
@@ -399,13 +832,29 @@ export default function GameZoneScreen({
     setIsGuessModalOpen(false);
     setSubmitting(true);
     setActionError(null);
+    const wasForced = Boolean(me?.forcedGuess);
     try {
       const result = await submitGuess(secret.id);
-      setGuessFeedback({
-        isOpen: true,
-        isCorrect: result.is_correct,
-        guessedName: secret.name,
-      });
+      const isFinishedNow =
+        result.game_status === 'finished' ||
+        result.game_status === 'completed' ||
+        wasForced;
+
+      if (!isFinishedNow) {
+        setGuessFeedback({
+          isOpen: true,
+          isCorrect: result.is_correct,
+          guessedName: secret.name,
+          wasForcedGuess: wasForced,
+        });
+      } else {
+        setGuessFeedback({
+          isOpen: false,
+          isCorrect: result.is_correct,
+          guessedName: secret.name,
+          wasForcedGuess: wasForced,
+        });
+      }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to submit guess.');
     } finally {
@@ -418,11 +867,12 @@ export default function GameZoneScreen({
     setActionError(null);
     try {
       await exitGame();
+      clearGameSecretFiltersAndCache(gameId);
       setIsLeaveModalOpen(false);
       if (onLeave) {
         onLeave();
-      } else if (onBackToLobby) {
-        onBackToLobby();
+      } else if (onBackToMatches) {
+        onBackToMatches();
       }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to leave game.');
@@ -432,16 +882,20 @@ export default function GameZoneScreen({
   }
 
   function handleGoHome() {
+    if (outcome.isFinished) {
+      clearGameSecretFiltersAndCache(gameId);
+    }
     if (onGoHome) {
       onGoHome();
     } else if (onLeave) {
       onLeave();
-    } else if (onBackToLobby) {
-      onBackToLobby();
+    } else if (onBackToMatches) {
+      onBackToMatches();
     }
   }
 
   function handleReviewMatch() {
+    clearGameSecretFiltersAndCache(gameId);
     if (onReviewMatch && gameId) {
       onReviewMatch(gameId);
     } else {
@@ -457,12 +911,12 @@ export default function GameZoneScreen({
       <div className="gamezone-content">
         {/* Header matching gamezone.png: Back Arrow (left), Category Name (center), Leave (right) */}
         <header className="gamezone-header">
-          {onBackToLobby ? (
+          {onBackToMatches ? (
             <button
               type="button"
-              onClick={onBackToLobby}
+              onClick={onBackToMatches}
               className="gamezone-back-btn"
-              aria-label="Back to Lobby"
+              aria-label="Back to Matches"
             >
               <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -489,44 +943,52 @@ export default function GameZoneScreen({
         {/* Real-time Guess Event Notification Tooltip */}
         {guessNotification && guessNotificationMessage && (
           <div
-            className={`relative mb-3 flex items-center justify-between gap-3 rounded-xl p-3 text-sm shadow-md border ${
+            className={`relative mb-3 flex items-center justify-between gap-3 rounded-xl p-3 text-sm shadow-sm border ${
               guessNotification.isCorrect
-                ? 'bg-[#63d6ea]/15 border-[#63d6ea]/40 text-[#63d6ea]'
-                : 'bg-amber-500/15 border-amber-500/40 text-amber-200'
+                ? 'bg-[#e6f6ee] border-[#0b6b45]/30 text-[#0b6b45]'
+                : 'bg-[#fff8e1] border-[#f59e0b]/40 text-[#78350f]'
             }`}
             role="status"
             aria-live="polite"
           >
-            <div className="flex items-center gap-2.5">
-              <span className="text-base" aria-hidden="true">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-lg shrink-0" aria-hidden="true">
                 {guessNotification.isCorrect ? '🎯' : '⚠️'}
               </span>
-              <span className="font-semibold leading-snug">
+              <span className="font-bold leading-snug">
                 {guessNotificationMessage}
               </span>
             </div>
             <button
               type="button"
               onClick={clearGuessNotification}
-              className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white cursor-pointer"
+              className={`grid size-8 shrink-0 place-items-center rounded-lg transition cursor-pointer ${
+                guessNotification.isCorrect
+                  ? 'text-[#0b6b45] hover:bg-[#0b6b45]/15 active:bg-[#0b6b45]/25'
+                  : 'text-[#78350f] hover:bg-[#fde68a]/70 active:bg-[#fde68a]'
+              }`}
               aria-label="Close notification"
             >
-              ✕
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
             </button>
           </div>
         )}
 
         {/* Global Action / Error banner */}
         {actionError && (
-          <div className="relative mb-3 flex items-center justify-between gap-3 rounded-xl border border-red-500/30 bg-red-500/15 p-3 text-sm text-[#ffd9d9]">
+          <div className="relative mb-3 flex items-center justify-between gap-3 rounded-xl border border-[#ba1a1a]/30 bg-[#ffdad6] p-3 text-sm font-semibold text-[#ba1a1a] shadow-sm">
             <span>{actionError}</span>
             <button
               type="button"
               onClick={() => setActionError(null)}
-              className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white cursor-pointer"
+              className="grid size-8 shrink-0 place-items-center rounded-lg text-[#ba1a1a] hover:bg-[#ba1a1a]/15 active:bg-[#ba1a1a]/25 cursor-pointer transition"
               aria-label="Close error"
             >
-              ✕
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
             </button>
           </div>
         )}
@@ -549,51 +1011,16 @@ export default function GameZoneScreen({
         {gameState && (
           <>
             {/* Players Status Grid */}
-            <div className="gamezone-players-grid">
-              {/* Me Player Card */}
-              <div className="gamezone-player-card gamezone-player-card--me">
-                <PlayerAvatar
-                  imageUrl={me?.playerImageUrl}
-                  name={me?.playerName || 'You'}
-                  className="gamezone-player-avatar"
-                  iconSize="size-5"
-                />
+            <PlayersStatusGrid
+              me={me}
+              opponent={opponent}
+              mySecretName={mySecretName}
+              meQuestionsLeft={meQuestionsLeft}
+              opponentQuestionsLeft={opponentQuestionsLeft}
+              questionLimit={questionLimit}
+              isFinished={outcome.isFinished}
+            />
 
-                <div className="gamezone-player-info">
-                  <div className="gamezone-player-name">{me?.playerName || 'You'}</div>
-                  <div className="gamezone-player-secret gamezone-player-secret--revealed">
-                    <span>{mySecretName}</span>
-                  </div>
-                  <div className="gamezone-player-questions">
-                    <span className="gamezone-player-questions-label">Questions left:</span>{' '}
-                    <span className="gamezone-player-questions-count">{meQuestionsLeft}/{questionLimit}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Opponent Player Card */}
-              <div className="gamezone-player-card gamezone-player-card--opponent">
-                <PlayerAvatar
-                  imageUrl={opponent?.playerImageUrl}
-                  name={opponent?.playerName || 'Opponent'}
-                  className="gamezone-player-avatar"
-                  iconSize="size-5"
-                />
-
-                <div className="gamezone-player-info">
-                  <div className="gamezone-player-name">{opponent?.playerName || 'Opponent'}</div>
-                  <div className="gamezone-player-secret gamezone-player-secret--hidden">
-                    <span>
-                      {opponent?.secret ? opponent.secret : outcome.isFinished ? 'Revealed in Review' : 'Hidden 👁️‍🗨️'}
-                    </span>
-                  </div>
-                  <div className="gamezone-player-questions">
-                    <span className="gamezone-player-questions-label">Questions left:</span>{' '}
-                    <span className="gamezone-player-questions-count">{opponentQuestionsLeft}/{questionLimit}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Turn Status Banner OR Game Over / Match Finished Banner */}
             {outcome.isFinished ? (
@@ -604,15 +1031,15 @@ export default function GameZoneScreen({
                   </span>
                 </div>
                 <h2 className={`mt-2 text-lg font-black tracking-tight ${outcome.textColor}`}>
-                  {outcome.subtitle}
+                  {outcome.subtitleText || outcome.subtitle}
                 </h2>
                 <p className="gamezone-game-over-desc">
                   {gameState.endReason ?? (
                     outcome.resultType === 'win'
                       ? 'Congratulations on the victory!'
                       : outcome.resultType === 'loss'
-                      ? `${opponent?.playerName || 'Opponent'} correctly guessed your secret.`
-                      : 'Both players completed the match.'
+                        ? 'Your opponent correctly guessed your secret.'
+                        : 'Both players completed the match.'
                   )}
                 </p>
               </div>
@@ -622,12 +1049,6 @@ export default function GameZoneScreen({
                   !turnInfo.isMyTurn ? 'gamezone-turn-banner--opponent' : ''
                 }`}
               >
-                <PlayerAvatar
-                  imageUrl={turnAvatarUrl}
-                  name={turnPlayerName}
-                  className="gamezone-turn-banner-avatar"
-                  iconSize="size-4"
-                />
                 <div className="gamezone-turn-banner-text">{turnInfo.title}</div>
                 {turnInfo.isBonus && (
                   <span className="gamezone-turn-banner-badge gamezone-turn-banner-badge--bonus">
@@ -651,9 +1072,12 @@ export default function GameZoneScreen({
                 questions.map((q) => {
                   const isAskedByMe = q.askedByPlayerId === me?.playerId;
                   const isAnswered = Boolean(q.answerText);
+                  const isQuestionPendingMyAnswer =
+                    !isAnswered &&
+                    (q.askedByPlayerId === opponent?.playerId || q.answeredByPlayerId === me?.playerId);
                   const waitingText = isAskedByMe
-                    ? `Waiting for ${opponent?.playerName || 'opponent'}...`
-                    : `Waiting for ${me?.playerName || 'you'}...`;
+                    ? 'Waiting for opponent...'
+                    : 'Waiting for you...';
 
                   return (
                     <div
@@ -664,7 +1088,40 @@ export default function GameZoneScreen({
                     >
                       <div className="gamezone-qa-question">{q.questionText}</div>
                       {isAnswered ? (
-                        <div className="gamezone-qa-answer">{q.answerText}</div>
+                        <div className="gamezone-qa-answer">
+                          <span
+                            className={
+                              q.answerText?.trim().toLowerCase() === 'yes'
+                                ? 'gamezone-qa-answer--yes'
+                                : q.answerText?.trim().toLowerCase() === 'no'
+                                ? 'gamezone-qa-answer--no'
+                                : ''
+                            }
+                          >
+                            {q.answerText}
+                          </span>
+                        </div>
+                      ) : isQuestionPendingMyAnswer ? (
+                        <div className="gamezone-qa-answer-actions">
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleQuickAnswer('Yes')}
+                            className="gamezone-qa-chip gamezone-qa-chip--yes"
+                            aria-label="Answer Yes"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleQuickAnswer('No')}
+                            className="gamezone-qa-chip gamezone-qa-chip--no"
+                            aria-label="Answer No"
+                          >
+                            No
+                          </button>
+                        </div>
                       ) : (
                         <div className="gamezone-qa-waiting">{waitingText}</div>
                       )}
@@ -688,22 +1145,23 @@ export default function GameZoneScreen({
               </div>
             ) : (
               <div className="gamezone-bottom-bar">
-                {/* Question / Answer text form */}
+                {/* Question form only when asking questions */}
                 <form onSubmit={handleSendMessage} className="gamezone-input-form">
                   <input
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder={inputPlaceholder}
-                    disabled={actionMode === 'disabled' || submitting}
+                    disabled={isInputDisabled}
                     className="gamezone-input-field"
                     maxLength={180}
                   />
                   <button
                     type="submit"
-                    disabled={!inputText.trim() || actionMode === 'disabled' || submitting}
+                    disabled={isSendDisabled}
                     className="gamezone-send-btn"
                     aria-label="Send message"
+                    title={actionMode !== 'ask' ? 'Send enabled on your turn' : 'Send question'}
                   >
                     <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="22" y1="2" x2="11" y2="13" />
@@ -717,10 +1175,10 @@ export default function GameZoneScreen({
                   type="button"
                   onClick={() => setIsGuessModalOpen(true)}
                   disabled={isGuessDisabled}
-                  className="gamezone-guess-btn"
+                  className={`gamezone-guess-btn ${me?.forcedGuess ? 'ring-2 ring-amber-400 font-bold animate-pulse' : ''}`}
                   aria-label="Guess Secret"
                 >
-                  Guess Secret
+                  {me?.forcedGuess ? 'Make Final Guess' : 'Guess Secret'}
                 </button>
               </div>
             )}
@@ -731,12 +1189,24 @@ export default function GameZoneScreen({
       {/* Choose Secret Modal for Guessing Opponent's Secret */}
       <ChooseSecretModal
         isOpen={isGuessModalOpen}
+        gameId={gameId}
         categoryId={effectiveCategoryId}
         categoryName={effectiveCategoryName}
-        title="Guess Opponent's Secret"
-        subtitle="Select the secret you think your opponent chose"
-        confirmButtonText="Confirm Guess"
-        helperText="Warning: If your guess is wrong, your opponent gets a 2-question bonus turn!"
+        title={me?.forcedGuess ? "Final Guess: Force a Draw!" : "Guess Opponent's Secret"}
+        subtitle={
+          me?.forcedGuess
+            ? "Guess correctly to draw the match, otherwise you lose"
+            : "Select the secret you think your opponent chose"
+        }
+        confirmButtonText={me?.forcedGuess ? "Submit Final Guess" : "Confirm Guess"}
+        helperText={
+          me?.forcedGuess
+            ? "Critical: If your guess is correct, the match ends in a DRAW. If incorrect, you LOSE!"
+            : "Warning: If your guess is wrong, your opponent gets a 2-question bonus turn!"
+        }
+        mode="guess"
+        lessLikelyIds={lessLikelyIds}
+        onToggleLessLikely={handleToggleLessLikely}
         onClose={() => setIsGuessModalOpen(false)}
         onConfirmSelection={handleConfirmGuess}
       />
@@ -773,24 +1243,33 @@ export default function GameZoneScreen({
       )}
 
       {/* Guess Result Feedback Modal */}
-      {guessFeedback.isOpen && (
+      {!outcome.isFinished && guessFeedback.isOpen && (
         <div className="gamezone-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedback-dialog-title">
           <div className="gamezone-modal-box">
             <div className="gamezone-modal-icon">
-              {guessFeedback.isCorrect ? '🎉' : '❌'}
+              {guessFeedback.isCorrect ? (guessFeedback.wasForcedGuess ? '🤝' : '🎉') : '❌'}
             </div>
             <h2 id="feedback-dialog-title" className="gamezone-modal-title">
-              {guessFeedback.isCorrect ? 'Correct Guess!' : 'Incorrect Guess'}
-            </h2>
-            <p className="gamezone-modal-desc">
               {guessFeedback.isCorrect
-                ? `Outstanding! You successfully deduced that ${opponent?.playerName || 'your opponent'}'s secret is "${guessFeedback.guessedName}".`
-                : `That was not ${opponent?.playerName || 'your opponent'}'s secret! They now receive a 2-question bonus turn.`}
-            </p>
+                ? (guessFeedback.wasForcedGuess ? 'Match Drawn!' : 'Correct Guess!')
+                : (guessFeedback.wasForcedGuess ? 'Match Lost!' : 'Incorrect Guess')}
+            </h2>
+            <div className="gamezone-modal-desc flex items-center justify-center w-full">
+              {guessFeedbackConfig && (
+                <FacebookPlayerName
+                  initialData={guessFeedbackConfig.initialData}
+                  fallbackName={guessFeedbackConfig.fallbackText}
+                  className={guessFeedbackConfig.className}
+                  textClassName="text-sm font-medium text-[#3c494c] text-center leading-relaxed"
+                  overlayPath={guessFeedbackConfig.overlayPath}
+                  overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
+                />
+              )}
+            </div>
             <div className="gamezone-modal-actions">
               <button
                 type="button"
-                onClick={() => setGuessFeedback({ isOpen: false, isCorrect: false })}
+                onClick={() => setGuessFeedback({ isOpen: false, isCorrect: false, wasForcedGuess: false })}
                 className="gamezone-modal-btn gamezone-modal-btn--confirm"
               >
                 OK
@@ -802,20 +1281,20 @@ export default function GameZoneScreen({
       {/* Non-closable Game Result Modal Dialog */}
       {outcome.isFinished && gameState && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200"
           role="dialog"
           aria-modal="true"
           aria-labelledby="game-result-dialog-title"
         >
-          <div className="relative w-full max-w-95 rounded-2xl border border-white/15 bg-[#17141d] p-6 text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center gap-4">
+          <div className="relative w-full max-w-95 rounded-2xl border border-[#bbc9cc] bg-white p-6 text-center shadow-xl flex flex-col items-center gap-4">
             {/* Outcome Icon */}
             <div
               className={`grid size-16 place-items-center rounded-full border text-3xl ${
                 outcome.resultType === 'win'
-                  ? 'bg-[#63d6ea]/15 border-[#63d6ea]/40 text-[#63d6ea] shadow-[0_0_24px_rgba(99,214,234,0.3)]'
+                  ? 'bg-[#02c2d9]/15 border-[#006875]/40 text-[#006875] shadow-[0_0_24px_rgba(0,104,117,0.2)]'
                   : outcome.resultType === 'loss'
-                    ? 'bg-red-500/15 border-red-500/40 text-red-400 shadow-[0_0_24px_rgba(239,68,68,0.3)]'
-                    : 'bg-amber-400/15 border-amber-400/40 text-amber-300 shadow-[0_0_24px_rgba(245,158,11,0.3)]'
+                    ? 'bg-[#ffdad6] border-[#ba1a1a]/40 text-[#ba1a1a]'
+                    : 'bg-[#ffeccf] border-[#904d00]/40 text-[#904d00]'
               }`}
               aria-hidden="true"
             >
@@ -823,48 +1302,78 @@ export default function GameZoneScreen({
             </div>
 
             {/* Outcome Header */}
-            <div className="flex flex-col items-center gap-1.5">
+            <div className="w-full flex flex-col items-center gap-1.5">
               <span className={`inline-block rounded-full px-3 py-1 text-xs font-black tracking-widest border ${outcome.badgeClass}`}>
                 {outcome.title}
               </span>
               <h2 id="game-result-dialog-title" className={`text-2xl font-black tracking-tight ${outcome.textColor}`}>
                 {outcome.resultType === 'win' ? 'Victory!' : outcome.resultType === 'loss' ? 'Defeat' : 'Draw'}
               </h2>
-              <p className="text-sm text-[#c4c7d0]">
-                {outcome.subtitle}
-              </p>
+              <div className="gamezone-modal-desc flex items-center justify-center w-full min-h-[44px]">
+                {outcome.overlayPath && outcome.initialData ? (
+                  <FacebookPlayerName
+                    initialData={outcome.initialData}
+                    fallbackName={outcome.subtitleText}
+                    className="w-full h-11 justify-center"
+                    textClassName="text-sm font-medium text-[#3c494c] text-center leading-relaxed"
+                    overlayPath={outcome.overlayPath}
+                    overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
+                  />
+                ) : (
+                  <p className="text-sm font-medium text-[#3c494c] text-center leading-relaxed">
+                    {outcome.subtitleText || outcome.subtitle}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Match Summary Details */}
-            <div className="w-full rounded-xl border border-white/8 bg-white/[0.03] p-3.5 text-left text-xs space-y-2">
-              <div className="flex items-center justify-between text-[#8f94a6]">
+            <div className="w-full rounded-xl border border-[#bbc9cc] bg-[#eff4f7] p-3.5 text-left text-xs space-y-2">
+              <div className="flex items-center justify-between text-[#6c797c]">
                 <span>Category</span>
-                <span className="font-semibold text-white">{effectiveCategoryName}</span>
+                <span className="font-semibold text-[#171d1e]">{effectiveCategoryName}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#8f94a6]">Your Secret</span>
-                <span className="font-semibold text-white">{mySecretName}</span>
+                <span className="text-[#6c797c]">Your Secret</span>
+                <span className="font-semibold text-[#171d1e]">{mySecretName}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#8f94a6]">{opponent?.playerName || 'Opponent'}'s Secret</span>
-                <span className="font-semibold text-amber-300">
+                <div className="flex items-center min-w-0 flex-1 h-4.5 mr-2">
+                  <FacebookPlayerName
+                    initialData={opponentInitialData}
+                    fallbackName={`${opponentDisplayName}'s Secret`}
+                    className="w-full h-4.5"
+                    textClassName="font-medium text-[#6c797c] text-xs truncate"
+                    overlayPath="overlays/gamezone/player_name_summary_secret.xml"
+                    overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
+                  />
+                </div>
+                <span className="font-semibold text-[#904d00] shrink-0">
                   {opponent?.secret || 'Available in Review'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-white/6 text-[#8f94a6]">
-                <span>Questions Asked</span>
-                <span className="font-medium text-white">
-                  You: {me?.questionsAsked ?? 0} • {opponent?.playerName || 'Opponent'}: {opponent?.questionsAsked ?? 0}
+              <div className="flex items-center justify-between pt-1 border-t border-[#bbc9cc] text-[#6c797c]">
+                <span className="shrink-0">Questions Asked</span>
+                <span className="font-medium text-[#171d1e] inline-flex items-center min-w-0 max-w-[65%] justify-end">
+                  <span className="shrink-0">You: {me?.questionsAsked ?? 0} •&nbsp;</span>
+                  <FacebookPlayerName
+                    initialData={opponentQuestionsInitialData}
+                    fallbackName={`${opponentDisplayName}: ${opponent?.questionsAsked ?? 0}`}
+                    className="inline-flex shrink-0 max-w-[130px] h-4.5 align-middle"
+                    textClassName="font-medium text-[#171d1e] text-xs truncate"
+                    overlayPath="overlays/gamezone/player_name_summary_stat.xml"
+                    overlayCassPath="overlays/gamezone/gamezone_result_player_name.css"
+                  />
                 </span>
               </div>
 
               {gameState.endReason && (
-                <div className="pt-1 border-t border-white/6 text-[#8f94a6]">
+                <div className="pt-1 border-t border-[#bbc9cc] text-[#6c797c]">
                   <span>Reason: </span>
-                  <span className="text-white/90">{gameState.endReason}</span>
+                  <span className="text-[#171d1e]">{gameState.endReason}</span>
                 </div>
               )}
             </div>
@@ -874,7 +1383,7 @@ export default function GameZoneScreen({
               <button
                 type="button"
                 onClick={handleReviewMatch}
-                className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#63d6ea] text-sm font-extrabold text-[#00363e] shadow-[0_4px_16px_rgba(99,214,234,0.25)] transition hover:opacity-90 active:scale-[0.99] sm:text-base"
+                className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#006875] text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(0,104,117,0.2)] transition hover:bg-[#005a66] active:scale-[0.99] sm:text-base"
               >
                 <span>Review Match</span>
                 <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -885,7 +1394,7 @@ export default function GameZoneScreen({
               <button
                 type="button"
                 onClick={handleGoHome}
-                className="flex h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-white/15 bg-white/6 text-sm font-bold text-white transition hover:bg-white/10 active:scale-[0.99]"
+                className="flex h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-sm font-bold text-[#171d1e] transition hover:bg-[#e9eff1] active:scale-[0.99]"
               >
                 Go to Home
               </button>

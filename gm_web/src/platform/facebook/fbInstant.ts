@@ -1,4 +1,8 @@
 import type { PlatformPlayer } from '../../types/fbinstant'
+import { setupMockFbInstant } from './mockFbInstant'
+
+// Initialize mock FBInstant if running in an environment without Facebook Instant Games SDK
+setupMockFbInstant()
 
 export type FacebookSignedPlayerInfo = {
   playerId: string
@@ -6,17 +10,15 @@ export type FacebookSignedPlayerInfo = {
 }
 
 export function isFacebookInstantGames(): boolean {
-  return import.meta.env.PROD && typeof FBInstant !== 'undefined'
+  return typeof FBInstant !== 'undefined'
 }
 
 export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlayerInfo | null> {
   // Called only after initializeFacebookInstant() has completed.
-  // No custom request payload is used because SDK 8 on the web client can
-  // reject the passthrough message used by getSignedPlayerInfoAsync(payload).
   const player = FBInstant.player
 
   type SignedPlayerInfoRuntime = {
-    getPlayerId(): string
+    getPlayerID(): string
     getSignature(): string
   }
 
@@ -36,7 +38,7 @@ export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlaye
   try {
     const signedInfo = await playerWithSignedInfo.getSignedPlayerInfoAsync()
 
-    const playerId = signedInfo.getPlayerId()
+    const playerId = signedInfo.getPlayerID()
     const signature = signedInfo.getSignature()
 
     if (!playerId || !signature) {
@@ -55,18 +57,39 @@ export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlaye
 }
 
 export async function initializeFacebookInstant(): Promise<PlatformPlayer | null> {
+  setupMockFbInstant()
+
   if (!isFacebookInstantGames()) {
     console.log('Running outside Facebook Instant Games')
     return null
   }
 
   try {
-    await FBInstant.initializeAsync()
+    console.log('Initializing Facebook Instant Games...')
+
+    const initTimeout = new Promise<never>((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              'FBInstant.initializeAsync timed out (running outside Facebook iframe)',
+            ),
+          ),
+        4000,
+      ),
+    )
+    await Promise.race([FBInstant.initializeAsync(), initTimeout])
 
     FBInstant.setLoadingProgress(50)
     FBInstant.setLoadingProgress(100)
 
-    await FBInstant.startGameAsync()
+    const startTimeout = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('FBInstant.startGameAsync timed out')),
+        4000,
+      ),
+    )
+    await Promise.race([FBInstant.startGameAsync(), startTimeout])
 
  /*    console.log('Facebook Instant Game initialized successfully')
     console.log('SDK Version:', FBInstant.getSDKVersion())
@@ -91,8 +114,8 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
     // the Supabase backend as if they were directly available to the game.
     const platformPlayer: PlatformPlayer = {
       id,
-      name: '',
-      photo: undefined,
+      name: (typeof player.getName === 'function' ? player.getName() : '') || '',
+      photo: (typeof player.getPhoto === 'function' ? player.getPhoto() : undefined),
     }
 
     console.log('Platform player identity:', platformPlayer)
@@ -109,21 +132,19 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
 
 export async function showFacebookPlayerProfileOverlay(
   container: HTMLElement,
-): Promise<void> {
+): Promise<FBInstantOverlayView | null> {
   if (!isFacebookInstantGames()) {
     console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
-    return
+    return null
   }
 
   try {
     const overlayViews = FBInstant.overlayViews
     if (!overlayViews) {
       console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
-      return
+      return null
     }
 
-    // Overlay XML/CSS files are Meta overlay assets, not normal Vite public files.
-    // The paths must resolve inside the Instant Game bundle that Meta serves.
     const xmlPath = 'overlays/profile_card.xml'
     const cssPath = 'overlays/styles.css'
 
@@ -132,40 +153,93 @@ export async function showFacebookPlayerProfileOverlay(
     const overlay = await overlayViews.createOverlayViewAsync(
       xmlPath,
       container,
-      'width: 100%; height: 180px; border: none;',
+      'width: 100%; height: 100%; border: none; overflow: hidden;',
       cssPath,
     )
 
     await overlay.showAsync()
+    return overlay
   } catch (error) {
     console.error('Failed to show Facebook player profile overlay:', error)
+    return null
   }
 }
 
-export async function showFacebookOpponentProfileOverlay(
+function normalizeOverlayPath(path: string): string {
+  if (!path) return ''
+  let p = path.trim()
+  const overlayIdx = p.indexOf('overlays/')
+  if (overlayIdx !== -1) {
+    return p.slice(overlayIdx)
+  }
+  p = p.replace(/^\/+/, '')
+  if (p.startsWith('public/')) {
+    p = p.slice('public/'.length)
+  }
+  return p
+}
+
+export async function showCustomOverlay(
   container: HTMLElement,
-  opponentPlayerId: string,
-): Promise<void> {
+  xmlPath: string,
+  cssPath: string,
+  initialData: Record<string, unknown> = {},
+): Promise<FBInstantOverlayView | null> {
   if (!isFacebookInstantGames()) {
     console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
-    return
-  }
-
-  const playerId = opponentPlayerId.trim()
-
-  if (!playerId) {
-    console.warn('Cannot show opponent profile overlay without a player ID')
-    return
+    return null
   }
 
   try {
     const overlayViews = FBInstant.overlayViews
     if (!overlayViews) {
       console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
-      return
+      return null
     }
 
-    const xmlPath = 'overlays/opponent_profile.xml'
+    const cleanXmlPath = normalizeOverlayPath(xmlPath)
+    const cleanCssPath = normalizeOverlayPath(cssPath)
+
+    const overlay = await overlayViews.createOverlayViewAsync(
+      cleanXmlPath,
+      container,
+      'width: 100%; height: 100%; border: none; overflow: hidden; background: transparent; margin: 0; padding: 0;',
+      cleanCssPath,
+      initialData,
+    )
+
+    await overlay.showAsync()
+    return overlay
+  } catch (error) {
+    console.error('Failed to show Facebook custom overlay:', error)
+    return null
+  }
+}
+
+export async function showFacebookOpponentProfileOverlay(
+  container: HTMLElement,
+  opponentPlayerId: string,
+): Promise<FBInstantOverlayView | null> {
+  if (!isFacebookInstantGames()) {
+    console.warn('Facebook Instant Overlay Views are unavailable outside Instant Games')
+    return null
+  }
+
+  const playerId = opponentPlayerId.trim()
+
+  if (!playerId) {
+    console.warn('Cannot show opponent profile overlay without a player ID')
+    return null
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews) {
+      console.error('FBInstant.overlayViews is unavailable in this SDK/runtime')
+      return null
+    }
+
+    const xmlPath = `overlays/opponent_profile.xml`
     const cssPath = 'overlays/styles.css'
 
     console.log('Creating Facebook opponent profile overlay:', {
@@ -177,13 +251,127 @@ export async function showFacebookOpponentProfileOverlay(
     const overlay = await overlayViews.createOverlayViewAsync(
       xmlPath,
       container,
-      'width: 100%; height: 180px; border: none;',
+      'width: 100%; height: 100%; border: none; overflow: hidden;',
       cssPath,
+      { opponentPlayerId: playerId }
     )
 
     await overlay.showAsync()
+    return overlay
+    return overlay
   } catch (error) {
     console.error('Failed to show Facebook opponent profile overlay:', error)
+    return null
+  }
+}
+
+export async function showFacebookPlayerNameOverlay(
+  container: HTMLElement,
+  initialData?: Record<string, unknown>,
+  overlayPath: string = '',
+  overlayCassPath: string = '',
+): Promise<FBInstantOverlayView | null> {
+  if (!isFacebookInstantGames()) {
+    return null
+  }
+
+  if (!initialData || !initialData.playerId) {
+    return null
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews) {
+      return null
+    }
+
+    const xmlPath = overlayPath || 'overlays/player_name.xml'
+    const cssPath = overlayCassPath || 'overlays/styles.css'
+
+    const cleanXmlPath = normalizeOverlayPath(xmlPath)
+    const cleanCssPath = normalizeOverlayPath(cssPath)
+
+    const overlay = await overlayViews.createOverlayViewAsync(
+      cleanXmlPath,
+      container,
+      'width: 100%; height: 100%; border: none; overflow: hidden; background: transparent;',
+      cleanCssPath,
+      initialData,
+    )
+
+    await overlay.showAsync()
+    return overlay
+  } catch (error) {
+    console.error('Failed to show Facebook player name overlay:', error)
+    return null
+  }
+}
+
+export async function showFacebookProfileNameOverlay(
+  container: HTMLElement,
+  textStyle: string = 'font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: inherit; margin: 0; padding: 0;',
+  iFrameStyle: string = 'width: 100%; height: 100%; border: none; overflow: hidden; display: block; background: transparent; margin: 0; padding: 0;',
+  pathToCss?: string,
+): Promise<FBInstantOverlayView | null> {
+  if (!isFacebookInstantGames()) {
+    return null
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews || typeof overlayViews.createProfileNameOverlayViewAsync !== 'function') {
+      console.warn('createProfileNameOverlayViewAsync is unavailable in this SDK/runtime')
+      return null
+    }
+
+    const cleanCssPath = pathToCss ? normalizeOverlayPath(pathToCss) : undefined
+
+    console.log('Creating Facebook profile name overlay:', { cleanCssPath, textStyle })
+
+    const overlay = await overlayViews.createProfileNameOverlayViewAsync(
+      container,
+      textStyle,
+      iFrameStyle,
+      cleanCssPath,
+    )
+
+    await overlay.showAsync()
+    return overlay
+  } catch (error) {
+    console.error('Failed to show Facebook profile name overlay:', error)
+    return null
+  }
+}
+
+export async function showFacebookProfilePictureOverlay(
+  container: HTMLElement,
+  imageStyle: string = 'position: fixed; top: 0; left: 0;width: 100%; height: 100%; border-radius: 50%; object-fit: cover; margin: 0; display: block;',
+  iFrameStyle: string = 'width: 100%; height: 100%; border: none; overflow: hidden; display: block; background: transparent; margin: 0; padding: 0;',
+): Promise<FBInstantOverlayView | null> {
+  if (!isFacebookInstantGames()) {
+    return null
+  }
+
+  try {
+    const overlayViews = FBInstant.overlayViews
+    if (!overlayViews || typeof overlayViews.createProfilePictureOverlayViewAsync !== 'function') {
+      console.warn('createProfilePictureOverlayViewAsync is unavailable in this SDK/runtime')
+      return null
+    }
+
+    console.log('Creating Facebook profile picture overlay')
+
+    const overlay = await overlayViews.createProfilePictureOverlayViewAsync(
+      container,
+      imageStyle,
+      iFrameStyle,
+    )
+
+    await overlay.showAsync()
+    return overlay
+  } catch (error) {
+    console.error('Failed to show Facebook profile picture overlay:', error)
+    return null
   }
 }
 
@@ -208,3 +396,49 @@ export function getFacebookGameRoomCode(): string | null {
 
   return null
 }
+
+/**
+ * Triggers haptic vibration feedback using the Facebook Instant Games SDK,
+ * with graceful fallback to navigator.vibrate on mobile web.
+ *
+ * Adheres to Facebook Instant Games best practices:
+ * - Fire-and-forget: does not block game execution
+ * - Silent error handling: catches exceptions without disrupting gameplay
+ * - Hardware fallback: supports HTML5 Vibration API when not running in FBInstant
+ */
+export function triggerHapticFeedback(): void {
+  try {
+    if (typeof window !== 'undefined' && window.FBInstant?.performHapticFeedbackAsync) {
+      window.FBInstant.performHapticFeedbackAsync().catch((err) => {
+        // Haptic feedback is non-critical, catch silently per FB documentation
+        console.warn('[Haptics] FBInstant haptic feedback failed or unsupported:', err);
+      });
+      return;
+    }
+
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(40);
+    }
+  } catch (error) {
+    // Best practice: Always catch and handle errors silently
+    console.warn('[Haptics] Haptic feedback execution failed:', error);
+  }
+}
+
+/**
+ * Checks whether haptic feedback is supported on the current device and platform.
+ */
+export function isHapticFeedbackSupported(): boolean {
+  try {
+    if (typeof window !== 'undefined' && window.FBInstant?.getSupportedAPIs) {
+      return window.FBInstant.getSupportedAPIs().includes('performHapticFeedbackAsync');
+    }
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
