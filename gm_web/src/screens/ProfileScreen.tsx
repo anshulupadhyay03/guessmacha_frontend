@@ -1,41 +1,13 @@
-import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import PlayerAvatar from '../components/PlayerAvatar';
+import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
 
-function DefaultAvatarIcon({ className = 'size-10' }: { className?: string }) {
-  return (
-    <svg className={`${className} text-[#006875]`} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path
-        fillRule="evenodd"
-        d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-}
-
-function ProfileAvatar({ imageUrl, name }: { imageUrl?: string | null; name?: string }) {
-  const [hasError, setHasError] = useState(false);
-
-  if (imageUrl && !hasError) {
-    return (
-      <img
-        src={imageUrl}
-        alt={name || 'User profile'}
-        onError={() => setHasError(true)}
-        className="size-20 sm:size-24 rounded-full object-cover border-2 border-[#006875] shadow-[0_4px_16px_rgba(0,104,117,0.15)]"
-      />
-    );
-  }
-
-  return (
-    <div
-      className="grid size-20 sm:size-24 place-items-center rounded-full bg-[#eff4f7] border-2 border-[#bbc9cc]"
-      aria-label={name || 'User profile'}
-    >
-      <DefaultAvatarIcon className="size-10 sm:size-12 text-[#006875]" />
-    </div>
-  );
-}
+// Inline text style for the isMe profile-name overlay (your own name).
+// Mirrors the <h2> below (20px black #171d1e, single line); margin:-8px
+// offsets the overlay iframe's default 8px body margin so the name never
+// gets clipped into a scroller.
+const PROFILE_NAME_TEXT_STYLE =
+  'font-family: Manrope, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 900; color: #171d1e; letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; line-height: 1.4; margin: -8px; padding: 0;'
 
 export default function ProfileScreen() {
   const { session, loading } = useAuth();
@@ -77,12 +49,24 @@ export default function ProfileScreen() {
           {/* User Identity Card */}
           <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-[#bbc9cc] bg-white p-6 text-center shadow-xs">
             <div className="mb-3.5">
-              <ProfileAvatar imageUrl={avatarUrl} name={username} />
+              <PlayerAvatar
+                isMe
+                imageUrl={avatarUrl}
+                name={username}
+                className="size-20 sm:size-24 shrink-0 rounded-full bg-[#eff4f7] border-2 border-[#006875] shadow-[0_4px_16px_rgba(0,104,117,0.15)]"
+                iconSize="size-10"
+              />
             </div>
 
-            <div className="flex flex-col items-center gap-1">
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#171d1e]">
-                {username}
+            <div className="flex w-full flex-col items-center gap-1">
+              <h2 className="flex w-full items-center justify-center">
+                <FacebookPlayerName
+                  isMe
+                  fallbackName={username}
+                  className="w-full h-8 justify-center"
+                  textClassName="truncate text-xl sm:text-2xl font-black tracking-tight text-[#171d1e] text-center"
+                  textStyle={PROFILE_NAME_TEXT_STYLE}
+                />
               </h2>
               {user?.email && (
                 <p className="text-xs text-[#3c494c] font-medium">{user.email}</p>
