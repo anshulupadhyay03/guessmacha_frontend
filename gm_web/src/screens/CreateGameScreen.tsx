@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { Category } from '../../../shared/types/category';
 import Chip from '../components/Chip';
+import CategoryIcon from '../components/CategoryIcon';
 import type { CreateGameResponse } from '../features/dashboard/types';
 import { useCategories } from '../hooks/useCategories';
 import { useCreateGame } from '../hooks/useCreateGame';
@@ -11,51 +11,6 @@ interface CreateGameScreenProps {
 }
 
 const questionLimitOptions = [5, 7, 10, 12, 15];
-
-const RAW_BASE_IMAGE_URL = (
-  import.meta.env.BASE_IMAGE_URL ||
-  import.meta.env.VITE_BASE_IMAGE_URL ||
-  ''
-).trim();
-
-function getCategoryIconUrl(iconKey: string | null | undefined): string | null {
-  if (!iconKey || typeof iconKey !== 'string') {
-    return null;
-  }
-  const trimmedKey = iconKey.trim();
-  if (!trimmedKey) {
-    return null;
-  }
-  if (trimmedKey.startsWith('http://') || trimmedKey.startsWith('https://')) {
-    return trimmedKey;
-  }
-  if (!RAW_BASE_IMAGE_URL) {
-    return null;
-  }
-  const cleanBase = RAW_BASE_IMAGE_URL.replace(/\/+$/, '');
-  const cleanKey = trimmedKey.replace(/^\/+/, '');
-  return `${cleanBase}/${cleanKey}`;
-}
-
-const DEFAULT_ICON_URL = '/category-icons/icon-default.svg';
-
-function CategoryIcon({ category }: { category: Category }) {
-  const [hasError, setHasError] = useState(false);
-  const iconUrl = getCategoryIconUrl(category.iconKey);
-  const src = !hasError && iconUrl ? iconUrl : DEFAULT_ICON_URL;
-
-  return (
-    <img
-      src={src}
-      alt={category.name}
-      className="size-11 object-contain select-none pointer-events-none"
-      loading="lazy"
-      onError={() => {
-        if (!hasError) setHasError(true);
-      }}
-    />
-  );
-}
 
 export default function CreateGameScreen({
   onBack,

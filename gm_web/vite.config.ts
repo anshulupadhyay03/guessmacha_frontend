@@ -10,7 +10,6 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     base: './',
-    envPrefix: ['VITE_', 'BASE_'],
     plugins: [react(), tailwindcss()],
     define: {
       __DEV_SUPABASE_ACCESS_TOKEN__: JSON.stringify(
@@ -18,9 +17,6 @@ export default defineConfig(({ command, mode }) => {
       ),
       __DEV_SUPABASE_REFRESH_TOKEN__: JSON.stringify(
         command === 'serve' ? env.REFRESH_TOKEN ?? '' : '',
-      ),
-      'import.meta.env.BASE_IMAGE_URL': JSON.stringify(
-        env.BASE_IMAGE_URL || env.VITE_BASE_IMAGE_URL || '',
       ),
     },
   }

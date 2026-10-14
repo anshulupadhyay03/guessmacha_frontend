@@ -14,6 +14,7 @@ import ChooseSecretModal from '../components/ChooseSecretModal'
 import ConfirmSecretDialog from '../components/ConfirmSecretDialog'
 import PlayerAvatar from '../components/PlayerAvatar'
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName'
+import CategoryIcon from '../components/CategoryIcon'
 
 // Inline text style for the isMe profile-name overlay so your own name
 // renders in lobby typography (16px bold #171d1e, single line). Mirrors
@@ -39,62 +40,6 @@ interface MatchLobbyScreenProps {
   roomCode: string
   onStartGame?: () => void
   onNavigateToGameZone?: () => void
-}
-
-const RAW_BASE_IMAGE_URL = (
-  import.meta.env.BASE_IMAGE_URL ||
-  import.meta.env.VITE_BASE_IMAGE_URL ||
-  ''
-).trim()
-
-const DEFAULT_ICON_URL = '/category-icons/icon-default.svg'
-
-function getCategoryIconUrl(iconKey: string | null | undefined, categoryName?: string): string | null {
-  if (iconKey && typeof iconKey === 'string') {
-    const trimmedKey = iconKey.trim()
-    if (trimmedKey) {
-      if (trimmedKey.startsWith('http://') || trimmedKey.startsWith('https://')) {
-        return trimmedKey
-      }
-      if (RAW_BASE_IMAGE_URL) {
-        const cleanBase = RAW_BASE_IMAGE_URL.replace(/\/+$/, '')
-        const cleanKey = trimmedKey.replace(/^\/+/, '')
-        return `${cleanBase}/${cleanKey}`
-      }
-      return `/category-icons/${trimmedKey.replace(/^\/+/, '')}`
-    }
-  }
-
-  const name = categoryName?.toLowerCase().trim() || ''
-  if (name.includes('animal')) return '/category-icons/icon-animal.svg'
-  if (name.includes('movie') || name.includes('bollywood')) return '/category-icons/icon-bollywood.svg'
-  if (name.includes('sport')) return '/category-icons/icon-sports.svg'
-  if (name.includes('countr')) return '/category-icons/icon-countries.svg'
-  if (name.includes('food') || name.includes('dish')) return '/category-icons/icon-foods-dishes.svg'
-  if (name.includes('cricket')) return '/category-icons/icon-cricket-players.svg'
-  if (name.includes('football')) return '/category-icons/icon-football-players.svg'
-  if (name.includes('car')) return '/category-icons/icon-cars-supercars.svg'
-
-  return null
-}
-
-function CategoryIcon({ category }: { category?: LobbyCategory }) {
-  const [hasError, setHasError] = useState(false)
-  const iconKey = category?.iconKey || category?.icon_key
-  const iconUrl = getCategoryIconUrl(iconKey, category?.name)
-  const src = !hasError && iconUrl ? iconUrl : DEFAULT_ICON_URL
-
-  return (
-    <img
-      src={src}
-      alt={category?.name ?? 'Category'}
-      className="size-16 object-contain select-none pointer-events-none"
-      loading="lazy"
-      onError={() => {
-        if (!hasError) setHasError(true)
-      }}
-    />
-  )
 }
 
 function timeUntil(expiresAt?: string): string | null {
@@ -322,7 +267,10 @@ export default function MatchLobbyScreen({
             <article className="relative overflow-hidden rounded-2xl border border-[#bbc9cc] bg-white p-6 shadow-xs">
               <div className="relative flex items-center gap-4">
                 <div className="grid size-16 shrink-0 place-items-center" aria-hidden="true">
-                  <CategoryIcon category={game?.category} />
+                  <CategoryIcon
+                    category={game?.category}
+                    className="size-16 object-contain select-none pointer-events-none"
+                  />
                 </div>
                 <div className="min-w-0">
                   <span className="block text-xs font-semibold tracking-[0.12em] text-[#006875] uppercase">
