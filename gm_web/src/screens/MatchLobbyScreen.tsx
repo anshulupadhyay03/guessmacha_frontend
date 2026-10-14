@@ -41,6 +41,62 @@ interface MatchLobbyScreenProps {
   onNavigateToGameZone?: () => void
 }
 
+const RAW_BASE_IMAGE_URL = (
+  import.meta.env.BASE_IMAGE_URL ||
+  import.meta.env.VITE_BASE_IMAGE_URL ||
+  ''
+).trim()
+
+const DEFAULT_ICON_URL = '/category-icons/icon-default.svg'
+
+function getCategoryIconUrl(iconKey: string | null | undefined, categoryName?: string): string | null {
+  if (iconKey && typeof iconKey === 'string') {
+    const trimmedKey = iconKey.trim()
+    if (trimmedKey) {
+      if (trimmedKey.startsWith('http://') || trimmedKey.startsWith('https://')) {
+        return trimmedKey
+      }
+      if (RAW_BASE_IMAGE_URL) {
+        const cleanBase = RAW_BASE_IMAGE_URL.replace(/\/+$/, '')
+        const cleanKey = trimmedKey.replace(/^\/+/, '')
+        return `${cleanBase}/${cleanKey}`
+      }
+      return `/category-icons/${trimmedKey.replace(/^\/+/, '')}`
+    }
+  }
+
+  const name = categoryName?.toLowerCase().trim() || ''
+  if (name.includes('animal')) return '/category-icons/icon-animal.svg'
+  if (name.includes('movie') || name.includes('bollywood')) return '/category-icons/icon-bollywood.svg'
+  if (name.includes('sport')) return '/category-icons/icon-sports.svg'
+  if (name.includes('countr')) return '/category-icons/icon-countries.svg'
+  if (name.includes('food') || name.includes('dish')) return '/category-icons/icon-foods-dishes.svg'
+  if (name.includes('cricket')) return '/category-icons/icon-cricket-players.svg'
+  if (name.includes('football')) return '/category-icons/icon-football-players.svg'
+  if (name.includes('car')) return '/category-icons/icon-cars-supercars.svg'
+
+  return null
+}
+
+function CategoryIcon({ category }: { category?: LobbyCategory }) {
+  const [hasError, setHasError] = useState(false)
+  const iconKey = category?.iconKey || category?.icon_key
+  const iconUrl = getCategoryIconUrl(iconKey, category?.name)
+  const src = !hasError && iconUrl ? iconUrl : DEFAULT_ICON_URL
+
+  return (
+    <img
+      src={src}
+      alt={category?.name ?? 'Category'}
+      className="size-16 object-contain select-none pointer-events-none"
+      loading="lazy"
+      onError={() => {
+        if (!hasError) setHasError(true)
+      }}
+    />
+  )
+}
+
 function timeUntil(expiresAt?: string): string | null {
   if (!expiresAt) return null
 
@@ -265,8 +321,8 @@ export default function MatchLobbyScreen({
           <div className="space-y-6 md:col-span-5">
             <article className="relative overflow-hidden rounded-2xl border border-[#bbc9cc] bg-white p-6 shadow-xs">
               <div className="relative flex items-center gap-4">
-                <div className="grid size-16 shrink-0 place-items-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-3xl text-[#006875]" aria-hidden="true">
-                  ◉
+                <div className="grid size-16 shrink-0 place-items-center" aria-hidden="true">
+                  <CategoryIcon category={game?.category} />
                 </div>
                 <div className="min-w-0">
                   <span className="block text-xs font-semibold tracking-[0.12em] text-[#006875] uppercase">
@@ -292,16 +348,21 @@ export default function MatchLobbyScreen({
                     type="button"
                     onClick={() => void refresh()}
                     disabled={loading}
-                    className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-[#006875] transition hover:bg-[#eff4f7] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
+                    aria-busy={loading}
                     aria-label="Refresh game status"
                     title="Refresh game status"
+                    className="group -m-1.5 inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[#006875] transition-colors hover:bg-[#006875]/8 hover:text-[#004b55] active:bg-[#006875]/12 disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875] motion-reduce:transition-none"
                   >
                     <svg
-                      className={`h-5 w-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-2] ${loading ? 'animate-spin' : ''}`}
+                      className={`size-5.5 fill-none stroke-current stroke-[2.25] transition-transform duration-300 motion-reduce:transition-none ${loading ? 'animate-spin' : 'group-hover:rotate-90'
+                        }`}
                       viewBox="0 0 24 24"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       aria-hidden="true"
                     >
-                      <path d="M20 11a8 8 0 1 0 2 5.3M20 4v7h-7" />
+                      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                      <path d="M21 3v5h-5" />
                     </svg>
                   </button>
                 </div>
@@ -430,9 +491,8 @@ export default function MatchLobbyScreen({
                 </div>
 
                 <div
-                  className={`flex items-center justify-between rounded-xl border p-3 ${
-                    opponent ? 'border-[#bbc9cc] bg-[#eff4f7]/50' : 'border-dashed border-[#bbc9cc] bg-[#eff4f7]/20 opacity-60'
-                  }`}
+                  className={`flex items-center justify-between rounded-xl border p-3 ${opponent ? 'border-[#bbc9cc] bg-[#eff4f7]/50' : 'border-dashed border-[#bbc9cc] bg-[#eff4f7]/20 opacity-60'
+                    }`}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <PlayerAvatar
