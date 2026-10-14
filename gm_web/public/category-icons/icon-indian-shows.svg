@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="100%" height="100%" fill="none"><g id="icon-indian-shows-light">
+    <rect width="96" height="96" rx="22" fill="#ffffff"/>
+    <rect x="1" y="1" width="94" height="94" rx="21" stroke="#006877" stroke-opacity="0.16" stroke-width="2"/>
+    <g transform="translate(18, 18)" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="22" y1="18" x2="13" y2="8" stroke="#d97706" stroke-width="2.4"/>
+      <circle cx="13" cy="8" r="1.8" fill="#d97706"/>
+      <line x1="38" y1="18" x2="47" y2="8" stroke="#d97706" stroke-width="2.4"/>
+      <circle cx="47" cy="8" r="1.8" fill="#d97706"/>
+      <rect x="6" y="18" width="48" height="34" rx="6" fill="#e0f3f6" stroke="#006877" stroke-width="2.4"/>
+      <rect x="10" y="22" width="30" height="26" rx="4" fill="#ffffff" stroke="#006877" stroke-width="1.8"/>
+      <path d="M25 27 C24 30, 21 34, 21 39 C23 41, 25 41, 25 36" stroke="#d97706" stroke-width="2" fill="none"/>
+      <path d="M25 27 C26 30, 29 34, 29 39 C27 41, 25 41, 25 36" stroke="#d97706" stroke-width="2" fill="none"/>
+      <line x1="25" y1="27" x2="25" y2="40" stroke="#d97706" stroke-width="1.8"/>
+      <path d="M20 41 Q25 43 30 41" stroke="#006877" stroke-width="2"/>
+      <circle cx="46" cy="27" r="2.5" fill="#d97706"/>
+      <circle cx="46" cy="35" r="2.5" fill="#d97706"/>
+      <line x1="43" y1="42" x2="49" y2="42" stroke="#006877" stroke-width="1.8"/>
+      <line x1="43" y1="45" x2="49" y2="45" stroke="#006877" stroke-width="1.8"/>
+      <line x1="14" y1="52" x2="10" y2="58" stroke="#006877" stroke-width="2.4"/>
+      <line x1="46" y1="52" x2="50" y2="58" stroke="#006877" stroke-width="2.4"/>
+    </g>
+  </g></svg>

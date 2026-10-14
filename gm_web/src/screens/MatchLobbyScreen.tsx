@@ -14,6 +14,7 @@ import ChooseSecretModal from '../components/ChooseSecretModal'
 import ConfirmSecretDialog from '../components/ConfirmSecretDialog'
 import PlayerAvatar from '../components/PlayerAvatar'
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName'
+import CategoryIcon from '../components/CategoryIcon'
 
 // Inline text style for the isMe profile-name overlay so your own name
 // renders in lobby typography (16px bold #171d1e, single line). Mirrors
@@ -265,8 +266,11 @@ export default function MatchLobbyScreen({
           <div className="space-y-6 md:col-span-5">
             <article className="relative overflow-hidden rounded-2xl border border-[#bbc9cc] bg-white p-6 shadow-xs">
               <div className="relative flex items-center gap-4">
-                <div className="grid size-16 shrink-0 place-items-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-3xl text-[#006875]" aria-hidden="true">
-                  ◉
+                <div className="grid size-16 shrink-0 place-items-center" aria-hidden="true">
+                  <CategoryIcon
+                    category={game?.category}
+                    className="size-16 object-contain select-none pointer-events-none"
+                  />
                 </div>
                 <div className="min-w-0">
                   <span className="block text-xs font-semibold tracking-[0.12em] text-[#006875] uppercase">
@@ -292,16 +296,21 @@ export default function MatchLobbyScreen({
                     type="button"
                     onClick={() => void refresh()}
                     disabled={loading}
-                    className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-[#006875] transition hover:bg-[#eff4f7] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
+                    aria-busy={loading}
                     aria-label="Refresh game status"
                     title="Refresh game status"
+                    className="group -m-1.5 inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[#006875] transition-colors hover:bg-[#006875]/8 hover:text-[#004b55] active:bg-[#006875]/12 disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875] motion-reduce:transition-none"
                   >
                     <svg
-                      className={`h-5 w-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-2] ${loading ? 'animate-spin' : ''}`}
+                      className={`size-5.5 fill-none stroke-current stroke-[2.25] transition-transform duration-300 motion-reduce:transition-none ${loading ? 'animate-spin' : 'group-hover:rotate-90'
+                        }`}
                       viewBox="0 0 24 24"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       aria-hidden="true"
                     >
-                      <path d="M20 11a8 8 0 1 0 2 5.3M20 4v7h-7" />
+                      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                      <path d="M21 3v5h-5" />
                     </svg>
                   </button>
                 </div>
@@ -430,9 +439,8 @@ export default function MatchLobbyScreen({
                 </div>
 
                 <div
-                  className={`flex items-center justify-between rounded-xl border p-3 ${
-                    opponent ? 'border-[#bbc9cc] bg-[#eff4f7]/50' : 'border-dashed border-[#bbc9cc] bg-[#eff4f7]/20 opacity-60'
-                  }`}
+                  className={`flex items-center justify-between rounded-xl border p-3 ${opponent ? 'border-[#bbc9cc] bg-[#eff4f7]/50' : 'border-dashed border-[#bbc9cc] bg-[#eff4f7]/20 opacity-60'
+                    }`}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <PlayerAvatar

@@ -37,6 +37,8 @@ export interface LobbyCategory {
   id: string;
   name: string;
   itemCount: number;
+  iconKey?: string | null;
+  icon_key?: string | null;
 }
 
 export interface GameDetails {

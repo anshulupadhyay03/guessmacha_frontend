@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="100%" height="100%" fill="none"><g id="icon-fruits-vegetables-light">
+    <rect width="96" height="96" rx="22" fill="#ffffff"/>
+    <rect x="1" y="1" width="94" height="94" rx="21" stroke="#006877" stroke-opacity="0.16" stroke-width="2"/>
+    <g transform="translate(18, 18)" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 20 C13 18, 6 22, 6 30 C6 41, 15 48, 20 48 C25 48, 34 41, 34 30 C34 22, 27 18, 22 20 C20 21, 20 21, 18 20 Z" fill="#fee2e2" stroke="#dc2626" stroke-width="2.3"/>
+      <path d="M20 20 C20 14, 22 10, 25 8" stroke="#16a34a" stroke-width="2"/>
+      <path d="M24 11 C28 11, 30 8, 30 8 C30 8, 27 6, 24 11 Z" fill="#16a34a" stroke="#16a34a" stroke-width="1.2"/>
+      <path d="M35 18 C38 15, 43 17, 44 20 L32 50 C30 52, 28 51, 28 49 Z" fill="#ffedd5" stroke="#ea580c" stroke-width="2.3"/>
+      <line x1="33" y1="28" x2="38" y2="25" stroke="#ea580c" stroke-width="1.8"/>
+      <line x1="31" y1="36" x2="35" y2="33" stroke="#ea580c" stroke-width="1.8"/>
+      <path d="M42 17 L48 10" stroke="#16a34a" stroke-width="2"/>
+      <path d="M43 14 L49 16" stroke="#16a34a" stroke-width="1.8"/>
+      <path d="M38 34 C44 26, 54 28, 54 28 C54 28, 56 38, 48 46 C42 51, 38 46, 38 46" fill="#dcfce7" stroke="#16a34a" stroke-width="2.2"/>
+      <path d="M40 44 Q46 36 52 30" stroke="#16a34a" stroke-width="1.8"/>
+      <line x1="44" y1="40" x2="48" y2="40" stroke="#16a34a" stroke-width="1.5"/>
+      <line x1="47" y1="36" x2="50" y2="34" stroke="#16a34a" stroke-width="1.5"/>
+    </g>
+  </g></svg>

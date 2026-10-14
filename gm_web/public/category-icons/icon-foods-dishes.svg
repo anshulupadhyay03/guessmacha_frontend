@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="100%" height="100%" fill="none">
+  <g id="icon-foods-dishes-light">
+    <rect width="96" height="96" rx="22" fill="#ffffff"/>
+    <rect x="1" y="1" width="94" height="94" rx="21" stroke="#006877" stroke-opacity="0.16" stroke-width="2"/>
+    <g transform="translate(20, 20)" stroke="#006877" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 38 C8 22 20 14 28 14 C36 14 48 22 48 38 Z" fill="#e0f3f6" stroke="#006877" stroke-width="2.4"/>
+      <circle cx="28" cy="11" r="3.5" fill="#d97706" stroke="#d97706"/>
+      <line x1="4" y1="38" x2="52" y2="38" stroke="#006877" stroke-width="3.2"/>
+      <line x1="10" y1="44" x2="46" y2="44" stroke="#d97706" stroke-width="2.4"/>
+      <path d="M22 6 Q20 3 22 0" stroke="#d97706" stroke-width="2"/>
+      <path d="M28 6 Q30 3 28 0" stroke="#d97706" stroke-width="2"/>
+      <path d="M34 6 Q32 3 34 0" stroke="#d97706" stroke-width="2"/>
+    </g>
+  </g>
+</svg>
