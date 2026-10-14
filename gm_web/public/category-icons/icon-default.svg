@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="100%" height="100%" fill="none">
+  <g id="icon-default-light">
+    <rect width="96" height="96" rx="22" fill="#ffffff"/>
+    <rect x="1" y="1" width="94" height="94" rx="21" stroke="#006877" stroke-opacity="0.16" stroke-width="2"/>
+    <g transform="translate(20, 20)" stroke="#006877" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="8" y="8" width="16" height="16" rx="4" fill="#e0f3f6"/>
+      <rect x="32" y="8" width="16" height="16" rx="4" fill="#fef3c7" stroke="#d97706"/>
+      <rect x="8" y="32" width="16" height="16" rx="4" fill="#fef3c7" stroke="#d97706"/>
+      <rect x="32" y="32" width="16" height="16" rx="4" fill="#e0f3f6"/>
+    </g>
+  </g>
+</svg>
+

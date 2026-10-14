@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_BASE_URL?: string;
   readonly VITE_SUPABASE_FUNCTIONS_URL?: string;
+  readonly BASE_IMAGE_URL?: string;
+  readonly VITE_BASE_IMAGE_URL?: string;
 }
 
 interface ImportMeta {
