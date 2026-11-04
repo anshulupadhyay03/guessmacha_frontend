@@ -2,14 +2,16 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { setupMockFbInstant } from './platform/facebook/mockFbInstant'
+import { isMockFbInstantEnabled, setupMockFbInstant } from './platform/facebook/mockFbInstant'
 import { initializeFacebookInstant } from './platform/facebook/fbInstant'
 import { initializeAuth } from './platform/supabase/auth'
 
 console.log('GM_WEB main.tsx loaded')
 
-// Ensure mock FBInstant is registered for localhost / dev environments
-setupMockFbInstant()
+// Initialize mock FBInstant only if explicitly enabled via environment configuration (.env.local)
+if (isMockFbInstantEnabled()) {
+  setupMockFbInstant()
+}
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

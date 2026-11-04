@@ -1,9 +1,27 @@
 /**
+ * Check if mock FBInstant SDK is enabled via environment variables (.env.local / local.env).
+ * Defaults to false so localhost / dev environments do not fake FBInstant unless explicitly requested.
+ */
+export function isMockFbInstantEnabled(): boolean {
+  const flag =
+    import.meta.env.VITE_MOCK_FB_INSTANT ??
+    import.meta.env.VITE_USE_MOCK_FB_INSTANT ??
+    import.meta.env.MOCK_FB_INSTANT;
+  return String(flag).toLowerCase() === 'true' || flag === '1';
+}
+
+/**
  * Mock implementation of Facebook Instant Games SDK (FBInstant) API.
- * Injected when FBInstant is not present in the runtime environment.
+ * Injected only when explicitly enabled via environment configuration or forced.
  */
 export function setupMockFbInstant(force = false): void {
   if (typeof window === 'undefined') {
+    return;
+  }
+
+  // Only mock if explicitly enabled in environment or forced
+  const shouldMock = force || isMockFbInstantEnabled();
+  if (!shouldMock) {
     return;
   }
 
@@ -12,19 +30,7 @@ export function setupMockFbInstant(force = false): void {
     return;
   }
 
-  const isLocalhost =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    window.location.hostname === '0.0.0.0';
-
-  const shouldMock =
-    force ||
-    typeof window.FBInstant === 'undefined' ||
-    import.meta.env.DEV ||
-    isLocalhost;
-
-  if (shouldMock) {
-    (window as unknown as { __IS_MOCK_FB_INSTANT__?: boolean }).__IS_MOCK_FB_INSTANT__ = true;
+  (window as unknown as { __IS_MOCK_FB_INSTANT__?: boolean }).__IS_MOCK_FB_INSTANT__ = true;
 
     const fallbackAvatar =
       "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23eff4f7'/%3E%3Ccircle cx='24' cy='18' r='9' fill='%23006875'/%3E%3Cpath d='M10 40c0-7.7 6.3-14 14-14s14 6.3 14 14' fill='%23006875'/%3E%3C/svg%3E";
@@ -388,7 +394,6 @@ export function setupMockFbInstant(force = false): void {
     }
 
     console.log('Mock FBInstant SDK initialized');
-  }
 }
 
 /**
@@ -408,8 +413,8 @@ function ensureOverlayStylesheet(stylesheetPath?: string): void {
   }
 }
 
-// Automatically invoke if running in browser
-if (typeof window !== 'undefined') {
+// Automatically invoke if running in browser and explicitly enabled via env
+if (typeof window !== 'undefined' && isMockFbInstantEnabled()) {
   setupMockFbInstant();
 }
 
@@ -425,7 +430,9 @@ export async function showCustomOverlay(
     return null;
   }
 
-  setupMockFbInstant();
+  if (isMockFbInstantEnabled()) {
+    setupMockFbInstant();
+  }
 
   if (window.FBInstant?.overlayViews && container) {
     const overlay = await window.FBInstant.overlayViews.createOverlayViewAsync(

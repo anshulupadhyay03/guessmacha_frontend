@@ -145,6 +145,7 @@ body {
   min-width: 0;
   flex-shrink: 1;
   overflow: hidden;
+  margin-top: 1px;
 }
 
 .playerSuffixWrapper_stat {

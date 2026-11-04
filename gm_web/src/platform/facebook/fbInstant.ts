@@ -1,8 +1,10 @@
 import type { PlatformPlayer } from '../../types/fbinstant'
-import { setupMockFbInstant } from './mockFbInstant'
+import { isMockFbInstantEnabled, setupMockFbInstant } from './mockFbInstant'
 
-// Initialize mock FBInstant if running in an environment without Facebook Instant Games SDK
-setupMockFbInstant()
+// Initialize mock FBInstant only if explicitly enabled via environment configuration
+if (isMockFbInstantEnabled()) {
+  setupMockFbInstant()
+}
 
 export type FacebookSignedPlayerInfo = {
   playerId: string
@@ -57,7 +59,9 @@ export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlaye
 }
 
 export async function initializeFacebookInstant(): Promise<PlatformPlayer | null> {
-  setupMockFbInstant()
+  if (isMockFbInstantEnabled()) {
+    setupMockFbInstant()
+  }
 
   if (!isFacebookInstantGames()) {
     console.log('Running outside Facebook Instant Games')
