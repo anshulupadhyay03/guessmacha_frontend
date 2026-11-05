@@ -499,6 +499,9 @@ export default function MatchLobbyScreen({
         isOpen={isChooseSecretOpen}
         categoryId={game?.category.id}
         categoryName={game?.category.name}
+        mode="choose"
+        shouldCache={false}
+        allowRefresh={true}
         onClose={() => setIsChooseSecretOpen(false)}
         onConfirmSelection={handleSelectSecret}
       />

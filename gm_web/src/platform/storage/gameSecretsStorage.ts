@@ -78,8 +78,7 @@ export function loadGameCachedPuzzles(
         if (
           parsed &&
           Array.isArray(parsed.puzzles) &&
-          parsed.puzzles.length > 0 &&
-          (!categoryId || parsed.categoryId === categoryId || parsed.category?.id === categoryId)
+          parsed.puzzles.length > 0
         ) {
           return { category: parsed.category, puzzles: parsed.puzzles };
         }
@@ -127,8 +126,7 @@ export function saveGameCachedPuzzles(
 
     if (gameId) {
       storage.setItem(`${STORAGE_PREFIX}${gameId}:puzzles`, serialized);
-    }
-    if (effectiveCatId) {
+    } else if (effectiveCatId) {
       storage.setItem(`${CATEGORY_PREFIX}${effectiveCatId}:puzzles`, serialized);
     }
   } catch (err) {

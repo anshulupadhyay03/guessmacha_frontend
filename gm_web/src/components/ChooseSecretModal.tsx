@@ -39,6 +39,8 @@ interface ChooseSecretModalProps {
   confirmButtonText?: string;
   helperText?: string;
   mode?: 'choose' | 'guess';
+  shouldCache?: boolean;
+  allowRefresh?: boolean;
   lessLikelyIds?: Set<string>;
   onToggleLessLikely?: (puzzleId: string) => void;
   onClose: () => void;
@@ -105,6 +107,13 @@ const ArrowUpIcon = () => (
 const ChevronDownIcon = ({ className = 'size-4' }: { className?: string }) => (
   <Icon className={className}>
     <path d="m6 9 6 6 6-6" />
+  </Icon>
+);
+
+const RefreshIcon = ({ className = 'size-4' }: { className?: string }) => (
+  <Icon className={className}>
+    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+    <path d="M21 3v5h-5" />
   </Icon>
 );
 
@@ -381,6 +390,8 @@ export default function ChooseSecretModal({
   confirmButtonText,
   helperText,
   mode = 'choose',
+  shouldCache,
+  allowRefresh,
   lessLikelyIds: lessLikelyIdsProp,
   onToggleLessLikely: onToggleLessLikelyProp,
   onClose,
@@ -394,7 +405,22 @@ export default function ChooseSecretModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPuzzleId, setSelectedPuzzleId] = useState<string | null>(null);
   const [isLessLikelyExpanded, setIsLessLikelyExpanded] = useState(true);
-  const { category, puzzles, loading, error, reload } = usePuzzles(categoryId, gameId);
+
+  // When called from MatchLobbyScreen (mode='choose') or when shouldCache is false,
+  // do not store/load puzzles to/from localStorage.
+  const effectiveShouldCache = shouldCache ?? (mode === 'guess');
+  const { category, puzzles, loading, error, reload } = usePuzzles(
+    categoryId,
+    gameId,
+    effectiveShouldCache,
+  );
+
+  const canRefresh = allowRefresh ?? (mode === 'choose');
+
+  const handleRefreshSecrets = useCallback(() => {
+    setSelectedPuzzleId(null);
+    void reload(true);
+  }, [reload]);
 
   // Fallback internal storage for lessLikelyIds if parent does not control it directly
   const [internalLessLikelyIds, setInternalLessLikelyIds] = useState<Set<string>>(() =>
@@ -538,15 +564,41 @@ export default function ChooseSecretModal({
       {/* Toolbar: stays visible while the list scrolls */}
       <div className="shrink-0 space-y-3 px-5 pb-3">
         <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-container-low px-4 py-3">
-          <div className="min-w-0">
-            <p className="text-[0.6875rem] font-semibold tracking-wider text-on-surface-variant uppercase">
-              Category
-            </p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <p className="text-[0.6875rem] font-semibold tracking-wider text-on-surface-variant uppercase">
+                Category
+              </p>
+              {canRefresh && (
+                <>
+                  <span className="text-on-surface-variant/40" aria-hidden="true">
+                    •
+                  </span>
+                  <span className="text-[0.6875rem] font-medium text-on-surface-variant">
+                    {puzzles.length} available
+                  </span>
+                </>
+              )}
+            </div>
             <p className="truncate text-base font-semibold text-on-surface">{effectiveCategoryName}</p>
           </div>
-          <span className="shrink-0 rounded-full bg-secondary-container px-3 py-1 text-xs font-semibold text-on-secondary-container">
-            {puzzles.length} available
-          </span>
+          {canRefresh ? (
+            <button
+              type="button"
+              onClick={handleRefreshSecrets}
+              disabled={loading}
+              aria-label="Refresh Secrets"
+              title="Refresh Secrets"
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-3 py-1.5 text-xs font-semibold text-primary shadow-xs transition hover:bg-surface-container hover:text-primary active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshIcon className={cx('size-3.5', loading && 'animate-spin')} />
+              <span>{loading ? 'Refreshing…' : 'Refresh Secrets'}</span>
+            </button>
+          ) : (
+            <span className="shrink-0 rounded-full bg-secondary-container px-3 py-1 text-xs font-semibold text-on-secondary-container">
+              {puzzles.length} available
+            </span>
+          )}
         </div>
 
         <div className="relative">
@@ -610,9 +662,20 @@ export default function ChooseSecretModal({
         )}
 
         {!loading && !error && filteredPuzzles.length === 0 && (
-          <p role="status" className="py-12 text-center text-sm text-on-surface-variant">
-            {hasQuery ? <>No results for “{searchQuery.trim()}”</> : 'Nothing to choose from yet.'}
-          </p>
+          <div role="status" className="py-12 text-center text-sm text-on-surface-variant">
+            <p>{hasQuery ? <>No results for “{searchQuery.trim()}”</> : 'Nothing to choose from yet.'}</p>
+            {canRefresh && (
+              <button
+                type="button"
+                onClick={handleRefreshSecrets}
+                disabled={loading}
+                className="mt-3 inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-primary underline underline-offset-2 hover:text-primary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshIcon className={cx('size-3.5', loading && 'animate-spin')} />
+                <span>Refresh Secrets</span>
+              </button>
+            )}
+          </div>
         )}
 
         {!loading && !error && filteredPuzzles.length > 0 && (
@@ -657,7 +720,22 @@ export default function ChooseSecretModal({
                 )}
               </>
             ) : (
-              <div className="space-y-2">{filteredPuzzles.map((p) => renderOption(p, false))}</div>
+              <>
+                <div className="space-y-2">{filteredPuzzles.map((p) => renderOption(p, false))}</div>
+                {canRefresh && filteredPuzzles.length > 0 && !hasQuery && (
+                  <div className="pt-2 pb-1 text-center">
+                    <button
+                      type="button"
+                      onClick={handleRefreshSecrets}
+                      disabled={loading}
+                      className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <RefreshIcon className={cx('size-3.5', loading && 'animate-spin')} />
+                      <span>{loading ? 'Refreshing…' : 'Didn’t find a good secret? Refresh for new options'}</span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

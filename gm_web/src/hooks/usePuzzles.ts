@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CategoryDetails, PuzzleItem } from '../../../shared/types/puzzle';
+import type {
+  CategoryDetails,
+  GetPuzzlesRequest,
+  PuzzleItem,
+} from '../../../shared/types/puzzle';
 import { puzzleService } from '../platform/api/puzzleApi';
 import {
   loadGameCachedPuzzles,
@@ -14,17 +18,24 @@ interface UsePuzzlesResult {
   reload: (force?: boolean) => Promise<void>;
 }
 
-export function usePuzzles(categoryId?: string, gameId?: string): UsePuzzlesResult {
+export function usePuzzles(
+  categoryId?: string,
+  gameId?: string,
+  shouldCache = true,
+): UsePuzzlesResult {
   const [category, setCategory] = useState<CategoryDetails | null>(() => {
+    if (!shouldCache) return null;
     const cached = loadGameCachedPuzzles(gameId, categoryId);
     return cached?.category ?? null;
   });
   const [puzzles, setPuzzles] = useState<PuzzleItem[]>(() => {
+    if (!shouldCache) return [];
     const cached = loadGameCachedPuzzles(gameId, categoryId);
     return cached?.puzzles ?? [];
   });
   const [loading, setLoading] = useState<boolean>(() => {
-    if (!categoryId) return false;
+    if (!gameId && !categoryId) return false;
+    if (!shouldCache) return true;
     const cached = loadGameCachedPuzzles(gameId, categoryId);
     return !cached;
   });
@@ -32,15 +43,15 @@ export function usePuzzles(categoryId?: string, gameId?: string): UsePuzzlesResu
 
   const reload = useCallback(
     async (force = false) => {
-      if (!categoryId) {
+      if (!gameId && !categoryId) {
         setCategory(null);
         setPuzzles([]);
         setLoading(false);
         return;
       }
 
-      // If not forcing a reload and we have valid cached puzzles, skip network request
-      if (!force) {
+      // If not forcing a reload and caching is enabled and we have valid cached puzzles, skip network request
+      if (!force && shouldCache) {
         const cached = loadGameCachedPuzzles(gameId, categoryId);
         if (cached && cached.puzzles.length > 0) {
           setCategory(cached.category);
@@ -54,10 +65,15 @@ export function usePuzzles(categoryId?: string, gameId?: string): UsePuzzlesResu
       setError(null);
 
       try {
-        const data = await puzzleService.getPuzzles(categoryId);
+        const request: GetPuzzlesRequest = gameId
+          ? { gameId }
+          : { categoryId: categoryId! };
+        const data = await puzzleService.getPuzzles(request);
         setCategory(data.category);
         setPuzzles(data.puzzles);
-        saveGameCachedPuzzles(data.category, data.puzzles, gameId, categoryId);
+        if (shouldCache) {
+          saveGameCachedPuzzles(data.category, data.puzzles, gameId, categoryId);
+        }
       } catch (caughtError) {
         setError(
           caughtError instanceof Error
@@ -68,21 +84,12 @@ export function usePuzzles(categoryId?: string, gameId?: string): UsePuzzlesResu
         setLoading(false);
       }
     },
-    [categoryId, gameId],
+    [categoryId, gameId, shouldCache],
   );
 
   useEffect(() => {
-    // If secrets are already cached and present in state, do not trigger a network request
-    const cached = loadGameCachedPuzzles(gameId, categoryId);
-    if (cached && cached.puzzles.length > 0) {
-      setCategory(cached.category);
-      setPuzzles(cached.puzzles);
-      setLoading(false);
-      return;
-    }
-
     void Promise.resolve().then(() => reload(false));
-  }, [categoryId, gameId, reload]);
+  }, [reload]);
 
   return { category, puzzles, loading, error, reload };
 }

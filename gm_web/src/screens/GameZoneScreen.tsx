@@ -512,7 +512,6 @@ const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
 
 export default function GameZoneScreen({
   gameId,
-  categoryId,
   categoryName,
   onBackToMatches,
   onLeave,
@@ -520,7 +519,6 @@ export default function GameZoneScreen({
   onReviewMatch,
 }: GameZoneScreenProps) {
   const { game: detailsGame } = useGameDetails(gameId);
-  const effectiveCategoryId = categoryId || detailsGame?.category?.id;
   const effectiveCategoryName = categoryName || detailsGame?.category?.name || 'Category';
 
   const {
@@ -1190,7 +1188,6 @@ export default function GameZoneScreen({
       <ChooseSecretModal
         isOpen={isGuessModalOpen}
         gameId={gameId}
-        categoryId={effectiveCategoryId}
         categoryName={effectiveCategoryName}
         title={me?.forcedGuess ? "Final Guess: Force a Draw!" : "Guess Opponent's Secret"}
         subtitle={

@@ -1,8 +1,8 @@
-import type { GetPuzzlesData } from '../types/puzzle';
+import type { GetPuzzlesData, GetPuzzlesRequest } from '../types/puzzle';
 import type { ApiClient } from '../api/client';
 
 export interface PuzzleRepository {
-  getPuzzles(categoryId: string): Promise<GetPuzzlesData>;
+  getPuzzles(request: GetPuzzlesRequest | string): Promise<GetPuzzlesData>;
 }
 
 function isGetPuzzlesData(value: unknown): value is GetPuzzlesData {
@@ -29,13 +29,22 @@ function normalizePuzzlesResponse(response: unknown): GetPuzzlesData {
     return response.data;
   }
 
-  throw new Error('Unable to load puzzles for category');
+  throw new Error('Unable to load puzzles');
 }
 
 export function createPuzzleRepository(apiClient: ApiClient): PuzzleRepository {
   return {
-    async getPuzzles(categoryId: string): Promise<GetPuzzlesData> {
-      const response = await apiClient.get<unknown>('get_puzzles', { categoryId });
+    async getPuzzles(request: GetPuzzlesRequest | string): Promise<GetPuzzlesData> {
+      const params: Record<string, string> = {};
+      if (typeof request === 'string') {
+        params.categoryId = request;
+      } else if (request.gameId) {
+        params.gameId = request.gameId;
+      } else if (request.categoryId) {
+        params.categoryId = request.categoryId;
+      }
+
+      const response = await apiClient.get<unknown>('get_puzzles', params);
       return normalizePuzzlesResponse(response);
     },
   };

@@ -1,19 +1,32 @@
 import type { PuzzleRepository } from '../repositories/puzzleRepository';
-import type { GetPuzzlesData } from '../types/puzzle';
+import type { GetPuzzlesData, GetPuzzlesRequest } from '../types/puzzle';
 
 export interface PuzzleService {
-  getPuzzles(categoryId: string): Promise<GetPuzzlesData>;
+  getPuzzles(request: GetPuzzlesRequest | string): Promise<GetPuzzlesData>;
 }
 
 export function createPuzzleService(
   puzzleRepository: PuzzleRepository,
 ): PuzzleService {
   return {
-    async getPuzzles(categoryId: string): Promise<GetPuzzlesData> {
-      if (!categoryId || !categoryId.trim()) {
-        throw new Error('Category ID is required to load puzzles');
+    async getPuzzles(request: GetPuzzlesRequest | string): Promise<GetPuzzlesData> {
+      if (typeof request === 'string') {
+        const trimmed = request.trim();
+        if (!trimmed) {
+          throw new Error('Category ID is required to load puzzles');
+        }
+        return puzzleRepository.getPuzzles(trimmed);
       }
-      return puzzleRepository.getPuzzles(categoryId.trim());
+
+      if (request.gameId && request.gameId.trim()) {
+        return puzzleRepository.getPuzzles({ gameId: request.gameId.trim() });
+      }
+
+      if (request.categoryId && request.categoryId.trim()) {
+        return puzzleRepository.getPuzzles({ categoryId: request.categoryId.trim() });
+      }
+
+      throw new Error('Game ID or Category ID is required to load puzzles');
     },
   };
 }

@@ -10,7 +10,8 @@ export interface CategoryDetails {
 }
 
 export interface GetPuzzlesRequest {
-  categoryId: string;
+  categoryId?: string;
+  gameId?: string;
 }
 
 export interface GetPuzzlesData {
