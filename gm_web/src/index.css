@@ -89,3 +89,45 @@
     color: var(--color-on-background);
   }
 }
+
+@utility font-title-md {
+  font-family: var(--font-lobby-display);
+  font-weight: 600;
+}
+@utility text-title-md {
+  font-size: 20px;
+  line-height: 28px;
+}
+@utility font-body-md {
+  font-family: var(--font-lobby-body);
+  font-weight: 400;
+}
+@utility text-body-md {
+  font-size: 16px;
+  line-height: 24px;
+}
+@utility font-label-sm {
+  font-family: var(--font-lobby-body);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+@utility text-label-sm {
+  font-size: 12px;
+  line-height: 16px;
+}
+@utility font-headline-lg {
+  font-family: var(--font-lobby-display);
+  font-weight: 600;
+}
+@utility text-headline-lg {
+  font-size: 32px;
+  line-height: 40px;
+}
+@utility font-headline-lg-mobile {
+  font-family: var(--font-lobby-display);
+  font-weight: 600;
+}
+@utility text-headline-lg-mobile {
+  font-size: 28px;
+  line-height: 36px;
+}

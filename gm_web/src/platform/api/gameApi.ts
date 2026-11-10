@@ -73,6 +73,16 @@ export type {
   GetQuestionsResponse,
 } from '../../../../shared/types/matchReview';
 
+export type {
+  DashboardStats,
+  DashboardActiveMatch,
+  DashboardRecentMatch,
+  DashboardPopularCategory,
+  DashboardComingSoonFeature,
+  DashboardData,
+  GetDashboardResponse,
+} from '../../../../shared/types/dashboard';
+
 export const FUNCTIONS_URL = SUPABASE_FUNCTIONS_BASE_URL;
 export { BASE_URL };
 

@@ -1,3 +1,16 @@
 export { ArrowRightIcon, default } from './ArrowRightIcon';
 export type { ArrowRightIconProps } from './ArrowRightIcon';
-
+export { ChevronIcon } from './ChevronIcon';
+export type { ChevronIconProps } from './ChevronIcon';
+export { CreatePlusIcon } from './CreatePlusIcon';
+export type { CreatePlusIconProps } from './CreatePlusIcon';
+export { JoinUsersIcon } from './JoinUsersIcon';
+export type { JoinUsersIconProps } from './JoinUsersIcon';
+export { GamesIcon } from './GamesIcon';
+export type { GamesIconProps } from './GamesIcon';
+export { WinRateIcon } from './WinRateIcon';
+export type { WinRateIconProps } from './WinRateIcon';
+export { WinStreakIcon } from './WinStreakIcon';
+export type { WinStreakIconProps } from './WinStreakIcon';
+export { ComingSoonIcon } from './ComingSoonIcon';
+export type { ComingSoonIconProps } from './ComingSoonIcon';
