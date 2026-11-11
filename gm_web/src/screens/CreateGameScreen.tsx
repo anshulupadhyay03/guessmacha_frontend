@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Chip from '../components/Chip';
 import CategoryIcon from '../components/CategoryIcon';
 import type { CreateGameResponse } from '../features/dashboard/types';
 import { useCategories } from '../hooks/useCategories';
@@ -21,12 +20,19 @@ export default function CreateGameScreen({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [questionLimit, setQuestionLimit] = useState(10);
 
+  // Default to Countries (or first available category) if not yet explicitly selected
+  const effectiveCategoryId =
+    selectedCategoryId ??
+    (categories.length > 0
+      ? (categories.find((c) => c.name.toLowerCase() === 'countries') ?? categories[0]).id
+      : null);
+
   async function handleConfirm() {
-    if (!selectedCategoryId || creating) {
+    if (!effectiveCategoryId || creating) {
       return;
     }
 
-    const game = await createGame(selectedCategoryId, questionLimit);
+    const game = await createGame(effectiveCategoryId, questionLimit);
 
     if (game) {
       onGameCreated(game);
@@ -34,89 +40,225 @@ export default function CreateGameScreen({
   }
 
   return (
-    <section className="relative mx-auto min-h-full w-full max-w-[640px] px-[22px] pt-3 pb-0 text-left text-[#171d1e]">
-      <button type="button" className="absolute top-[18px] left-[22px] cursor-pointer rounded-[10px] border border-[#bbc9cc] bg-[#eff4f7] px-2.5 py-2 text-sm font-bold text-[#171d1e] transition hover:bg-[#e9eff1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]" onClick={onBack}>
-        ← Back
-      </button>
-      <p className="mt-2 text-center text-[0.7rem] font-bold tracking-[0.12em] text-[#36656e] uppercase">CREATE A ROOM</p>
-      <h1 className="mt-3 mb-2 text-center text-[clamp(2rem,5vw,2.6rem)] leading-[1.1] font-extrabold tracking-[-0.06em] text-[#171d1e]">Pick a category</h1>
-      <p className="mx-auto mb-7 max-w-[420px] text-center text-[0.96rem] leading-6 text-[#3c494c]">Choose a topic for this round. Your friends will join with the room code.</p>
+    <section className="flex min-h-full w-full flex-col bg-surface text-on-surface font-body-md text-body-md antialiased" aria-label="Create room screen">
+      {/* Top Header */}
+      <header className="sticky top-0 z-40 w-full border-b border-surface-container-high/60 bg-surface/95 backdrop-blur-md shadow-xs">
+        <div className="mx-auto flex h-14 max-w-xl items-center justify-between px-4">
+          <button
+            type="button"
+            aria-label="Go back"
+            className="flex size-9 shrink-0 -ml-1 cursor-pointer items-center justify-center text-on-surface-variant transition-transform hover:text-on-surface active:scale-95"
+            onClick={onBack}
+          >
+            <svg
+              className="size-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+          <div className="flex min-w-0 flex-1 items-center justify-center px-2">
+            <h1 className="truncate text-center font-title-md text-[17px] font-bold leading-tight tracking-tight text-on-surface">
+              Pick a category
+            </h1>
+          </div>
+          <div className="size-9 shrink-0 -mr-1" aria-hidden="true" />
+        </div>
+      </header>
 
-      {loading && <p className="my-6 text-center text-[#3c494c]">Loading categories…</p>}
+      {/* Main Content */}
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pt-3 pb-6">
+        {/* Horizontal Question Strip */}
+        <div className="mb-3 flex flex-col rounded-xl border border-surface-container-high/50 bg-surface-container-low px-3.5 py-2.5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-primary">
+              Questions Per Player
+            </span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 font-label-sm text-[11px] font-semibold text-primary">
+              {questionLimit} turns each
+            </span>
+          </div>
 
-      {error && (
-        <div className="my-5 rounded-[14px] bg-[#ffdad6] border border-[#ba1a1a]/30 p-[14px] text-center text-[#93000a]" role="alert">
-          <p>Couldn’t load categories. Please try again.</p>
-          <button type="button" className="mt-2 cursor-pointer bg-transparent text-sm font-extrabold text-[#006875] underline" onClick={() => void reload()}>
-            Retry
+          {/* Segmented Horizontal Pills */}
+          <div
+            aria-label="Questions limit options"
+            className="grid grid-cols-5 gap-1.5"
+            role="radiogroup"
+          >
+            {questionLimitOptions.map((limit) => {
+              const isSelected = questionLimit === limit;
+              return (
+                <button
+                  key={limit}
+                  type="button"
+                  disabled={creating}
+                  onClick={() => setQuestionLimit(limit)}
+                  className={`flex h-9 cursor-pointer items-center justify-center rounded-lg font-title-md text-xs transition-all ${
+                    isSelected
+                      ? 'scale-[1.02] bg-primary font-bold text-on-primary shadow-sm shadow-primary/25'
+                      : 'bg-surface-container-lowest font-semibold text-on-surface shadow-xs hover:bg-surface-container-high/40 active:scale-95'
+                  }`}
+                  aria-pressed={isSelected}
+                >
+                  {limit}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Category Header */}
+        <div className="mb-2 flex items-center justify-between px-0.5">
+          <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+            Choose one Category
+          </span>
+          <span className="font-label-sm text-[11px] font-bold text-secondary">
+            {categories.length} Available
+          </span>
+        </div>
+
+        {/* Skeletons on loading */}
+        {loading && (
+          <div className="my-2 flex flex-col gap-2 animate-pulse" aria-busy="true">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="h-14 rounded-xl bg-surface-container-lowest ring-1 ring-surface-container-high/60"
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div
+            className="my-3 rounded-xl border border-error/30 bg-error-container p-3 text-center text-on-error-container"
+            role="alert"
+          >
+            <p className="font-body-md text-sm">Couldn’t load categories. Please try again.</p>
+            <button
+              type="button"
+              className="mt-2 cursor-pointer bg-transparent font-title-md text-sm font-bold text-primary underline"
+              onClick={() => void reload()}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && categories.length === 0 && (
+          <p className="my-6 text-center font-body-md text-sm text-on-surface-variant">
+            No categories are available right now.
+          </p>
+        )}
+
+        {/* Category Cards Deck */}
+        <div aria-label="Game topics" className="flex flex-col gap-2" role="radiogroup">
+          {categories.map((category) => {
+            const isSelected = effectiveCategoryId === category.id;
+
+            return (
+              <div
+                key={category.id}
+                role="radio"
+                aria-checked={isSelected}
+                tabIndex={0}
+                onClick={() => {
+                  if (!creating) {
+                    setSelectedCategoryId(category.id);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if ((e.key === ' ' || e.key === 'Enter') && !creating) {
+                    e.preventDefault();
+                    setSelectedCategoryId(category.id);
+                  }
+                }}
+                className={`category-card flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 shadow-xs transition-all bg-surface-container-lowest ${
+                  isSelected
+                    ? 'ring-1.5 ring-primary/30'
+                    : 'ring-1 ring-surface-container-high/60 hover:ring-surface-container-high'
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                      isSelected
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-surface-container-high text-secondary'
+                    }`}
+                  >
+                    <CategoryIcon
+                      category={category}
+                      className="size-5 object-contain select-none pointer-events-none"
+                    />
+                  </div>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate font-title-md text-[14px] font-bold leading-tight text-on-surface">
+                      {category.name}
+                    </span>
+                    {category.description && (
+                      <span className="truncate font-body-md text-[11px] leading-tight text-on-surface-variant">
+                        {category.description}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Radio Indicator */}
+                <div
+                  className={`radio-indicator ml-2 flex size-5 shrink-0 items-center justify-center rounded-full transition-all ${
+                    isSelected
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface-container-highest'
+                  }`}
+                  aria-hidden="true"
+                >
+                  {isSelected && (
+                    <span className="size-2 rounded-full bg-surface-container-lowest" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </main>
+
+      {/* Sticky Bottom Bar */}
+      <aside className="sticky bottom-0 z-40 w-full border-t border-surface-container-high/60 bg-surface/95 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
+        <div className="mx-auto flex max-w-xl flex-col gap-2 px-4 pt-2.5 pb-3">
+          {creating && (
+            <p className="text-center font-title-md text-xs font-semibold text-primary">
+              Creating your room…
+            </p>
+          )}
+          {createError && (
+            <p
+              className="rounded-lg border border-error/30 bg-error-container p-2 text-center font-body-md text-xs leading-4 text-on-error-container"
+              role="alert"
+            >
+              {createError.message}
+            </p>
+          )}
+          {/* Confirm Button */}
+          <button
+            type="button"
+            className="flex h-11 w-full cursor-pointer items-center justify-center rounded-xl bg-[#006875] font-title-md text-[15px] font-bold tracking-wide text-white shadow-[0_4px_14px_rgba(0,104,117,0.2)] transition-all hover:bg-[#005a66] hover:shadow-[0_8px_24px_rgba(0,104,117,0.25)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+            onClick={() => void handleConfirm()}
+            disabled={!effectiveCategoryId || creating}
+          >
+            {creating ? 'Creating room…' : 'Confirm'}
           </button>
         </div>
-      )}
-
-      {!loading && !error && categories.length === 0 && (
-        <p className="my-6 text-center text-[#3c494c]">No categories are available right now.</p>
-      )}
-
-      <div className="mt-4 mb-2">
-        <label className="mb-2 block text-xs font-bold tracking-[0.12em] text-[#36656e] uppercase">
-          Questions Limit for each Player
-        </label>
-        <div
-          role="radiogroup"
-          aria-label="Questions Limit for each Player"
-          className="flex flex-wrap items-center gap-2.5"
-        >
-          {questionLimitOptions.map((limit) => (
-            <Chip
-              key={limit}
-              label={limit}
-              selected={questionLimit === limit}
-              onClick={() => setQuestionLimit(limit)}
-              disabled={creating}
-              ariaLabel={`${limit} questions`}
-            />
-          ))}
-        </div>
-      </div>
-
-      <fieldset className="mt-5 grid min-w-0 gap-2.5 border-0 p-0 disabled:cursor-wait disabled:opacity-65" disabled={creating}>
-        <legend className="sr-only">Available categories</legend>
-        {categories.map((category) => (
-          <label
-            className={`flex min-h-[72px] w-full cursor-pointer items-center gap-[14px] rounded-2xl border bg-white px-[14px] py-3 text-left text-[#171d1e] shadow-xs transition hover:-translate-y-px hover:border-[#006875] hover:shadow-sm ${selectedCategoryId === category.id ? 'border-[#006875] shadow-[0_0_0_2px_rgba(0,104,117,0.2)]' : 'border-[#bbc9cc]'}`}
-            key={category.id}
-          >
-            <span className="grid size-11 shrink-0 place-items-center" aria-hidden="true">
-              <CategoryIcon category={category} />
-            </span>
-            <span className="grid min-w-0 gap-[3px]">
-              <strong className="text-base text-[#171d1e]">{category.name}</strong>
-              {category.description && <small className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-[#3c494c]">{category.description}</small>}
-            </span>
-             <input
-              className="ml-auto size-[18px] shrink-0 accent-[#006875] focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[#006875]/40"
-              type="radio"
-              name="category"
-              value={category.id}
-              checked={selectedCategoryId === category.id}
-              onChange={() => setSelectedCategoryId(category.id)}
-            />
-          </label>
-        ))}
-      </fieldset>
-
-      <div className="sticky bottom-0 z-20 -mx-[22px] mt-6 border-t border-[#bbc9cc]/50 bg-[#f5fafc]/95 px-[22px] pt-3 pb-5 backdrop-blur-md">
-        {creating && <p className="mb-2 text-center text-sm font-semibold text-[#006875]">Creating your room…</p>}
-        {createError && <p className="mb-2 rounded-xl bg-[#ffdad6] border border-[#ba1a1a]/30 p-[12px] text-sm leading-5 text-[#93000a]" role="alert">{createError.message}</p>}
-        <button
-          type="button"
-          className="w-full cursor-pointer rounded-xl bg-[#006875] px-[18px] py-4 text-[1.15rem] font-extrabold text-white shadow-[0_4px_14px_rgba(0,104,117,0.2)] transition hover:-translate-y-px hover:bg-[#005a66] hover:shadow-[0_8px_24px_rgba(0,104,117,0.25)] disabled:cursor-not-allowed disabled:opacity-55 disabled:transform-none"
-          onClick={() => void handleConfirm()}
-          disabled={!selectedCategoryId || creating}
-        >
-          {creating ? 'Creating room…' : 'Confirm'}
-        </button>
-      </div>
+      </aside>
     </section>
   );
 }

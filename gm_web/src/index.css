@@ -56,6 +56,8 @@
   --color-on-tertiary: #ffffff;
   --color-tertiary-container: #f89a43;
   --color-on-tertiary-container: #683600;
+  --color-tertiary-fixed: #ffdcc2;
+  --color-on-tertiary-fixed: #2e1500;
 
   /* Error */
   --color-error: #ba1a1a;
