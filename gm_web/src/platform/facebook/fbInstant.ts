@@ -446,3 +446,64 @@ export function isHapticFeedbackSupported(): boolean {
   return false;
 }
 
+export interface ShareFacebookGameOptions {
+  roomCode: string;
+  categoryName?: string;
+}
+
+/**
+ * Triggers native Facebook Instant Games social share dialog using FBInstant.shareAsync().
+ * Refer to Zero Permissions custom updates, invites, and shares documentation.
+ */
+export async function shareFacebookGameAsync(
+  options: ShareFacebookGameOptions,
+): Promise<boolean> {
+  if (!isFacebookInstantGames()) {
+    console.warn('shareFacebookGameAsync called outside Facebook Instant Games');
+    return false;
+  }
+
+  try {
+    const { roomCode, categoryName } = options;
+    const shareAsync = FBInstant?.shareAsync;
+
+    if (typeof shareAsync !== 'function') {
+      console.warn('FBInstant.shareAsync is not available in this SDK/runtime');
+      return false;
+    }
+
+    const categoryText = categoryName ? ` (${categoryName})` : '';
+    const shareText = `{{FBInstant.player.name}} invited you to play GuessMate${categoryText}! Join with Room Code: ${roomCode}`;
+
+    const payload = {
+      imageOverlayPath: 'overlays/matchlobby/share_card.xml',
+      pathToCSS: 'overlays/matchlobby/match_lobby_share_card.css',
+      initialData: { roomCode, categoryName: categoryName || '' },
+      text: shareText,
+      data: { roomCode },
+      shareDestination: ['NEWSFEED', 'GROUP', 'COPY_LINK', 'MESSENGER'],
+      switchContext: false,
+    };
+
+    try {
+      await shareAsync(payload);
+      return true;
+    } catch (overlayError) {
+      console.warn(
+        'FBInstant.shareAsync with overlay failed, retrying without overlay:',
+        overlayError,
+      );
+      await shareAsync({
+        text: shareText,
+        data: { roomCode },
+        shareDestination: ['NEWSFEED', 'GROUP', 'COPY_LINK', 'MESSENGER'],
+        switchContext: false,
+      });
+      return true;
+    }
+  } catch (error) {
+    console.error('FBInstant.shareAsync failed:', error);
+    return false;
+  }
+}
+

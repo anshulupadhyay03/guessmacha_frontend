@@ -15,6 +15,10 @@ import ConfirmSecretDialog from '../components/ConfirmSecretDialog'
 import PlayerAvatar from '../components/PlayerAvatar'
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName'
 import CategoryIcon from '../components/CategoryIcon'
+import {
+  isFacebookInstantGames,
+  shareFacebookGameAsync,
+} from '../platform/facebook/fbInstant'
 
 // Inline text style for the isMe profile-name overlay so your own name
 // renders in lobby typography (16px bold #171d1e, single line). Mirrors
@@ -242,6 +246,14 @@ export default function MatchLobbyScreen({
   }
 
   async function handleShare() {
+    if (isFacebookInstantGames()) {
+      await shareFacebookGameAsync({
+        roomCode,
+        categoryName: game?.category?.name,
+      })
+      return
+    }
+
     if (!navigator.share) return handleCopy()
 
     try {

@@ -108,7 +108,11 @@ export function setupMockFbInstant(force = false): void {
         return Promise.resolve();
       },
       getSupportedAPIs: function () {
-        return ['performHapticFeedbackAsync'];
+        return ['performHapticFeedbackAsync', 'shareAsync'];
+      },
+      shareAsync: function (payload?: FBInstantSharePayload) {
+        console.log('[Mock FBInstant] shareAsync invoked with:', payload);
+        return Promise.resolve();
       },
       overlayViews: {
         createOverlayViewAsync: function (

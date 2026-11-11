@@ -1,0 +1,4 @@
+<View className="shareCard">
+  <Image src="{{FBInstant.player.photo}}" className="shareAvatar" />
+  <Text content="{{FBInstant.player.name}} invited you to play GuessMate! Room Code: {{roomCode}}" className="shareText" />
+</View>

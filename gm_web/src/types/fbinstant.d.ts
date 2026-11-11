@@ -56,6 +56,19 @@ declare global {
     getType(): string;
   }
 
+  interface FBInstantSharePayload {
+    image?: string;
+    text?: string;
+    data?: Record<string, unknown>;
+    shareDestination?: ('NEWSFEED' | 'GROUP' | 'COPY_LINK' | 'MESSENGER' | string)[];
+    switchContext?: boolean;
+    imageOverlayPath?: string;
+    pathToCSS?: string;
+    initialData?: Record<string, unknown>;
+    intent?: 'INVITE' | 'REQUEST' | 'CHALLENGE' | 'SHARE';
+    [key: string]: unknown;
+  }
+
   interface FBInstantAPI {
     initializeAsync(): Promise<void>;
     setLoadingProgress(progress: number): void;
@@ -68,6 +81,7 @@ declare global {
     overlayViews?: FBInstantOverlayViews;
     performHapticFeedbackAsync?(): Promise<void>;
     getSupportedAPIs?(): string[];
+    shareAsync?(payload: FBInstantSharePayload): Promise<void>;
     quit?(): void;
   }
 
