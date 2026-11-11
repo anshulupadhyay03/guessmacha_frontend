@@ -95,10 +95,10 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
     )
     await Promise.race([FBInstant.startGameAsync(), startTimeout])
 
- /*    console.log('Facebook Instant Game initialized successfully')
-    console.log('SDK Version:', FBInstant.getSDKVersion())
-    console.log('Platform:', FBInstant.getPlatform())
-    console.log('Locale:', FBInstant.getLocale()) */
+    /*    console.log('Facebook Instant Game initialized successfully')
+       console.log('SDK Version:', FBInstant.getSDKVersion())
+       console.log('Platform:', FBInstant.getPlatform())
+       console.log('Locale:', FBInstant.getLocale()) */
 
     const player = FBInstant.player
 
@@ -451,6 +451,49 @@ export interface ShareFacebookGameOptions {
   categoryName?: string;
 }
 
+export interface InviteFacebookGameOptions {
+  roomCode: string;
+  categoryName?: string;
+}
+
+/**
+ * Triggers native Facebook Instant Games player invitation dialog using FBInstant.inviteAsync().
+ */
+export async function inviteFacebookGameAsync(
+  options: InviteFacebookGameOptions | string,
+): Promise<boolean> {
+  if (!isFacebookInstantGames()) {
+    console.warn('inviteFacebookGameAsync called outside Facebook Instant Games');
+    return false;
+  }
+
+  try {
+    const roomCode = typeof options === 'string' ? options : options.roomCode;
+    const inviteAsync = FBInstant?.inviteAsync;
+
+    if (typeof inviteAsync !== 'function') {
+      console.warn('FBInstant.inviteAsync is not available in this SDK/runtime');
+      return false;
+    }
+
+    await inviteAsync({
+      imageOverlayPath: 'overlays/matchlobby/share_card.xml',
+      pathToCSS: 'overlays/matchlobby/match_lobby_share_card.css',
+      text: {
+        default: 'Come play with me!'
+      },
+      data: { roomCode: roomCode },
+      cta: 'Play Now',
+      dialogTitle: 'Invite Friends',
+      initialData: { roomCode },
+    });
+    return true;
+  } catch (error) {
+    console.error('FBInstant.inviteAsync failed:', error);
+    return false;
+  }
+}
+
 /**
  * Triggers native Facebook Instant Games social share dialog using FBInstant.shareAsync().
  * Refer to Zero Permissions custom updates, invites, and shares documentation.
@@ -481,7 +524,7 @@ export async function shareFacebookGameAsync(
       initialData: { roomCode, categoryName: categoryName || '' },
       text: shareText,
       data: { roomCode },
-      shareDestination: ['NEWSFEED', 'GROUP', 'COPY_LINK', 'MESSENGER'],
+      shareDestination: ['GROUP', 'COPY_LINK', 'MESSENGER'],
       switchContext: false,
     };
 

@@ -69,6 +69,25 @@ declare global {
     [key: string]: unknown;
   }
 
+  interface FBInstantInvitePayload {
+    image?: string;
+    text?:
+      | string
+      | {
+          default: string;
+          localizations?: Record<string, string>;
+        };
+    data?: Record<string, unknown>;
+    cta?: string;
+    dialogTitle?: string;
+    imageOverlayPath?: string;
+    pathToCSS?: string;
+    initialData?: Record<string, unknown>;
+    sections?: unknown[];
+    filters?: string[];
+    [key: string]: unknown;
+  }
+
   interface FBInstantAPI {
     initializeAsync(): Promise<void>;
     setLoadingProgress(progress: number): void;
@@ -82,6 +101,7 @@ declare global {
     performHapticFeedbackAsync?(): Promise<void>;
     getSupportedAPIs?(): string[];
     shareAsync?(payload: FBInstantSharePayload): Promise<void>;
+    inviteAsync?(payload: FBInstantInvitePayload): Promise<void>;
     quit?(): void;
   }
 

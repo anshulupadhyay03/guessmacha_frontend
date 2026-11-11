@@ -17,7 +17,7 @@ import FacebookPlayerName from '../platform/facebook/FacebookPlayerName'
 import CategoryIcon from '../components/CategoryIcon'
 import {
   isFacebookInstantGames,
-  shareFacebookGameAsync,
+  inviteFacebookGameAsync,
 } from '../platform/facebook/fbInstant'
 
 // Inline text style for the isMe profile-name overlay so your own name
@@ -247,10 +247,7 @@ export default function MatchLobbyScreen({
 
   async function handleShare() {
     if (isFacebookInstantGames()) {
-      await shareFacebookGameAsync({
-        roomCode,
-        categoryName: game?.category?.name,
-      })
+      await inviteFacebookGameAsync(roomCode)
       return
     }
 
