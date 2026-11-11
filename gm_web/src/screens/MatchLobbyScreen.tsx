@@ -40,6 +40,7 @@ interface MatchLobbyScreenProps {
   roomCode: string
   onStartGame?: () => void
   onNavigateToGameZone?: () => void
+  onBack?: () => void
 }
 
 function timeUntil(expiresAt?: string): string | null {
@@ -81,6 +82,7 @@ export default function MatchLobbyScreen({
   roomCode,
   onStartGame,
   onNavigateToGameZone,
+  onBack,
 }: MatchLobbyScreenProps) {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const { game, loading, error, refresh } = useGameDetails(gameId)
@@ -257,9 +259,34 @@ export default function MatchLobbyScreen({
   return (
     <section className="min-h-full bg-[#f5fafc] font-lobby-body text-[#171d1e]" aria-live="polite">
       <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-28 sm:px-6">
-        <div className="mb-6 text-center">
-          <h1 className="font-lobby-display text-[28px] leading-9 font-bold text-[#171d1e]">Match Lobby</h1>
-          <p className="mt-2 text-base text-[#3c494c]">Invite a friend to join.</p>
+        <div className="relative mb-6">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="absolute left-0 top-0 flex items-center gap-1.5 cursor-pointer rounded-[10px] border border-[#bbc9cc] bg-[#eff4f7] px-2.5 py-2 text-sm font-bold text-[#171d1e] transition hover:bg-[#e9eff1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
+              aria-label="Back to Matches"
+              title="Back to Matches"
+            >
+              <svg
+                className="size-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              <span>Back</span>
+            </button>
+          )}
+          <div className="text-center px-14 sm:px-0">
+            <h1 className="font-lobby-display text-[28px] leading-9 font-bold text-[#171d1e]">Match Lobby</h1>
+            <p className="mt-2 text-base text-[#3c494c]">Invite a friend to join.</p>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-12">

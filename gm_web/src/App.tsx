@@ -211,6 +211,11 @@ function App() {
           roomCode={game.roomCode}
           onStartGame={() => setScreen('game-zone')}
           onNavigateToGameZone={() => setScreen('game-zone')}
+          onBack={() => {
+            setGame(null)
+            setActiveTab('matches')
+            setScreen('matches')
+          }}
         />
       )
     }
