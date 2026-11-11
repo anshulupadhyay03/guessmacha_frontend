@@ -90,9 +90,11 @@ function AppShell({
       {/* Top Header shown on Home tab */}
       {activeTab === 'home' && screen === 'home' && !isGameZone && (
         <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
-          <div className="grid size-11.5 place-items-center rounded-[14px] bg-linear-to-br from-[#02c2d9] to-[#006875] text-[0.95rem] font-extrabold tracking-[0.08em] text-white shadow-sm" aria-label="GuessMacha app icon">
-            <span>GM</span>
-          </div>
+          <img
+            src="/app_icon_circle.svg"
+            alt="SiftMates app icon"
+            className="size-11.5 rounded-full object-cover shadow-sm select-none pointer-events-none"
+          />
 
           <button type="button" className="grid size-10 place-items-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-[#171d1e] transition hover:-translate-y-px hover:bg-[#e9eff1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]" aria-label="Open settings">
             <svg className="size-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] stroke-[1.8]" viewBox="0 0 24 24" aria-hidden="true">
