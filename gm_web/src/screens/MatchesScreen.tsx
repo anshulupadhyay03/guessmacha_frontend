@@ -93,7 +93,7 @@ export default function MatchesScreen({ onSelectMatch, onCreateGame }: MatchesSc
       <div className="matches-container">
         {/* Screen Header */}
         <div className="matches-header">
-          <h1 className="matches-title">GuessMacha</h1>
+          <h1 className="matches-title text-xl font-bold tracking-tight text-[#171d1e]">Active Matches</h1>
         </div>
 
         {/* Tab Switcher */}

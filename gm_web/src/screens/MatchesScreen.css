@@ -27,10 +27,10 @@
 
 .matches-title {
   font-family: var(--font-headline, 'Manrope', 'Segoe UI', sans-serif);
-  font-size: clamp(1.5rem, 5vw, 1.875rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--color-on-surface, #171d1e);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #171d1e;
   margin: 0;
 }
 
