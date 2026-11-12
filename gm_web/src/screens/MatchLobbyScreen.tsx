@@ -179,7 +179,7 @@ export default function MatchLobbyScreen({
 
   async function handleShare() {
     if (isFacebookInstantGames()) {
-      await inviteFacebookGameAsync(roomCode)
+      await inviteFacebookGameAsync({ roomCode, categoryName: game?.category.name })
       return
     }
 

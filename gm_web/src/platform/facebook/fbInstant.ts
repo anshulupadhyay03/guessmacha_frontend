@@ -1,4 +1,5 @@
 import type { PlatformPlayer } from '../../types/fbinstant'
+import { base64Image } from './base64Image'
 import { isMockFbInstantEnabled, setupMockFbInstant } from './mockFbInstant'
 
 // Initialize mock FBInstant only if explicitly enabled via environment configuration
@@ -446,11 +447,6 @@ export function isHapticFeedbackSupported(): boolean {
   return false;
 }
 
-export interface ShareFacebookGameOptions {
-  roomCode: string;
-  categoryName?: string;
-}
-
 export interface InviteFacebookGameOptions {
   roomCode: string;
   categoryName?: string;
@@ -460,7 +456,7 @@ export interface InviteFacebookGameOptions {
  * Triggers native Facebook Instant Games player invitation dialog using FBInstant.inviteAsync().
  */
 export async function inviteFacebookGameAsync(
-  options: InviteFacebookGameOptions | string,
+  options: InviteFacebookGameOptions,
 ): Promise<boolean> {
   if (!isFacebookInstantGames()) {
     console.warn('inviteFacebookGameAsync called outside Facebook Instant Games');
@@ -468,24 +464,25 @@ export async function inviteFacebookGameAsync(
   }
 
   try {
-    const roomCode = typeof options === 'string' ? options : options.roomCode;
+    const { roomCode, categoryName } = options;
     const inviteAsync = FBInstant?.inviteAsync;
 
     if (typeof inviteAsync !== 'function') {
       console.warn('FBInstant.inviteAsync is not available in this SDK/runtime');
       return false;
     }
+     const shareText = `Can you defeat me in this Quizz Game For ${categoryName} category? Join me now!`;
+
+     console.log('Inviting friends via Facebook Instant Games:', { roomCode, categoryName, shareText });
 
     await inviteAsync({
-      imageOverlayPath: 'overlays/matchlobby/share_card.xml',
-      pathToCSS: 'overlays/matchlobby/match_lobby_share_card.css',
+      image: base64Image,
       text: {
-        default: 'Come play with me!'
+        default: shareText
       },
       data: { roomCode: roomCode },
-      cta: 'Play Now',
+      cta: 'Join Now',
       dialogTitle: 'Invite Friends',
-      initialData: { roomCode },
     });
     return true;
   } catch (error) {
@@ -498,11 +495,11 @@ export async function inviteFacebookGameAsync(
  * Triggers native Facebook Instant Games social share dialog using FBInstant.shareAsync().
  * Refer to Zero Permissions custom updates, invites, and shares documentation.
  */
-export async function shareFacebookGameAsync(
-  options: ShareFacebookGameOptions,
+export async function shareFacebookGameInviteAsync(
+  options: InviteFacebookGameOptions,
 ): Promise<boolean> {
   if (!isFacebookInstantGames()) {
-    console.warn('shareFacebookGameAsync called outside Facebook Instant Games');
+    console.warn('shareFacebookGameInviteAsync called outside Facebook Instant Games');
     return false;
   }
 
@@ -516,15 +513,15 @@ export async function shareFacebookGameAsync(
     }
 
     const categoryText = categoryName ? ` (${categoryName})` : '';
-    const shareText = `{{FBInstant.player.name}} invited you to play GuessMate${categoryText}! Join with Room Code: ${roomCode}`;
-
+    const shareText = `Let's play this Quizz Game For${categoryText} category!`;
+  
     const payload = {
       imageOverlayPath: 'overlays/matchlobby/share_card.xml',
       pathToCSS: 'overlays/matchlobby/match_lobby_share_card.css',
-      initialData: { roomCode, categoryName: categoryName || '' },
       text: shareText,
-      data: { roomCode },
-      shareDestination: ['GROUP', 'COPY_LINK', 'MESSENGER'],
+      data: { room_code: roomCode },
+      shareDestination: ['COPY_LINK', 'MESSENGER'],
+      intent: 'INVITE' as const,
       switchContext: false,
     };
 
@@ -536,13 +533,7 @@ export async function shareFacebookGameAsync(
         'FBInstant.shareAsync with overlay failed, retrying without overlay:',
         overlayError,
       );
-      await shareAsync({
-        text: shareText,
-        data: { roomCode },
-        shareDestination: ['NEWSFEED', 'GROUP', 'COPY_LINK', 'MESSENGER'],
-        switchContext: false,
-      });
-      return true;
+      return false;
     }
   } catch (error) {
     console.error('FBInstant.shareAsync failed:', error);
