@@ -273,14 +273,14 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
 
                 {/* Outcome Statement & Question Stats */}
                 <div className="px-4 py-3.5 text-center bg-white">
-                  <p className={`text-base font-bold ${resultDetails.outcomeColor} flex items-center justify-center gap-1 flex-wrap`}>
+                  <p className="text-sm font-medium text-on-surface flex items-center justify-center gap-1 flex-wrap">
                     {resultDetails.type === 'loss' ? (
                       <>
                         <FacebookPlayerName
                           initialData={{ playerId: match.opponentName, extraText: "guessed your secret" }}
                           fallbackName="Opponent"
                           className="w-full h-5.5"
-                          textClassName={`text-base font-bold ${resultDetails.outcomeColor}`}
+                          textClassName="text-sm font-medium text-on-surface"
                           overlayPath="overlays/history/player_name_outcome.xml"
                           overlayCassPath="overlays/history/history_style.css"
                         />
