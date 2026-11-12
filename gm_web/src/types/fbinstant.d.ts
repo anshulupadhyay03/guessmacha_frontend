@@ -56,6 +56,38 @@ declare global {
     getType(): string;
   }
 
+  interface FBInstantSharePayload {
+    image?: string;
+    text?: string;
+    data?: Record<string, unknown>;
+    shareDestination?: ('NEWSFEED' | 'GROUP' | 'COPY_LINK' | 'MESSENGER' | string)[];
+    switchContext?: boolean;
+    imageOverlayPath?: string;
+    pathToCSS?: string;
+    initialData?: Record<string, unknown>;
+    intent?: 'INVITE' | 'REQUEST' | 'CHALLENGE' | 'SHARE';
+    [key: string]: unknown;
+  }
+
+  interface FBInstantInvitePayload {
+    image?: string;
+    text?:
+      | string
+      | {
+          default: string;
+          localizations?: Record<string, string>;
+        };
+    data?: Record<string, unknown>;
+    cta?: string;
+    dialogTitle?: string;
+    imageOverlayPath?: string;
+    pathToCSS?: string;
+    initialData?: Record<string, unknown>;
+    sections?: unknown[];
+    filters?: string[];
+    [key: string]: unknown;
+  }
+
   interface FBInstantAPI {
     initializeAsync(): Promise<void>;
     setLoadingProgress(progress: number): void;
@@ -68,6 +100,8 @@ declare global {
     overlayViews?: FBInstantOverlayViews;
     performHapticFeedbackAsync?(): Promise<void>;
     getSupportedAPIs?(): string[];
+    shareAsync?(payload: FBInstantSharePayload): Promise<void>;
+    inviteAsync?(payload: FBInstantInvitePayload): Promise<void>;
     quit?(): void;
   }
 

@@ -15,6 +15,10 @@ import ConfirmSecretDialog from '../components/ConfirmSecretDialog'
 import PlayerAvatar from '../components/PlayerAvatar'
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName'
 import CategoryIcon from '../components/CategoryIcon'
+import {
+  isFacebookInstantGames,
+  inviteFacebookGameAsync,
+} from '../platform/facebook/fbInstant'
 import MatchProgressSteps, { CheckIcon } from '../components/MatchProgressSteps'
 import { getMatchProgress } from '../features/matchLobby/progress'
 
@@ -174,6 +178,11 @@ export default function MatchLobbyScreen({
   }
 
   async function handleShare() {
+    if (isFacebookInstantGames()) {
+      await inviteFacebookGameAsync(roomCode)
+      return
+    }
+
     if (!navigator.share) return handleCopy()
 
     try {
