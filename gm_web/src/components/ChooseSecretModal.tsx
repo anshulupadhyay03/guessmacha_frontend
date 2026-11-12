@@ -262,7 +262,7 @@ function SecretOption({
           />
           <span
             className={cx(
-              'min-w-0 flex-1 truncate text-base',
+              'min-w-0 flex-1 text-base leading-snug break-words',
               isSelected ? 'font-semibold text-on-surface' : 'font-medium text-on-surface',
             )}
           >
@@ -405,6 +405,23 @@ export default function ChooseSecretModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPuzzleId, setSelectedPuzzleId] = useState<string | null>(null);
   const [isLessLikelyExpanded, setIsLessLikelyExpanded] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const handleListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    if (scrollTop > 20) {
+      setIsCollapsed(true);
+    } else if (scrollTop <= 5) {
+      setIsCollapsed(false);
+    }
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    listRef.current?.scrollTo({ top: 0 });
+    setIsCollapsed(false);
+  }, []);
 
   // When called from MatchLobbyScreen (mode='choose') or when shouldCache is false,
   // do not store/load puzzles to/from localStorage.
@@ -426,12 +443,22 @@ export default function ChooseSecretModal({
   const [internalLessLikelyIds, setInternalLessLikelyIds] = useState<Set<string>>(() =>
     gameId ? loadGameLessLikelyIds(gameId) : new Set(),
   );
-
-  useEffect(() => {
+  const [prevGameId, setPrevGameId] = useState(gameId);
+  if (prevGameId !== gameId) {
+    setPrevGameId(gameId);
     if (gameId && !lessLikelyIdsProp) {
       setInternalLessLikelyIds(loadGameLessLikelyIds(gameId));
     }
-  }, [gameId, lessLikelyIdsProp]);
+  }
+
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setIsCollapsed(false);
+      setIsLessLikelyExpanded(true);
+    }
+  }
 
   const activeLessLikelyIds = lessLikelyIdsProp ?? internalLessLikelyIds;
 
@@ -456,7 +483,7 @@ export default function ChooseSecretModal({
   /* Native <dialog>: focus trap, Escape, inert background and top layer for free. */
   useEffect(() => {
     if (!isOpen) return;
-    setIsLessLikelyExpanded(true);
+    listRef.current?.scrollTo({ top: 0 });
     const dialog = dialogRef.current;
     if (!dialog) return;
 
@@ -541,101 +568,141 @@ export default function ChooseSecretModal({
         'animate-in fade-in slide-in-from-bottom duration-200 motion-reduce:animate-none',
       )}
     >
-      {/* Header */}
-      <header className="flex shrink-0 items-start justify-between gap-4 px-5 pt-5 pb-3">
-        <div className="min-w-0">
-          <h2 id={titleId} className="font-lobby-display text-2xl font-bold tracking-tight text-on-surface">
-            {title ?? 'Choose Secret'}
-          </h2>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            {subtitle ?? 'Select an item for your opponent to deduce'}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      {/* Top Section */}
+      <div
+        className={cx(
+          'shrink-0 px-5 transition-all duration-300 ease-in-out',
+          isCollapsed ? 'pt-3 pb-2' : 'pt-5 pb-3',
+        )}
+      >
+        {/* Collapsible header and category elements (refer line 546) */}
+        <div
+          className={cx(
+            'transition-all duration-300 ease-in-out overflow-hidden',
+            isCollapsed
+              ? 'max-h-0 opacity-0 pointer-events-none -translate-y-2 mb-0'
+              : 'max-h-[300px] opacity-100 translate-y-0 mb-3',
+          )}
         >
-          <CloseIcon />
-        </button>
-      </header>
-
-      {/* Toolbar: stays visible while the list scrolls */}
-      <div className="shrink-0 space-y-3 px-5 pb-3">
-        <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-container-low px-4 py-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <p className="text-[0.6875rem] font-semibold tracking-wider text-on-surface-variant uppercase">
-                Category
+          {/* Header */}
+          <header className="flex items-start justify-between gap-4 pb-3">
+            <div className="min-w-0">
+              <h2 id={titleId} className="font-lobby-display text-2xl font-bold tracking-tight text-on-surface">
+                {title ?? 'Choose Secret'}
+              </h2>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                {subtitle ?? 'Select an item for your opponent to deduce'}
               </p>
-              {canRefresh && (
-                <>
-                  <span className="text-on-surface-variant/40" aria-hidden="true">
-                    •
-                  </span>
-                  <span className="text-[0.6875rem] font-medium text-on-surface-variant">
-                    {puzzles.length} available
-                  </span>
-                </>
-              )}
             </div>
-            <p className="truncate text-base font-semibold text-on-surface">{effectiveCategoryName}</p>
-          </div>
-          {canRefresh ? (
             <button
               type="button"
-              onClick={handleRefreshSecrets}
-              disabled={loading}
-              aria-label="Refresh Secrets"
-              title="Refresh Secrets"
-              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-3 py-1.5 text-xs font-semibold text-primary shadow-xs transition hover:bg-surface-container hover:text-primary active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={onClose}
+              aria-label="Close"
+              className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <RefreshIcon className={cx('size-3.5', loading && 'animate-spin')} />
-              <span>{loading ? 'Refreshing…' : 'Refresh Secrets'}</span>
+              <CloseIcon />
             </button>
-          ) : (
-            <span className="shrink-0 rounded-full bg-secondary-container px-3 py-1 text-xs font-semibold text-on-secondary-container">
-              {puzzles.length} available
-            </span>
-          )}
+          </header>
+
+          {/* Category card */}
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-container-low px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[0.6875rem] font-semibold tracking-wider text-on-surface-variant uppercase">
+                  Category
+                </p>
+                {canRefresh && (
+                  <>
+                    <span className="text-on-surface-variant/40" aria-hidden="true">
+                      •
+                    </span>
+                    <span className="text-[0.6875rem] font-medium text-on-surface-variant">
+                      {puzzles.length} available
+                    </span>
+                  </>
+                )}
+              </div>
+              <p className="truncate text-base font-semibold text-on-surface">{effectiveCategoryName}</p>
+            </div>
+            {canRefresh ? (
+              <button
+                type="button"
+                onClick={handleRefreshSecrets}
+                disabled={loading}
+                aria-label="Refresh Secrets"
+                title="Refresh Secrets"
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-3 py-1.5 text-xs font-semibold text-primary shadow-xs transition hover:bg-surface-container hover:text-primary active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshIcon className={cx('size-3.5', loading && 'animate-spin')} />
+                <span>{loading ? 'Refreshing…' : 'Refresh Secrets'}</span>
+              </button>
+            ) : (
+              <span className="shrink-0 rounded-full bg-secondary-container px-3 py-1 text-xs font-semibold text-on-secondary-container">
+                {puzzles.length} available
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="relative">
-          <label htmlFor={searchId} className="sr-only">
-            Search {effectiveCategoryName}
-          </label>
-          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-on-surface-variant">
-            <SearchIcon />
-          </span>
-          <input
-            id={searchId}
-            type="search"
-            enterKeyHint="search"
-            autoComplete="off"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search ${effectiveCategoryName.toLowerCase()}…`}
-            // text-base (16px) prevents iOS Safari from zooming the page on focus
-            className="h-11 w-full rounded-xl border border-transparent bg-surface-container-low pr-10 pl-11 text-base text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/25 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
-          />
-          {hasQuery && (
+        {/* Search bar: moves to the top when the section above collapses */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <label htmlFor={searchId} className="sr-only">
+              Search {effectiveCategoryName}
+            </label>
+            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-on-surface-variant">
+              <SearchIcon />
+            </span>
+            <input
+              id={searchId}
+              type="search"
+              enterKeyHint="search"
+              autoComplete="off"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={`Search ${effectiveCategoryName.toLowerCase()}…`}
+              // text-base (16px) prevents iOS Safari from zooming the page on focus
+              className="h-11 w-full rounded-xl border border-transparent bg-surface-container-low pr-10 pl-11 text-base text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/25 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            />
+            {hasQuery && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                aria-label="Clear search"
+                className="absolute inset-y-0 right-1.5 my-auto grid size-8 cursor-pointer place-items-center rounded-full text-on-surface-variant hover:bg-surface-container"
+              >
+                <Icon className="size-4">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </Icon>
+              </button>
+            )}
+          </div>
+
+          {/* Close button in collapsed state to keep modal dismissible */}
+          <div
+            className={cx(
+              'flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out',
+              isCollapsed ? 'w-10 opacity-100' : 'w-0 opacity-0 pointer-events-none',
+            )}
+          >
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              aria-label="Clear search"
-              className="absolute inset-y-0 right-1.5 my-auto grid size-8 cursor-pointer place-items-center rounded-full text-on-surface-variant hover:bg-surface-container"
+              onClick={onClose}
+              aria-label="Close"
+              className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <Icon className="size-4">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </Icon>
+              <CloseIcon />
             </button>
-          )}
+          </div>
         </div>
       </div>
 
       {/* Scrollable list */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">
+      <div
+        ref={listRef}
+        onScroll={handleListScroll}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4"
+      >
         {loading && (
           <div role="status" aria-busy="true" className="space-y-2">
             <span className="sr-only">Loading secrets…</span>
