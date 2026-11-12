@@ -510,6 +510,24 @@ const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
   );
 });
 
+let quesAnsAudio: HTMLAudioElement | null = null;
+
+function playQuestionAnswerSound(): void {
+  try {
+    if (typeof window === 'undefined') return;
+    if (!quesAnsAudio) {
+      quesAnsAudio = new Audio(`${import.meta.env.BASE_URL}ques_ans_sound.mp3`);
+      quesAnsAudio.preload = 'auto';
+    }
+    quesAnsAudio.currentTime = 0;
+    quesAnsAudio.play().catch((err) => {
+      console.warn('[Audio] Failed to play question answer sound:', err);
+    });
+  } catch (err) {
+    console.warn('[Audio] Error playing question answer sound:', err);
+  }
+}
+
 export default function GameZoneScreen({
   gameId,
   categoryName,
@@ -583,9 +601,21 @@ export default function GameZoneScreen({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [questions]);
 
-  // Haptic feedback tracking for opponent questions and opponent answers
+  // Haptic feedback and sound tracking for opponent questions and opponent answers
   const prevQuestionsRef = useRef<GameStateQuestion[] | null>(null);
   const isInitialQuestionsLoadRef = useRef(true);
+
+  // Preload question/answer notification sound
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && !quesAnsAudio) {
+        quesAnsAudio = new Audio(`${import.meta.env.BASE_URL}ques_ans_sound.mp3`);
+        quesAnsAudio.preload = 'auto';
+      }
+    } catch {
+      // Ignore preloading error
+    }
+  }, []);
 
   // Reset initial tracking flag whenever entering a different game
   useEffect(() => {
@@ -646,6 +676,7 @@ export default function GameZoneScreen({
 
     if (opponentAsked || opponentAnswered) {
       triggerHapticFeedback();
+      playQuestionAnswerSound();
     }
 
     prevQuestionsRef.current = questions;
