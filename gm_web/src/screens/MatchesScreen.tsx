@@ -3,6 +3,9 @@ import { useAuth } from '../hooks/useAuth';
 import { useMatches } from '../hooks/useMatches';
 import type { MatchItem } from '../features/matches/types';
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
+import { gameService } from '../platform/api/gameApi';
+import { generateClientRequestId } from '../hooks/useGameState';
+import { clearGameSecretFiltersAndCache } from '../platform/storage/gameSecretsStorage';
 import './MatchesScreen.css';
 
 interface MatchesScreenProps {
@@ -24,7 +27,7 @@ function formatExpiryCountdown(expiresAt: string | null): string | null {
   const totalMinutes = Math.ceil(ms / 60_000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return `Expires in ${hours}h ${minutes}m.`;
+  return `Expires in ${hours}h ${minutes}m`;
 }
 
 function CrossedSwordsIcon() {
@@ -60,9 +63,30 @@ export default function MatchesScreen({ onSelectMatch, onCreateGame }: MatchesSc
   const { session } = useAuth();
   const currentUserId = session?.user?.id;
 
+  const [leaveTargetMatch, setLeaveTargetMatch] = useState<MatchItem | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+
   const currentList = useMemo(() => {
     return activeTab === 'active' ? activeMatches : expiredMatches;
   }, [activeTab, activeMatches, expiredMatches]);
+
+  async function handleConfirmLeave() {
+    if (!leaveTargetMatch) return;
+    setLeaving(true);
+    setLeaveError(null);
+    try {
+      const reqId = generateClientRequestId();
+      await gameService.leaveGame(leaveTargetMatch.gameId, reqId);
+      clearGameSecretFiltersAndCache(leaveTargetMatch.gameId);
+      setLeaveTargetMatch(null);
+      await refresh();
+    } catch (err) {
+      setLeaveError(err instanceof Error ? err.message : 'Failed to leave game.');
+    } finally {
+      setLeaving(false);
+    }
+  }
 
   return (
     <section className="matches-screen" aria-label="Matches screen">
@@ -193,6 +217,31 @@ export default function MatchesScreen({ onSelectMatch, onCreateGame }: MatchesSc
                 const isActionRequired = isSecretSelection && !mySecretLocked;
 
                 const countdown = formatExpiryCountdown(match.expiresAt);
+
+                let footerStatusText: string | null = null;
+                let isFooterStatusCyan = false;
+
+                if (isWaiting) {
+                  footerStatusText = countdown || 'Waiting for opponent';
+                } else if (isSecretSelection) {
+                  if (isActionRequired) {
+                    footerStatusText = 'Waiting on your move';
+                    isFooterStatusCyan = true;
+                  } else {
+                    footerStatusText = 'Waiting for opponent';
+                  }
+                } else if (isInProgress) {
+                  if (match.currentTurnPlayerId) {
+                    if (match.currentTurnPlayerId === currentUserId) {
+                      footerStatusText = 'Waiting on your move';
+                      isFooterStatusCyan = true;
+                    } else {
+                      footerStatusText = 'Waiting for opponent';
+                    }
+                  } else {
+                    footerStatusText = countdown || 'Match in progress';
+                  }
+                }
 
                 return (
                   <article
@@ -337,10 +386,39 @@ export default function MatchesScreen({ onSelectMatch, onCreateGame }: MatchesSc
                       )}
                     </div>
 
-                    {/* Expiry countdown if waiting */}
-                    {isWaiting && countdown && (
+                    {/* Card Footer: status on left, Leave Game button on right */}
+                    {!isExpired && (
                       <div className="card-footer">
-                        <span>{countdown}</span>
+                        <span className={`card-footer-status ${isFooterStatusCyan ? 'cyan' : ''}`}>
+                          {footerStatusText}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLeaveError(null);
+                            setLeaveTargetMatch(match);
+                          }}
+                          className="leave-game-btn"
+                          aria-label={`Leave game for ${match.categoryName}`}
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                          </svg>
+                          <span>Leave Game</span>
+                        </button>
                       </div>
                     )}
                   </article>
@@ -350,6 +428,61 @@ export default function MatchesScreen({ onSelectMatch, onCreateGame }: MatchesSc
           )}
         </div>
       </div>
+
+      {/* Leave Game Confirmation Modal */}
+      {leaveTargetMatch && (
+        <div
+          className="matches-modal-overlay gamezone-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="leave-dialog-title"
+          onClick={() => {
+            if (!leaving) {
+              setLeaveTargetMatch(null);
+              setLeaveError(null);
+            }
+          }}
+        >
+          <div
+            className="matches-modal-box gamezone-modal-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="matches-modal-icon gamezone-modal-icon">🚪</div>
+            <h2 id="leave-dialog-title" className="matches-modal-title gamezone-modal-title">
+              Leave Game?
+            </h2>
+            <p className="matches-modal-desc gamezone-modal-desc">
+              Are you sure you want to leave this game? You will lose your progress and the match.
+            </p>
+            {leaveError && (
+              <p className="matches-modal-error" role="alert">
+                {leaveError}
+              </p>
+            )}
+            <div className="matches-modal-actions gamezone-modal-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setLeaveTargetMatch(null);
+                  setLeaveError(null);
+                }}
+                disabled={leaving}
+                className="matches-modal-btn matches-modal-btn--cancel gamezone-modal-btn gamezone-modal-btn--cancel"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmLeave}
+                disabled={leaving}
+                className="matches-modal-btn matches-modal-btn--danger gamezone-modal-btn gamezone-modal-btn--danger"
+              >
+                {leaving ? 'Leaving…' : 'Leave Game'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

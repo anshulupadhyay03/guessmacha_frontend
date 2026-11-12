@@ -388,11 +388,163 @@
 }
 
 .card-footer {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-outline-variant, #bbc9cc);
-  font-size: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(187, 201, 204, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-footer-status {
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-on-surface-variant, #3c494c);
 }
+
+.card-footer-status.cyan {
+  color: var(--color-primary, #006875);
+  font-weight: 700;
+}
+
+.leave-game-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
+  background: transparent;
+  color: var(--color-error, #ba1a1a);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.leave-game-btn:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.leave-game-btn:active {
+  transform: scale(0.97);
+}
+
+.leave-game-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+/* Leave Game Confirmation Modal */
+.matches-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 29, 30, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: matches-modal-fade 0.15s ease-out;
+}
+
+@keyframes matches-modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.matches-modal-box {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--color-outline-variant, #bbc9cc);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.matches-modal-icon {
+  font-size: 2.2rem;
+}
+
+.matches-modal-title {
+  font-family: var(--font-headline, 'Manrope', sans-serif);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-on-surface, #171d1e);
+  margin: 0;
+}
+
+.matches-modal-desc {
+  font-size: 0.88rem;
+  color: var(--color-on-surface-variant, #3c494c);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.matches-modal-error {
+  font-size: 0.82rem;
+  color: var(--color-error, #ba1a1a);
+  font-weight: 600;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.matches-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.matches-modal-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.matches-modal-btn--cancel {
+  background: var(--color-surface-container-low, #eff4f7);
+  border: 1px solid var(--color-outline-variant, #bbc9cc);
+  color: var(--color-on-surface, #171d1e);
+}
+
+.matches-modal-btn--cancel:hover:not(:disabled) {
+  background: var(--color-surface-container, #e9eff1);
+}
+
+.matches-modal-btn--danger {
+  background: var(--color-error, #ba1a1a);
+  color: #ffffff;
+}
+
+.matches-modal-btn--danger:hover:not(:disabled) {
+  background: #a41313;
+}
+
+.matches-modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 
