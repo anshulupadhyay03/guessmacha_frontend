@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ChooseSecretModal from '../components/ChooseSecretModal';
 import PlayerAvatar from '../components/PlayerAvatar';
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
+import { VibrateIcon } from '../components/icons';
 import { triggerHapticFeedback } from '../platform/facebook/fbInstant';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
@@ -370,6 +371,24 @@ function getActionMode(
   return { mode: 'disabled', placeholder: 'Type your next question...' };
 }
 
+let quesAnsAudio: HTMLAudioElement | null = null;
+
+function playQuestionAnswerSound(): void {
+  try {
+    if (typeof window === 'undefined') return;
+    if (!quesAnsAudio) {
+      quesAnsAudio = new Audio(`${import.meta.env.BASE_URL}ques_ans_sound.mp3`);
+      quesAnsAudio.preload = 'auto';
+    }
+    quesAnsAudio.currentTime = 0;
+    quesAnsAudio.play().catch((err) => {
+      console.warn('[Audio] Failed to play question answer sound:', err);
+    });
+  } catch (err) {
+    console.warn('[Audio] Error playing question answer sound:', err);
+  }
+}
+
 interface PlayersStatusGridProps {
   me?: GameStatePlayer;
   opponent?: GameStatePlayer;
@@ -394,6 +413,10 @@ const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
   const opponentInitialData = useMemo(() => {
     return opponentPlayerName ? { playerId: opponentPlayerName } : undefined;
   }, [opponentPlayerName]);
+
+  const handleVibrateClick = useCallback(() => {
+    triggerHapticFeedback();
+  }, []);
 
   return (
     <div className="gamezone-players-grid">
@@ -496,6 +519,15 @@ const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
             />
           </div>
           <div className="gamezone-player-secret gamezone-player-secret--hidden">
+            <button
+              type="button"
+              onClick={handleVibrateClick}
+              className="gamezone-vibrate-btn"
+              aria-label="Trigger haptic feedback"
+              title="Trigger haptic feedback"
+            >
+              <VibrateIcon className="size-4 shrink-0" />
+            </button>
             <span>
               {opponent?.secret ? opponent.secret : isFinished ? 'Revealed in Review' : 'Hidden'}
             </span>
@@ -509,24 +541,6 @@ const PlayersStatusGrid = React.memo(function PlayersStatusGrid({
     </div>
   );
 });
-
-let quesAnsAudio: HTMLAudioElement | null = null;
-
-function playQuestionAnswerSound(): void {
-  try {
-    if (typeof window === 'undefined') return;
-    if (!quesAnsAudio) {
-      quesAnsAudio = new Audio(`${import.meta.env.BASE_URL}ques_ans_sound.mp3`);
-      quesAnsAudio.preload = 'auto';
-    }
-    quesAnsAudio.currentTime = 0;
-    quesAnsAudio.play().catch((err) => {
-      console.warn('[Audio] Failed to play question answer sound:', err);
-    });
-  } catch (err) {
-    console.warn('[Audio] Error playing question answer sound:', err);
-  }
-}
 
 export default function GameZoneScreen({
   gameId,
