@@ -89,14 +89,12 @@ function AppShell({
     <div className="flex h-full w-full flex-col overflow-hidden bg-[#f5fafc]">
       {/* Top Header shown on Home tab */}
       {activeTab === 'home' && screen === 'home' && !isGameZone && (
-        <header className="relative flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
-          <div className="grid size-11.5 place-items-center rounded-full bg-linear-to-br from-[#02c2d9] to-[#006875] text-white shadow-sm" aria-label="SiftMates app icon">
-            <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m21 21-4.35-4.35" />
-              <path d="M8.5 11h5" />
-            </svg>
-          </div>
+        <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
+          <img
+            src="/app_icon_circle.svg"
+            alt="SiftMates app icon"
+            className="size-11.5 rounded-full object-cover shadow-sm select-none pointer-events-none"
+          />
 
           <h2 className="absolute left-1/2 -translate-x-1/2 text-[clamp(1.4rem,3.5vw,1.9rem)] font-extrabold tracking-[-0.04em] text-[#171d1e]">
             SiftMates
