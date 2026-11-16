@@ -89,10 +89,18 @@ function AppShell({
     <div className="flex h-full w-full flex-col overflow-hidden bg-[#f5fafc]">
       {/* Top Header shown on Home tab */}
       {activeTab === 'home' && screen === 'home' && !isGameZone && (
-        <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
-          <div className="grid size-11.5 place-items-center rounded-[14px] bg-linear-to-br from-[#02c2d9] to-[#006875] text-[0.95rem] font-extrabold tracking-[0.08em] text-white shadow-sm" aria-label="GuessMacha app icon">
-            <span>GM</span>
+        <header className="relative flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
+          <div className="grid size-11.5 place-items-center rounded-full bg-linear-to-br from-[#02c2d9] to-[#006875] text-white shadow-sm" aria-label="SiftMates app icon">
+            <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.35-4.35" />
+              <path d="M8.5 11h5" />
+            </svg>
           </div>
+
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-[clamp(1.4rem,3.5vw,1.9rem)] font-extrabold tracking-[-0.04em] text-[#171d1e]">
+            SiftMates
+          </h2>
 
           <button type="button" className="grid size-10 place-items-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-[#171d1e] transition hover:-translate-y-px hover:bg-[#e9eff1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]" aria-label="Open settings">
             <svg className="size-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] stroke-[1.8]" viewBox="0 0 24 24" aria-hidden="true">
@@ -116,7 +124,7 @@ function AppShell({
               <button
                 key={item.key}
                 type="button"
-                className={`flex min-h-18 cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition ${
+                className={`flex min-h-18 cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875] ${
                   isActive
                     ? 'text-[#006875]'
                     : 'text-[#6c797c] hover:text-[#171d1e]'
@@ -124,7 +132,12 @@ function AppShell({
                 onClick={() => onTabChange(item.key)}
                 aria-pressed={isActive}
               >
-                <span className="inline-flex size-6 items-center justify-center" aria-hidden="true">
+                <span
+                  className={`inline-flex h-7 w-12 items-center justify-center rounded-full transition ${
+                    isActive ? 'bg-[#02c2d9]/15' : 'bg-transparent'
+                  }`}
+                  aria-hidden="true"
+                >
                   {item.renderIcon(isActive)}
                 </span>
                 <span>{item.label}</span>
@@ -295,6 +308,11 @@ function App() {
       <HomeScreen
         onCreateGame={() => setScreen('create-game')}
         onGameJoined={handleGameJoined}
+        onSelectMatch={handleSelectMatch}
+        onViewAllMatches={() => {
+          setActiveTab('matches')
+          setScreen('matches')
+        }}
       />
     )
   }
