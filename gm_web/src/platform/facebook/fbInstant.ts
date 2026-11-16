@@ -1,4 +1,5 @@
 import type { PlatformPlayer } from '../../types/fbinstant'
+import { base64Image } from './base64Image'
 import { isMockFbInstantEnabled, setupMockFbInstant } from './mockFbInstant'
 
 // Initialize mock FBInstant only if explicitly enabled via environment configuration
@@ -95,10 +96,10 @@ export async function initializeFacebookInstant(): Promise<PlatformPlayer | null
     )
     await Promise.race([FBInstant.startGameAsync(), startTimeout])
 
- /*    console.log('Facebook Instant Game initialized successfully')
-    console.log('SDK Version:', FBInstant.getSDKVersion())
-    console.log('Platform:', FBInstant.getPlatform())
-    console.log('Locale:', FBInstant.getLocale()) */
+    /*    console.log('Facebook Instant Game initialized successfully')
+       console.log('SDK Version:', FBInstant.getSDKVersion())
+       console.log('Platform:', FBInstant.getPlatform())
+       console.log('Locale:', FBInstant.getLocale()) */
 
     const player = FBInstant.player
 
@@ -444,5 +445,99 @@ export function isHapticFeedbackSupported(): boolean {
     return false;
   }
   return false;
+}
+
+export interface InviteFacebookGameOptions {
+  roomCode: string;
+  categoryName?: string;
+}
+
+/**
+ * Triggers native Facebook Instant Games player invitation dialog using FBInstant.inviteAsync().
+ */
+export async function inviteFacebookGameAsync(
+  options: InviteFacebookGameOptions,
+): Promise<boolean> {
+  if (!isFacebookInstantGames()) {
+    console.warn('inviteFacebookGameAsync called outside Facebook Instant Games');
+    return false;
+  }
+
+  try {
+    const { roomCode, categoryName } = options;
+    const inviteAsync = FBInstant?.inviteAsync;
+
+    if (typeof inviteAsync !== 'function') {
+      console.warn('FBInstant.inviteAsync is not available in this SDK/runtime');
+      return false;
+    }
+     const shareText = `Can you defeat me in this Quizz Game For ${categoryName} category? Join me now!`;
+
+     console.log('Inviting friends via Facebook Instant Games:', { roomCode, categoryName, shareText });
+
+    await inviteAsync({
+      image: base64Image,
+      text: {
+        default: shareText
+      },
+      data: { roomCode: roomCode },
+      cta: 'Join Now',
+      dialogTitle: 'Invite Friends',
+    });
+    return true;
+  } catch (error) {
+    console.error('FBInstant.inviteAsync failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Triggers native Facebook Instant Games social share dialog using FBInstant.shareAsync().
+ * Refer to Zero Permissions custom updates, invites, and shares documentation.
+ */
+export async function shareFacebookGameInviteAsync(
+  options: InviteFacebookGameOptions,
+): Promise<boolean> {
+  if (!isFacebookInstantGames()) {
+    console.warn('shareFacebookGameInviteAsync called outside Facebook Instant Games');
+    return false;
+  }
+
+  try {
+    const { roomCode, categoryName } = options;
+    const shareAsync = FBInstant?.shareAsync;
+
+    if (typeof shareAsync !== 'function') {
+      console.warn('FBInstant.shareAsync is not available in this SDK/runtime');
+      return false;
+    }
+
+    const categoryText = categoryName ? ` (${categoryName})` : '';
+    const shareText = `Let's play this Quizz Game For${categoryText} category!`;
+  
+    const payload = {
+      imageOverlayPath: 'overlays/matchlobby/share_card.xml',
+      pathToCSS: 'overlays/matchlobby/match_lobby_share_card.css',
+      text: shareText,
+      data: { room_code: roomCode },
+      shareDestination: ['COPY_LINK', 'MESSENGER'],
+      intent: 'INVITE' as const,
+      switchContext: false,
+    };
+
+    try {
+      await shareAsync(payload);
+      return true;
+    } catch (overlayError) {
+      console.warn(
+        'FBInstant.shareAsync with overlay failed, retrying without overlay:',
+        overlayError,
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('FBInstant.shareAsync failed:', error);
+    return false;
+  }
 }
 
