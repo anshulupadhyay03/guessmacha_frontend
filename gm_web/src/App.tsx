@@ -96,6 +96,10 @@ function AppShell({
             className="size-11.5 rounded-full object-cover shadow-sm select-none pointer-events-none"
           />
 
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-[clamp(1.4rem,3.5vw,1.9rem)] font-extrabold tracking-[-0.04em] text-[#171d1e]">
+            SiftMates
+          </h2>
+
           <button type="button" className="grid size-10 place-items-center rounded-xl border border-[#bbc9cc] bg-[#eff4f7] text-[#171d1e] transition hover:-translate-y-px hover:bg-[#e9eff1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]" aria-label="Open settings">
             <svg className="size-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] stroke-[1.8]" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 3.5v2.1m0 14.8v2.1m8.5-8.5h-2.1M5.6 12H3.5m15.9-5.3L16.7 8.8M7.3 15.2 5.6 16.9m0-9.8 1.7 1.7m9.4 9.4 1.7 1.7M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
@@ -118,7 +122,7 @@ function AppShell({
               <button
                 key={item.key}
                 type="button"
-                className={`flex min-h-18 cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition ${
+                className={`flex min-h-18 cursor-pointer flex-col items-center justify-center gap-1 bg-transparent text-[0.75rem] font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875] ${
                   isActive
                     ? 'text-[#006875]'
                     : 'text-[#6c797c] hover:text-[#171d1e]'
@@ -126,7 +130,12 @@ function AppShell({
                 onClick={() => onTabChange(item.key)}
                 aria-pressed={isActive}
               >
-                <span className="inline-flex size-6 items-center justify-center" aria-hidden="true">
+                <span
+                  className={`inline-flex h-7 w-12 items-center justify-center rounded-full transition ${
+                    isActive ? 'bg-[#02c2d9]/15' : 'bg-transparent'
+                  }`}
+                  aria-hidden="true"
+                >
                   {item.renderIcon(isActive)}
                 </span>
                 <span>{item.label}</span>
@@ -213,6 +222,11 @@ function App() {
           roomCode={game.roomCode}
           onStartGame={() => setScreen('game-zone')}
           onNavigateToGameZone={() => setScreen('game-zone')}
+          onBack={() => {
+            setGame(null)
+            setActiveTab('matches')
+            setScreen('matches')
+          }}
         />
       )
     }
@@ -297,6 +311,11 @@ function App() {
       <HomeScreen
         onCreateGame={() => setScreen('create-game')}
         onGameJoined={handleGameJoined}
+        onSelectMatch={handleSelectMatch}
+        onViewAllMatches={() => {
+          setActiveTab('matches')
+          setScreen('matches')
+        }}
       />
     )
   }

@@ -6,12 +6,56 @@ export interface CategoryIconSource {
   name?: string | null;
 }
 
+const ICON_KEY_TO_FILE: Record<string, string> = {
+  movies: 'icon-movies.svg',
+  movie: 'icon-movies.svg',
+  cinema: 'icon-movies.svg',
+  foods: 'icon-foods-dishes.svg',
+  food: 'icon-foods-dishes.svg',
+  'foods-dishes': 'icon-foods-dishes.svg',
+  'foods and dishes': 'icon-foods-dishes.svg',
+  animals: 'icon-animal.svg',
+  animal: 'icon-animal.svg',
+  countries: 'icon-countries.svg',
+  country: 'icon-countries.svg',
+  sports: 'icon-sports.svg',
+  sport: 'icon-sports.svg',
+  bollywood: 'icon-bollywood.svg',
+  cars: 'icon-cars-supercars.svg',
+  supercars: 'icon-cars-supercars.svg',
+  'cars-supercars': 'icon-cars-supercars.svg',
+  cartoons: 'icon-cartoons.svg',
+  cartoon: 'icon-cartoons.svg',
+  cricket: 'icon-cricket-players.svg',
+  'cricket-players': 'icon-cricket-players.svg',
+  football: 'icon-football-players.svg',
+  'football-players': 'icon-football-players.svg',
+  fruits: 'icon-fruits-vegetables.svg',
+  vegetables: 'icon-fruits-vegetables.svg',
+  'fruits-vegetables': 'icon-fruits-vegetables.svg',
+  brands: 'icon-global-brands.svg',
+  'global-brands': 'icon-global-brands.svg',
+  shows: 'icon-indian-shows.svg',
+  'indian-shows': 'icon-indian-shows.svg',
+  'international-shows': 'icon-international-shows.svg',
+  mythology: 'icon-mythology-legends.svg',
+  legends: 'icon-mythology-legends.svg',
+  'mythology-legends': 'icon-mythology-legends.svg',
+  professions: 'icon-professions.svg',
+  profession: 'icon-professions.svg',
+  'south-indian-movies': 'icon-south-indian-movies.svg',
+  space: 'icon-space-astronomy.svg',
+  astronomy: 'icon-space-astronomy.svg',
+  'space-astronomy': 'icon-space-astronomy.svg',
+};
+
 /**
  * Resolves the relative path to the local SVG icon in /category-icons.
  *
- * 1. If `iconKey` (or `icon_key`) is present, trims leading slashes and appends `.svg` if needed.
- * 2. If `iconKey` is missing or invalid, attempts keyword matching against `categoryName`.
- * 3. Returns null if no match can be determined.
+ * 1. Checks explicit icon key mapping.
+ * 2. If `iconKey` (or `icon_key`) is present, trims leading slashes and appends `.svg` if needed.
+ * 3. If `iconKey` is missing or invalid, attempts keyword matching against `categoryName`.
+ * 4. Returns DEFAULT_CATEGORY_ICON_URL as fallback.
  */
 export function getCategoryIconUrl(
   iconKeyOrCategory?: string | null | CategoryIconSource,
@@ -31,10 +75,23 @@ export function getCategoryIconUrl(
 
   if (rawKey && typeof rawKey === 'string') {
     const trimmedKey = rawKey.trim().replace(/^\/+/, '');
-    if (trimmedKey) {
+    const cleanKey = trimmedKey.replace(/\.svg$/i, '').toLowerCase();
+
+    if (ICON_KEY_TO_FILE[cleanKey]) {
+      return `./category-icons/${ICON_KEY_TO_FILE[cleanKey]}`;
+    }
+
+    if (trimmedKey.startsWith('icon-')) {
       const fileName = trimmedKey.endsWith('.svg') ? trimmedKey : `${trimmedKey}.svg`;
       return `./category-icons/${fileName}`;
     }
+
+    if (ICON_KEY_TO_FILE[`icon-${cleanKey}`]) {
+      return `./category-icons/${ICON_KEY_TO_FILE[`icon-${cleanKey}`]}`;
+    }
+
+    const fileName = trimmedKey.endsWith('.svg') ? trimmedKey : `${trimmedKey}.svg`;
+    return `./category-icons/${fileName}`;
   }
 
   if (name) {
@@ -59,4 +116,3 @@ export function getCategoryIconUrl(
 
   return DEFAULT_CATEGORY_ICON_URL;
 }
-

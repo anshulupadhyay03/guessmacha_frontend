@@ -188,7 +188,7 @@
 }
 
 .gamezone-player-card--opponent .gamezone-player-secret {
-  justify-content: flex-end;
+  justify-content: space-between;
 }
 
 .gamezone-player-secret--revealed {
@@ -225,6 +225,41 @@
 
 .gamezone-secret-toggle-btn:focus-visible {
   outline: 2px solid var(--color-primary, #006875);
+  outline-offset: 1px;
+}
+
+.gamezone-vibrate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  border-radius: 6px;
+  color: #904d00;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.gamezone-vibrate-btn svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.gamezone-vibrate-btn:hover {
+  background: rgba(144, 77, 0, 0.12);
+  color: #6d3a00;
+}
+
+.gamezone-vibrate-btn:active {
+  transform: scale(0.9);
+}
+
+.gamezone-vibrate-btn:focus-visible {
+  outline: 2px solid #904d00;
   outline-offset: 1px;
 }
 
