@@ -1,4 +1,4 @@
-import type { DashboardData } from '../types/dashboard';
+import type { DashboardData, DashboardRank } from '../types/dashboard';
 import type { ApiClient } from '../api/client';
 
 export interface DashboardRepository {
@@ -15,6 +15,38 @@ function isDashboardData(value: unknown): value is DashboardData {
   );
 }
 
+function normalizeRank(rawRank: unknown): DashboardRank | undefined {
+  if (typeof rawRank !== 'object' || rawRank === null) {
+    return undefined;
+  }
+  const r = rawRank as Record<string, unknown>;
+  return {
+    name: typeof r.name === 'string' && r.name.trim() ? r.name.trim() : 'Beginner',
+    points: Number(r.points ?? 0) || 0,
+    nextRank: typeof r.nextRank === 'string' && r.nextRank.trim() ? r.nextRank.trim() : null,
+    progress: Number(r.progress ?? 0) || 0,
+    nextRankPoints:
+      r.nextRankPoints !== undefined && r.nextRankPoints !== null
+        ? Number(r.nextRankPoints) || 0
+        : null,
+    pointsToNextRank:
+      r.pointsToNextRank !== undefined && r.pointsToNextRank !== null
+        ? Number(r.pointsToNextRank) || 0
+        : null,
+  };
+}
+
+function normalizeDashboard(data: DashboardData): DashboardData {
+  return {
+    rank: normalizeRank(data.rank),
+    stats: data.stats ?? { gamesPlayed: 0, winRate: 0, winStreak: 0 },
+    recentMatches: data.recentMatches ?? [],
+    activeMatches: data.activeMatches ?? [],
+    popularCategories: data.popularCategories ?? [],
+    comingSoon: data.comingSoon ?? [],
+  };
+}
+
 function normalizeDashboardResponse(response: unknown): DashboardData {
   if (isDashboardData(response)) {
     return normalizeDashboard(response);
@@ -26,7 +58,9 @@ function normalizeDashboardResponse(response: unknown): DashboardData {
     'data' in response &&
     isDashboardData((response as { data: unknown }).data)
   ) {
-    return normalizeDashboard((response as { data: DashboardData }).data);
+    const rawData = (response as { data: DashboardData }).data;
+    const rank = rawData.rank ?? (response as { rank?: unknown }).rank;
+    return normalizeDashboard({ ...rawData, rank: rank as DashboardRank | undefined });
   }
 
   const errorMessage =
@@ -38,16 +72,6 @@ function normalizeDashboardResponse(response: unknown): DashboardData {
       : 'Unable to load dashboard';
 
   throw new Error(errorMessage);
-}
-
-function normalizeDashboard(data: DashboardData): DashboardData {
-  return {
-    stats: data.stats ?? { gamesPlayed: 0, winRate: 0, winStreak: 0 },
-    recentMatches: data.recentMatches ?? [],
-    activeMatches: data.activeMatches ?? [],
-    popularCategories: data.popularCategories ?? [],
-    comingSoon: data.comingSoon ?? [],
-  };
 }
 
 export function createDashboardRepository(apiClient: ApiClient): DashboardRepository {

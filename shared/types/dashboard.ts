@@ -1,3 +1,12 @@
+export interface DashboardRank {
+  name: string;
+  points: number;
+  nextRank?: string | null;
+  progress?: number;
+  nextRankPoints?: number | null;
+  pointsToNextRank?: number | null;
+}
+
 export interface DashboardStats {
   gamesPlayed: number;
   winRate: number;
@@ -41,6 +50,7 @@ export interface DashboardComingSoonFeature {
 }
 
 export interface DashboardData {
+  rank?: DashboardRank;
   stats: DashboardStats;
   recentMatches: DashboardRecentMatch[];
   activeMatches: DashboardActiveMatch[];

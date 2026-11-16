@@ -7,6 +7,7 @@ export type {
 } from '../../../../shared/types/game';
 
 export type {
+  DashboardRank,
   DashboardStats,
   DashboardActiveMatch,
   DashboardRecentMatch,

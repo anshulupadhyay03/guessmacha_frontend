@@ -38,6 +38,7 @@ export default function HomeScreen({
   const { joinGame, loading, error, clearError } = useJoinGame();
   const {
     dashboard,
+    rank,
     activeMatches,
     popularCategories,
     comingSoon,
@@ -106,9 +107,23 @@ export default function HomeScreen({
           id="profile-card-container"
           className="flex w-full items-center min-h-[clamp(4.5rem,8vw,6rem)]"
         />
-        <p className="mt-2.5 font-body-md text-body-md text-on-surface-variant">
-          Ready to outsmart your friends?
-        </p>
+        {rank ? (
+          <div className="mt-2.5 flex items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold uppercase tracking-wider">
+              {rank.name.toLowerCase().includes('tier') || rank.name.toLowerCase().includes('rank')
+                ? rank.name
+                : `${rank.name} Tier`}
+            </span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
+              {rank.points} RP
+            </span>
+          </div>
+        ) : dashboardLoading ? (
+          <div className="mt-2.5 flex items-center gap-2 animate-pulse">
+            <div className="h-5 w-24 rounded-full bg-surface-container-high" />
+            <div className="h-4 w-12 rounded bg-surface-container-high" />
+          </div>
+        ) : null}
 
         {dashboardError && !dashboardLoading && (
           <div

@@ -4,6 +4,7 @@ import type { DashboardData } from '../features/dashboard/types';
 
 interface UseDashboardResult {
   dashboard: DashboardData | null;
+  rank: DashboardData['rank'];
   activeMatches: DashboardData['activeMatches'];
   popularCategories: DashboardData['popularCategories'];
   comingSoon: DashboardData['comingSoon'];
@@ -44,6 +45,7 @@ export function useDashboard(): UseDashboardResult {
 
   return {
     dashboard,
+    rank: dashboard?.rank,
     activeMatches: dashboard?.activeMatches ?? [],
     popularCategories: dashboard?.popularCategories ?? [],
     comingSoon: dashboard?.comingSoon ?? [],

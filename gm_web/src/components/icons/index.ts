@@ -14,3 +14,5 @@ export { WinStreakIcon } from './WinStreakIcon';
 export type { WinStreakIconProps } from './WinStreakIcon';
 export { ComingSoonIcon } from './ComingSoonIcon';
 export type { ComingSoonIconProps } from './ComingSoonIcon';
+export { MilitaryTechIcon } from './MilitaryTechIcon';
+export type { MilitaryTechIconProps } from './MilitaryTechIcon';
