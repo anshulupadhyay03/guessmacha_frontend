@@ -13,19 +13,12 @@ import {
   ChevronRightIcon,
   AlertCircleIcon,
 } from '../components/icons';
+import PlayerAvatar from '../components/PlayerAvatar';
 
 // Inline text style for the isMe profile-name overlay (your own name).
 const PROFILE_NAME_TEXT_STYLE =
   'font-family: Manrope, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 800; color: #171d1e; letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; line-height: 1.3; margin: -6px 0 0 -8px; padding: 0;';
 
-function getInitials(name?: string | null): string {
-  if (!name || !name.trim()) return 'P';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return parts[0].slice(0, 2).toUpperCase();
-}
 
 export default function ProfileScreen() {
   const { data, loading, error, refresh } = useProfile();
@@ -148,7 +141,6 @@ export default function ProfileScreen() {
 
   // Identity values with empty fallbacks
   const displayName = profile?.displayName?.trim() || 'Player';
-  const avatarInitials = getInitials(displayName);
   const avatarUrl = profile?.avatarUrl?.trim() || null;
 
   // Rank progression values with empty fallbacks
@@ -215,30 +207,31 @@ export default function ProfileScreen() {
       <div className="flex flex-col gap-4">
         {/* Section 1: Player Identity Badge */}
         <section className="flex items-center justify-between bg-white p-4 sm:p-5 rounded-2xl border border-[#bbc9cc] shadow-xs">
-          <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+          <div className="flex items-center gap-3.5 sm:gap-4 w-full">
             {/* Avatar with fallback initials and active indicator */}
-            <div className="relative flex-shrink-0 size-16 rounded-full bg-[#baebf5]/50 border-2 border-[#dee3e5] flex items-center justify-center overflow-hidden">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  className="size-full object-cover"
+            <div className="relative size-16 shrink-0 sm:size-18">
+              {/* Clipped circle: only this layer has overflow-hidden */}
+              <div className="size-full overflow-hidden rounded-full border-2 border-primary/25 bg-surface-container-low">
+                <PlayerAvatar
+                  isMe
+                  imageUrl={avatarUrl}
+                  name={displayName || 'You'}
+                  className="size-full"
+                  iconSize="size-8"
                 />
-              ) : (
-                <span className="text-[#006875] font-['Manrope'] font-bold text-xl tracking-tight select-none">
-                  {avatarInitials}
-                </span>
-              )}
+              </div>
+
+              {/* Status dot: outside the clipped layer, sitting on the circle's edge */}
               <span
-                className="absolute bottom-0 right-0 size-3.5 rounded-full bg-[#02c2d9] border-2 border-white shadow-xs"
+                className="absolute right-0.5 bottom-0.5 size-3.5 rounded-full border-2 border-surface-container-lowest bg-primary-container shadow-xs"
                 title="Active"
               />
             </div>
 
             {/* Player details */}
-            <div className="flex flex-col min-w-0 justify-center">
+            <div className="flex flex-col w-full justify-center">
               <div className="flex items-center gap-1.5">
-                <h2 className="font-['Manrope'] text-xl sm:text-2xl text-[#171d1e] font-bold tracking-tight truncate max-w-[220px] sm:max-w-[340px]">
+                <h2 className="font-['Manrope'] text-xl sm:text-2xl text-[#171d1e] font-bold tracking-tight truncate w-full">
                   <FacebookPlayerName
                     isMe
                     fallbackName={displayName}
@@ -346,25 +339,23 @@ export default function ProfileScreen() {
           {/* Card 3: Current Streak */}
           <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-[#bbc9cc] shadow-xs flex flex-col justify-between">
             <div
-              className={`size-7 rounded-lg flex items-center justify-center mb-3 ${
-                isWinningStreak
+              className={`size-7 rounded-lg flex items-center justify-center mb-3 ${isWinningStreak
                   ? 'bg-[#baebf5] text-[#006875]'
                   : isLosingStreak
-                  ? 'bg-[#e3e9eb] text-[#3c494c]'
-                  : 'bg-[#e9eff1] text-[#6c797c]'
-              }`}
+                    ? 'bg-[#e3e9eb] text-[#3c494c]'
+                    : 'bg-[#e9eff1] text-[#6c797c]'
+                }`}
             >
               <ShieldIcon className="size-4.5" />
             </div>
             <div>
               <div
-                className={`font-['Manrope'] font-bold leading-none mb-1 ${
-                  isWinningStreak
+                className={`font-['Manrope'] font-bold leading-none mb-1 ${isWinningStreak
                     ? 'text-2xl sm:text-3xl text-[#006875]'
                     : isLosingStreak
-                    ? 'text-2xl sm:text-3xl text-[#3c494c]'
-                    : 'text-sm sm:text-base text-[#6c797c]'
-                }`}
+                      ? 'text-2xl sm:text-3xl text-[#3c494c]'
+                      : 'text-sm sm:text-base text-[#6c797c]'
+                  }`}
               >
                 {streakText}
               </div>
@@ -566,17 +557,15 @@ export default function ProfileScreen() {
                   <div className="flex items-center gap-3 pt-0.5">
                     <div className="flex-1 h-2 rounded-full bg-[#e9eff1] overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          cat.winRate > 0 ? 'bg-[#02c2d9]' : 'bg-[#bbc9cc]'
-                        }`}
+                        className={`h-full rounded-full transition-all duration-500 ${cat.winRate > 0 ? 'bg-[#02c2d9]' : 'bg-[#bbc9cc]'
+                          }`}
                         style={{ width: `${Math.min(100, Math.max(0, cat.winRate))}%` }}
                       />
                     </div>
                     <div className="flex items-baseline gap-1 shrink-0">
                       <span
-                        className={`font-['Manrope'] text-xs sm:text-sm font-bold tabular-nums ${
-                          cat.winRate > 0 ? 'text-[#006875]' : 'text-[#6c797c]'
-                        }`}
+                        className={`font-['Manrope'] text-xs sm:text-sm font-bold tabular-nums ${cat.winRate > 0 ? 'text-[#006875]' : 'text-[#6c797c]'
+                          }`}
                       >
                         {cat.winRate}%
                       </span>

@@ -44,6 +44,7 @@ function normalizeDashboard(data: DashboardData): DashboardData {
     activeMatches: data.activeMatches ?? [],
     popularCategories: data.popularCategories ?? [],
     comingSoon: data.comingSoon ?? [],
+    configuration: data.configuration,
   };
 }
 

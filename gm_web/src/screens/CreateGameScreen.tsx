@@ -189,16 +189,10 @@ export default function CreateGameScreen({
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <div
-                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                      isSelected
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-surface-container-high text-secondary'
-                    }`}
-                  >
+                  <div className="size-9 shrink-0 overflow-hidden rounded-lg">
                     <CategoryIcon
                       category={category}
-                      className="size-5 object-contain select-none pointer-events-none"
+                      className="size-full object-contain select-none pointer-events-none"
                     />
                   </div>
                   <div className="flex min-w-0 flex-col">

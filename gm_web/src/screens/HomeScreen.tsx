@@ -102,28 +102,31 @@ export default function HomeScreen({
   return (
     <section className="w-full" aria-label="GuessMacha home screen">
       <main className="mx-auto w-full max-w-160 flex-1 px-5.5 pt-2 pb-8 max-[520px]:px-4.5">
-        <div
-          ref={profileContainerRef}
-          id="profile-card-container"
-          className="flex w-full items-center min-h-[clamp(4.5rem,8vw,6rem)]"
-        />
-        {rank ? (
-          <div className="mt-2.5 flex items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold uppercase tracking-wider">
-              {rank.name.toLowerCase().includes('tier') || rank.name.toLowerCase().includes('rank')
-                ? rank.name
-                : `${rank.name} Tier`}
-            </span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
-              {rank.points} RP
-            </span>
-          </div>
-        ) : dashboardLoading ? (
-          <div className="mt-2.5 flex items-center gap-2 animate-pulse">
-            <div className="h-5 w-24 rounded-full bg-surface-container-high" />
-            <div className="h-4 w-12 rounded bg-surface-container-high" />
-          </div>
-        ) : null}
+        {/* Profile Card & Rank Badge */}
+        <div className="flex items-center justify-between gap-3 min-h-14 flex-wrap sm:flex-nowrap">
+          <div
+            ref={profileContainerRef}
+            id="profile-card-container"
+            className="flex items-center h-14 min-w-0 flex-1"
+          />
+          {rank ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold uppercase tracking-wider">
+                {rank.name.toLowerCase().includes('tier') || rank.name.toLowerCase().includes('rank')
+                  ? rank.name
+                  : `${rank.name} Tier`}
+              </span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
+                {rank.points} RP
+              </span>
+            </div>
+          ) : dashboardLoading ? (
+            <div className="flex shrink-0 items-center gap-2 animate-pulse">
+              <div className="h-5 w-24 rounded-full bg-surface-container-high" />
+              <div className="h-4 w-12 rounded bg-surface-container-high" />
+            </div>
+          ) : null}
+        </div>
 
         {dashboardError && !dashboardLoading && (
           <div

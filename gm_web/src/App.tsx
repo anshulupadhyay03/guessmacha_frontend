@@ -91,7 +91,7 @@ function AppShell({
       {activeTab === 'home' && screen === 'home' && !isGameZone && (
         <header className="relative z-30 flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2 bg-[#f5fafc]/95 backdrop-blur-md shadow-xs">
           <img
-            src="/app_icon_circle.svg"
+            src="./app_icon_circle.svg"
             alt="SiftMates app icon"
             className="size-11.5 rounded-full object-cover shadow-sm select-none pointer-events-none"
           />

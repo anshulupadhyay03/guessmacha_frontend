@@ -7,6 +7,11 @@ export interface DashboardRank {
   pointsToNextRank?: number | null;
 }
 
+export interface DashboardConfiguration {
+  waitingGameExpirationMinutes: number;
+}
+
+
 export interface DashboardStats {
   gamesPlayed: number;
   winRate: number;
@@ -23,6 +28,7 @@ export interface DashboardActiveMatch {
   opponentId: string | null;
   opponentName: string | null;
   isMyTurn: boolean;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -56,6 +62,7 @@ export interface DashboardData {
   activeMatches: DashboardActiveMatch[];
   popularCategories: DashboardPopularCategory[];
   comingSoon: DashboardComingSoonFeature[];
+  configuration: DashboardConfiguration;
 }
 
 export interface GetDashboardResponse {

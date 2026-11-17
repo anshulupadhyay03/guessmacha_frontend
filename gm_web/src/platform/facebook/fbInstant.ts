@@ -151,7 +151,7 @@ export async function showFacebookPlayerProfileOverlay(
     }
 
     const xmlPath = 'overlays/profile_card.xml'
-    const cssPath = 'overlays/styles.css'
+    const cssPath = 'overlays/profile_card.css'
 
     console.log('Creating Facebook profile overlay:', { xmlPath, cssPath })
 
