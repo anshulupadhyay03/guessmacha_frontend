@@ -30,12 +30,16 @@
 
 /* Header - pinned to top */
 .gamezone-header {
+  position: relative;
+  z-index: 30;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-top: 4px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-outline-variant, #bbc9cc);
+  background-color: var(--color-surface, #f5fafc);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .gamezone-back-btn {

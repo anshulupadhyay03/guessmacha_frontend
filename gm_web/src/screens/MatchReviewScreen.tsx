@@ -160,7 +160,7 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
   return (
     <section className="match-review-screen">
       {/* Top Header */}
-      <div className="match-review-header">
+      <header className="match-review-header">
         <button
           type="button"
           onClick={onBack}
@@ -176,7 +176,7 @@ export default function MatchReviewScreen({ gameId, onBack, match: initialMatch 
         <h1 className="match-review-title">Review Match</h1>
 
         <div className="match-review-header-spacer" aria-hidden="true" />
-      </div>
+      </header>
 
       {/* Initial Loading Skeleton */}
       {loading && !matchSummary && !initialMatch && (

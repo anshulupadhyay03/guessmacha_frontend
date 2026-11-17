@@ -89,7 +89,7 @@ function AppShell({
     <div className="flex h-full w-full flex-col overflow-hidden bg-[#f5fafc]">
       {/* Top Header shown on Home tab */}
       {activeTab === 'home' && screen === 'home' && !isGameZone && (
-        <header className="flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2">
+        <header className="relative z-30 flex shrink-0 items-center justify-between px-5.5 pt-4.5 pb-2 bg-[#f5fafc]/95 backdrop-blur-md shadow-xs">
           <img
             src="/app_icon_circle.svg"
             alt="SiftMates app icon"

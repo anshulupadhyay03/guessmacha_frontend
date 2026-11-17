@@ -42,12 +42,12 @@ export default function CreateGameScreen({
   return (
     <section className="flex min-h-full w-full flex-col bg-surface text-on-surface font-body-md text-body-md antialiased" aria-label="Create room screen">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-surface-container-high/60 bg-surface/95 backdrop-blur-md shadow-xs">
+      <header className="sticky top-0 z-50 w-full bg-surface/95 backdrop-blur-md shadow-xs">
         <div className="mx-auto flex h-14 max-w-xl items-center justify-between px-4">
           <button
             type="button"
             aria-label="Go back"
-            className="flex size-9 shrink-0 -ml-1 cursor-pointer items-center justify-center text-on-surface-variant transition-transform hover:text-on-surface active:scale-95"
+            className="flex size-9 shrink-0 -ml-1 cursor-pointer items-center justify-center rounded-xl text-on-surface-variant transition-transform hover:text-on-surface hover:bg-[#eff4f7] active:scale-95"
             onClick={onBack}
           >
             <svg
@@ -65,7 +65,7 @@ export default function CreateGameScreen({
             </svg>
           </button>
           <div className="flex min-w-0 flex-1 items-center justify-center px-2">
-            <h1 className="truncate text-center font-title-md text-[17px] font-bold leading-tight tracking-tight text-on-surface">
+            <h1 className="truncate text-center text-lg sm:text-xl font-extrabold leading-tight tracking-tight text-on-surface">
               Pick a category
             </h1>
           </div>
