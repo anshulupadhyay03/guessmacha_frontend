@@ -92,9 +92,9 @@ export default function MatchesScreen({ onSelectMatch, onCreateGame }: MatchesSc
     <section className="matches-screen" aria-label="Matches screen">
       <div className="matches-container">
         {/* Screen Header */}
-        <div className="matches-header">
-          <h1 className="matches-title text-xl font-bold tracking-tight text-[#171d1e]">Active Matches</h1>
-        </div>
+        <header className="matches-header">
+          <h1 className="matches-title text-[22px] font-extrabold tracking-tight text-[#171d1e]">Active Matches</h1>
+        </header>
 
         {/* Tab Switcher */}
         <div className="matches-tabs-container">

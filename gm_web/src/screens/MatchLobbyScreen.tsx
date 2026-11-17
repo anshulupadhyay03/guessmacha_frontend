@@ -198,12 +198,13 @@ export default function MatchLobbyScreen({
   return (
     <section className="min-h-full bg-[#f5fafc] font-lobby-body text-[#171d1e]" aria-live="polite">
       <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-28 sm:px-6">
-        <div className="relative mb-6">
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 -mx-4 -mt-6 px-4 sm:-mx-6 sm:px-6 py-4 mb-6 flex min-h-10 items-center justify-center bg-[#f5fafc]/95 backdrop-blur-md shadow-xs">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="absolute left-0 top-0 flex items-center gap-1.5 cursor-pointer rounded-[10px] border border-[#bbc9cc] bg-[#eff4f7] px-2.5 py-2 text-sm font-bold text-[#171d1e] transition hover:bg-[#e9eff1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
+              className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-1.5 cursor-pointer rounded-xl border border-[#bbc9cc] bg-[#eff4f7] px-3 py-2 text-sm font-bold text-[#171d1e] shadow-xs transition hover:bg-[#e9eff1] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006875]"
               aria-label="Back to Matches"
               title="Back to Matches"
             >
@@ -222,10 +223,10 @@ export default function MatchLobbyScreen({
               <span>Back</span>
             </button>
           )}
-          <div className="text-center px-14 sm:px-0">
-            <h1 className="font-lobby-display text-[28px] leading-9 font-bold text-[#171d1e]">Match Lobby</h1>
-          </div>
-        </div>
+          <h1 className="font-lobby-display text-2xl sm:text-[28px] font-extrabold tracking-tight text-[#171d1e] text-center px-16 sm:px-0">
+            Match Lobby
+          </h1>
+        </header>
 
         <div className="grid gap-6 md:grid-cols-12">
            

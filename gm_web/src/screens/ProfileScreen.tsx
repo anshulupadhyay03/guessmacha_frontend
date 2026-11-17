@@ -34,9 +34,9 @@ export default function ProfileScreen() {
     return (
       <section className="relative mx-auto flex w-full max-w-[640px] flex-col px-4 pt-3 pb-8 text-left text-[#171d1e]">
         {/* Top Header */}
-        <div className="relative mb-4 flex items-center justify-center border-b border-[#bbc9cc] pb-3">
-          <h1 className="text-xl font-bold tracking-tight text-[#171d1e]">Profile</h1>
-        </div>
+        <header className="sticky top-0 z-30 -mx-4 -mt-3 px-4 pt-3 pb-2.5 mb-4 flex items-center justify-center bg-[#f5fafc]/95 backdrop-blur-md shadow-xs">
+          <h1 className="text-[22px] font-extrabold tracking-tight text-[#171d1e]">Profile</h1>
+        </header>
 
         {/* Loading Skeletons */}
         <div className="flex flex-col gap-4 animate-pulse">
@@ -90,9 +90,9 @@ export default function ProfileScreen() {
     return (
       <section className="relative mx-auto flex w-full max-w-[640px] flex-col px-4 pt-3 pb-8 text-left text-[#171d1e]">
         {/* Top Header */}
-        <div className="relative mb-4 flex items-center justify-center border-b border-[#bbc9cc] pb-3">
-          <h1 className="text-xl font-bold tracking-tight text-[#171d1e]">Profile</h1>
-        </div>
+        <header className="sticky top-0 z-30 -mx-4 -mt-3 px-4 pt-3 pb-2.5 mb-4 flex items-center justify-center bg-[#f5fafc]/95 backdrop-blur-md shadow-xs">
+          <h1 className="text-[22px] font-extrabold tracking-tight text-[#171d1e]">Profile</h1>
+        </header>
 
         <div className="flex flex-col items-center justify-center rounded-2xl border border-[#bbc9cc] bg-white p-8 text-center shadow-xs">
           <div className="mb-3 text-[#ba1a1a]">
@@ -118,9 +118,10 @@ export default function ProfileScreen() {
   if (!data) {
     return (
       <section className="relative mx-auto flex w-full max-w-[640px] flex-col px-4 pt-3 pb-8 text-left text-[#171d1e]">
-        <div className="relative mb-4 flex items-center justify-center border-b border-[#bbc9cc] pb-3">
-          <h1 className="text-xl font-bold tracking-tight text-[#171d1e]">Profile</h1>
-        </div>
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 -mx-4 -mt-3 px-4 pt-3 pb-2.5 mb-4 flex items-center justify-center bg-[#f5fafc]/95 backdrop-blur-md shadow-xs">
+          <h1 className="text-[22px] font-extrabold tracking-tight text-[#171d1e]">Profile</h1>
+        </header>
 
         <div className="flex flex-col items-center justify-center rounded-2xl border border-[#bbc9cc] bg-white p-8 text-center shadow-xs">
           <h2 className="text-lg font-bold text-[#171d1e]">No Profile Found</h2>
@@ -207,9 +208,9 @@ export default function ProfileScreen() {
   return (
     <section className="relative mx-auto flex w-full max-w-[640px] flex-col px-4 pt-3 pb-8 text-left text-[#171d1e]">
       {/* Top Header */}
-      <div className="relative mb-4 flex items-center justify-center border-b border-[#bbc9cc] pb-3">
-        <h1 className="text-xl font-bold tracking-tight text-[#171d1e]">Profile</h1>
-      </div>
+      <header className="sticky top-0 z-30 -mx-4 -mt-3 px-4 pt-3 pb-2.5 mb-4 flex items-center justify-center bg-[#f5fafc]/95 backdrop-blur-md shadow-xs">
+        <h1 className="text-[22px] font-extrabold tracking-tight text-[#171d1e]">Profile</h1>
+      </header>
 
       <div className="flex flex-col gap-4">
         {/* Section 1: Player Identity Badge */}
