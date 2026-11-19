@@ -59,80 +59,90 @@ export async function getFacebookSignedPlayerInfo(): Promise<FacebookSignedPlaye
   }
 }
 
+let initFacebookPromise: Promise<PlatformPlayer | null> | null = null
+
 export async function initializeFacebookInstant(): Promise<PlatformPlayer | null> {
-  if (isMockFbInstantEnabled()) {
-    setupMockFbInstant()
+  if (initFacebookPromise) {
+    return initFacebookPromise
   }
 
-  if (!isFacebookInstantGames()) {
-    console.log('Running outside Facebook Instant Games')
-    return null
-  }
+  initFacebookPromise = (async () => {
+    if (isMockFbInstantEnabled()) {
+      setupMockFbInstant()
+    }
 
-  try {
-    console.log('Initializing Facebook Instant Games...')
-
-    const initTimeout = new Promise<never>((_, reject) =>
-      setTimeout(
-        () =>
-          reject(
-            new Error(
-              'FBInstant.initializeAsync timed out (running outside Facebook iframe)',
-            ),
-          ),
-        4000,
-      ),
-    )
-    await Promise.race([FBInstant.initializeAsync(), initTimeout])
-
-    FBInstant.setLoadingProgress(50)
-    FBInstant.setLoadingProgress(100)
-
-    const startTimeout = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error('FBInstant.startGameAsync timed out')),
-        4000,
-      ),
-    )
-    await Promise.race([FBInstant.startGameAsync(), startTimeout])
-
-    /*    console.log('Facebook Instant Game initialized successfully')
-       console.log('SDK Version:', FBInstant.getSDKVersion())
-       console.log('Platform:', FBInstant.getPlatform())
-       console.log('Locale:', FBInstant.getLocale()) */
-
-    const player = FBInstant.player
-
-    let id = ''
+    if (!isFacebookInstantGames()) {
+      console.log('Running outside Facebook Instant Games')
+      return null
+    }
 
     try {
-      id = player.getID() || ''
-      console.log('Direct player ID:', id)
+      console.log('Initializing Facebook Instant Games...')
+
+      const initTimeout = new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                'FBInstant.initializeAsync timed out (running outside Facebook iframe)',
+              ),
+            ),
+          4000,
+        ),
+      )
+      await Promise.race([FBInstant.initializeAsync(), initTimeout])
+
+      FBInstant.setLoadingProgress(50)
+      FBInstant.setLoadingProgress(100)
+
+      const startTimeout = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('FBInstant.startGameAsync timed out')),
+          4000,
+        ),
+      )
+      await Promise.race([FBInstant.startGameAsync(), startTimeout])
+
+      /*    console.log('Facebook Instant Game initialized successfully')
+         console.log('SDK Version:', FBInstant.getSDKVersion())
+         console.log('Platform:', FBInstant.getPlatform())
+         console.log('Locale:', FBInstant.getLocale()) */
+
+      const player = FBInstant.player
+
+      let id = ''
+
+      try {
+        id = player.getID() || ''
+        console.log('Direct player ID:', id)
+      } catch (error) {
+        console.error('getID failed:', error)
+      }
+
+      // Zero Permissions: Meta does NOT expose the current player's name or
+      // profile-photo URL to game JavaScript. Those values are resolved by Meta
+      // only when an Overlay View is rendered inside Meta's controlled iframe.
+      // Therefore, never read player.name/player.photo and never send them to
+      // the Supabase backend as if they were directly available to the game.
+      const platformPlayer: PlatformPlayer = {
+        id,
+        name: (typeof player.getName === 'function' ? player.getName() : '') || '',
+        photo: (typeof player.getPhoto === 'function' ? player.getPhoto() : undefined),
+      }
+
+      console.log('Platform player identity:', platformPlayer)
+      console.log(
+        'Player profile display: use FBInstant Overlay Views (Meta-rendered name/photo)',
+      )
+
+      return platformPlayer
     } catch (error) {
-      console.error('getID failed:', error)
+      console.error('Failed to initialize Instant Game:', error)
+      return null
     }
+  })()
 
-    // Zero Permissions: Meta does NOT expose the current player's name or
-    // profile-photo URL to game JavaScript. Those values are resolved by Meta
-    // only when an Overlay View is rendered inside Meta's controlled iframe.
-    // Therefore, never read player.name/player.photo and never send them to
-    // the Supabase backend as if they were directly available to the game.
-    const platformPlayer: PlatformPlayer = {
-      id,
-      name: (typeof player.getName === 'function' ? player.getName() : '') || '',
-      photo: (typeof player.getPhoto === 'function' ? player.getPhoto() : undefined),
-    }
-
-    console.log('Platform player identity:', platformPlayer)
-    console.log(
-      'Player profile display: use FBInstant Overlay Views (Meta-rendered name/photo)',
-    )
-
-    return platformPlayer
-  } catch (error) {
-    console.error('Failed to initialize Instant Game:', error)
-    return null
-  }
+  return initFacebookPromise
 }
 
 export async function showFacebookPlayerProfileOverlay(
@@ -380,26 +390,87 @@ export async function showFacebookProfilePictureOverlay(
   }
 }
 
+export function getFacebookEntryPointData(): Record<string, unknown> | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  try {
+    if (typeof FBInstant !== 'undefined' && typeof FBInstant.getEntryPointData === 'function') {
+      const data = FBInstant.getEntryPointData()
+      if (data) {
+        if (typeof data === 'string') {
+          try {
+            return JSON.parse(data) as Record<string, unknown>
+          } catch {
+            return { roomCode: data }
+          }
+        }
+        if (typeof data === 'object') {
+          return data as Record<string, unknown>
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to retrieve FBInstant.getEntryPointData():', error)
+  }
+
+  return null
+}
+
 export function getFacebookGameRoomCode(): string | null {
   if (typeof window === 'undefined') {
     return null
   }
 
-  const params = new URLSearchParams(window.location.search)
-  const candidates = [
-    params.get('room'),
-    params.get('roomCode'),
-    params.get('gameCode'),
-  ]
+  // 1. Try to extract room code from FBInstant entry point data (shared payload from invite/share)
+  const entryData = getFacebookEntryPointData()
+  if (entryData) {
+    const raw =
+      entryData.roomCode ||
+      entryData.room_code ||
+      entryData.room ||
+      entryData.gameCode ||
+      entryData.game_code
 
-  for (const candidate of candidates) {
-    const value = candidate?.trim()
-    if (value) {
-      return value.toUpperCase()
+    if (typeof raw === 'string' && raw.trim()) {
+      return raw.trim().toUpperCase()
     }
   }
 
+  // 2. Fallback to URL search parameters (supports query links, developer testing, and web sessions)
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const candidates = [
+      params.get('room'),
+      params.get('roomCode'),
+      params.get('room_code'),
+      params.get('gameCode'),
+    ]
+
+    for (const candidate of candidates) {
+      const value = candidate?.trim()
+      if (value) {
+        return value.toUpperCase()
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to parse room code from URL parameters:', err)
+  }
+
   return null
+}
+
+export async function getFacebookEntryPointRoomCode(): Promise<string | null> {
+  if (isFacebookInstantGames()) {
+    try {
+      await initializeFacebookInstant()
+    } catch (initErr) {
+      console.warn('initializeFacebookInstant warning during entry point check:', initErr)
+    }
+  }
+
+  return getFacebookGameRoomCode()
 }
 
 /**
@@ -519,7 +590,7 @@ export async function shareFacebookGameInviteAsync(
       imageOverlayPath: 'overlays/matchlobby/share_card.xml',
       pathToCSS: 'overlays/matchlobby/match_lobby_share_card.css',
       text: shareText,
-      data: { room_code: roomCode },
+      data: { roomCode: roomCode, room_code: roomCode },
       shareDestination: ['COPY_LINK', 'MESSENGER'],
       intent: 'INVITE' as const,
       switchContext: false,

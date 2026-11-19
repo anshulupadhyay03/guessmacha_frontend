@@ -108,7 +108,28 @@ export function setupMockFbInstant(force = false): void {
         return Promise.resolve();
       },
       getSupportedAPIs: function () {
-        return ['performHapticFeedbackAsync', 'shareAsync', 'inviteAsync'];
+        return ['performHapticFeedbackAsync', 'shareAsync', 'inviteAsync', 'getEntryPointData', 'getEntryPointAsync'];
+      },
+      getEntryPointData: function () {
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const raw = params.get('entry_point_data') || params.get('entryPointData');
+          if (raw) {
+            try {
+              return JSON.parse(raw);
+            } catch {
+              return { roomCode: raw };
+            }
+          }
+          const roomCode = params.get('roomCode') || params.get('room_code') || params.get('room');
+          if (roomCode) {
+            return { roomCode };
+          }
+        }
+        return null;
+      },
+      getEntryPointAsync: function () {
+        return Promise.resolve('invite');
       },
       shareAsync: function (payload?: FBInstantSharePayload) {
         console.log('[Mock FBInstant] shareAsync invoked with:', payload);
