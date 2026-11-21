@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { HTMLAttributes, MouseEvent, PointerEvent, ReactNode } from 'react';
 import { usePuzzles } from '../hooks/usePuzzles';
+import { InfoIcon } from './icons';
+import SecretInfoTooltip from './SecretInfoTooltip';
 import {
   loadGameLessLikelyIds,
   saveGameLessLikelyIds,
@@ -199,8 +201,11 @@ interface SecretOptionProps {
   isSelected: boolean;
   isLessLikely: boolean;
   swipeable: boolean;
+  isTooltipOpen: boolean;
+  categoryName?: string;
   onSelect: (id: string) => void;
   onToggleLessLikely?: (id: string) => void;
+  onToggleTooltip: (puzzle: PuzzleItem) => void;
 }
 
 function SecretOption({
@@ -209,8 +214,11 @@ function SecretOption({
   isSelected,
   isLessLikely,
   swipeable,
+  isTooltipOpen,
+  categoryName,
   onSelect,
   onToggleLessLikely,
+  onToggleTooltip,
 }: SecretOptionProps) {
   const canSwipe = swipeable && Boolean(onToggleLessLikely);
   const { offsetX, isDragging, handlers } = useSwipeRight(canSwipe, () =>
@@ -240,7 +248,7 @@ function SecretOption({
         {...handlers}
         style={canSwipe ? { transform: `translateX(${offsetX}px)` } : undefined}
         className={cx(
-          'relative flex items-center rounded-2xl border bg-surface-container-lowest',
+          'relative flex flex-col rounded-2xl border bg-surface-container-lowest transition-all',
           'has-focus-visible:ring-2 has-focus-visible:ring-primary/40',
           canSwipe && 'touch-pan-y select-none',
           canSwipe && !isDragging && 'transition-transform duration-200 ease-out motion-reduce:transition-none',
@@ -250,57 +258,95 @@ function SecretOption({
           isLessLikely && !isSelected && 'bg-surface-container-low',
         )}
       >
-        {/* Native radio = free keyboard support (arrow keys) and screen-reader semantics */}
-        <label className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-3 px-4 py-3">
-          <input
-            type="radio"
-            name={groupName}
-            value={puzzle.id}
-            checked={isSelected}
-            onChange={() => onSelect(puzzle.id)}
-            className="sr-only"
-          />
-          <span
-            className={cx(
-              'min-w-0 flex-1 text-base leading-snug break-words',
-              isSelected ? 'font-semibold text-on-surface' : 'font-medium text-on-surface',
-            )}
-          >
-            {puzzle.name}
-          </span>
-          <span
-            aria-hidden="true"
-            className={cx(
-              'grid size-5 shrink-0 place-items-center rounded-full border-2 transition-colors',
-              isSelected ? 'border-primary bg-primary' : 'border-outline bg-surface-container-lowest',
-            )}
-          >
-            <span
-              className={cx(
-                'size-2 rounded-full bg-on-primary transition-transform motion-reduce:transition-none',
-                isSelected ? 'scale-100' : 'scale-0',
-              )}
+        <div className="flex w-full items-center min-h-14">
+          {/* Native radio = free keyboard support (arrow keys) and screen-reader semantics */}
+          <label className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-3 px-4 py-3">
+            <input
+              type="radio"
+              name={groupName}
+              value={puzzle.id}
+              checked={isSelected}
+              onChange={() => onSelect(puzzle.id)}
+              className="sr-only"
             />
-          </span>
-        </label>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <span
+                className={cx(
+                  'min-w-0 text-base leading-snug break-words',
+                  isSelected ? 'font-semibold text-on-surface' : 'font-medium text-on-surface',
+                )}
+              >
+                {puzzle.name}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleTooltip(puzzle);
+                }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                }}
+                className={cx(
+                  'inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full transition active:scale-90',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                  isTooltipOpen
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'text-on-surface-variant/70 hover:bg-surface-container-high hover:text-primary',
+                )}
+                aria-label={`Know more about ${puzzle.name}`}
+                title={`Know more about ${puzzle.name}`}
+                aria-expanded={isTooltipOpen}
+              >
+                <InfoIcon className="size-4" />
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              className={cx(
+                'grid size-5 shrink-0 place-items-center rounded-full border-2 transition-colors',
+                isSelected ? 'border-primary bg-primary' : 'border-outline bg-surface-container-lowest',
+              )}
+            >
+              <span
+                className={cx(
+                  'size-2 rounded-full bg-on-primary transition-transform motion-reduce:transition-none',
+                  isSelected ? 'scale-100' : 'scale-0',
+                )}
+              />
+            </span>
+          </label>
 
-        {/* Pointer/keyboard alternative to the swipe gesture */}
-        {canSwipe && (
-          <button
-            type="button"
-            onClick={() => onToggleLessLikely?.(puzzle.id)}
-            aria-label={`${isLessLikely ? 'Move to most likely' : 'Move to less likely'}: ${puzzle.name}`}
-            className={cx(
-              'mr-2 inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
-              isLessLikely
-                ? 'bg-secondary-container text-on-secondary-container hover:bg-secondary-container/70'
-                : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high',
-            )}
-          >
-            {isLessLikely ? <ArrowUpIcon /> : <ArrowDownIcon />}
-            {isLessLikely ? 'Restore' : 'Less likely'}
-          </button>
+          {/* Pointer/keyboard alternative to the swipe gesture */}
+          {canSwipe && (
+            <button
+              type="button"
+              onClick={() => onToggleLessLikely?.(puzzle.id)}
+              aria-label={`${isLessLikely ? 'Move to most likely' : 'Move to less likely'}: ${puzzle.name}`}
+              className={cx(
+                'mr-2 inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                isLessLikely
+                  ? 'bg-secondary-container text-on-secondary-container hover:bg-secondary-container/70'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high',
+              )}
+            >
+              {isLessLikely ? <ArrowUpIcon /> : <ArrowDownIcon />}
+              {isLessLikely ? 'Restore' : 'Less likely'}
+            </button>
+          )}
+        </div>
+
+        {/* Inline Tooltip Card */}
+        {isTooltipOpen && (
+          <div className="w-full px-4 pb-3.5 pt-0">
+            <SecretInfoTooltip
+              puzzle={puzzle}
+              categoryName={categoryName}
+              onClose={() => onToggleTooltip(puzzle)}
+            />
+          </div>
         )}
       </div>
     </div>
@@ -404,9 +450,19 @@ export default function ChooseSecretModal({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPuzzleId, setSelectedPuzzleId] = useState<string | null>(null);
+  const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
   const [isLessLikelyExpanded, setIsLessLikelyExpanded] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const handleToggleTooltip = useCallback((puzzle: PuzzleItem) => {
+    setActiveTooltipId((prev) => (prev === puzzle.id ? null : puzzle.id));
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setActiveTooltipId(null);
+    onClose();
+  }, [onClose]);
 
   const handleListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const scrollTop = e.currentTarget.scrollTop;
@@ -454,6 +510,7 @@ export default function ChooseSecretModal({
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (prevIsOpen !== isOpen) {
     setPrevIsOpen(isOpen);
+    setActiveTooltipId(null);
     if (isOpen) {
       setIsCollapsed(false);
       setIsLessLikelyExpanded(true);
@@ -537,13 +594,17 @@ export default function ChooseSecretModal({
       isSelected={puzzle.id === selectedPuzzleId}
       isLessLikely={isLessLikely}
       swipeable={isGuess}
+      isTooltipOpen={puzzle.id === activeTooltipId}
+      categoryName={effectiveCategoryName}
       onSelect={setSelectedPuzzleId}
       onToggleLessLikely={handleToggleLessLikely}
+      onToggleTooltip={handleToggleTooltip}
     />
   );
 
   function handleConfirm() {
     if (selectedPuzzle) {
+      setActiveTooltipId(null);
       onConfirmSelection(selectedPuzzle);
     }
   }
@@ -555,15 +616,15 @@ export default function ChooseSecretModal({
       // Escape: let the parent decide, don't close natively.
       onCancel={(e) => {
         e.preventDefault();
-        onClose();
+        handleClose();
       }}
       // Click on the backdrop (the dialog element itself) closes.
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) handleClose();
       }}
       className={cx(
-        'm-0 mt-auto w-full max-w-lg overflow-hidden p-0 open:flex open:flex-col sm:m-auto',
-        'max-h-[90dvh] rounded-t-3xl border border-outline-variant bg-surface-container-lowest text-on-surface shadow-2xl sm:rounded-3xl',
+        'relative m-0 mt-auto w-full max-w-lg max-h-[90dvh] overflow-hidden p-0 open:flex open:flex-col sm:m-auto',
+        'rounded-t-3xl border border-outline-variant bg-surface-container-lowest text-on-surface shadow-2xl sm:rounded-3xl',
         'backdrop:bg-on-surface/40 backdrop:backdrop-blur-[2px]',
         'animate-in fade-in slide-in-from-bottom duration-200 motion-reduce:animate-none',
       )}
@@ -596,7 +657,7 @@ export default function ChooseSecretModal({
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Close"
               className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
@@ -687,7 +748,7 @@ export default function ChooseSecretModal({
           >
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Close"
               className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
