@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChooseSecretModal from '../components/ChooseSecretModal';
+import GameRulesModal from '../components/GameRulesModal';
 import PlayerAvatar from '../components/PlayerAvatar';
 import FacebookPlayerName from '../platform/facebook/FacebookPlayerName';
-import { VibrateIcon } from '../components/icons';
+import { HelpCircleIcon, VibrateIcon } from '../components/icons';
 import { triggerHapticFeedback } from '../platform/facebook/fbInstant';
 import type { PuzzleItem } from '../features/chooseSecret/types';
 import type { GameStateData, GameStatePlayer, GameStateQuestion } from '../features/gameZone/types';
@@ -572,6 +573,7 @@ export default function GameZoneScreen({
 
   // Modals state
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [isGuessModalOpen, setIsGuessModalOpen] = useState(false);
   const [lessLikelyIds, setLessLikelyIds] = useState<Set<string>>(() => loadGameLessLikelyIds(gameId));
@@ -952,35 +954,47 @@ export default function GameZoneScreen({
   return (
     <section className="gamezone-container">
       <div className="gamezone-content">
-        {/* Header matching gamezone.png: Back Arrow (left), Category Name (center), Leave (right) */}
+        {/* Header matching gamezone.png: Back Arrow (left), Category Name (center), Help (?) + Leave (right) */}
         <header className="gamezone-header">
-          {onBackToMatches ? (
-            <button
-              type="button"
-              onClick={onBackToMatches}
-              className="gamezone-back-btn"
-              aria-label="Back to Matches"
-            >
-              <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-            </button>
-          ) : (
-            <div className="w-8" />
-          )}
+          <div className="gamezone-header-left">
+            {onBackToMatches ? (
+              <button
+                type="button"
+                onClick={onBackToMatches}
+                className="gamezone-back-btn"
+                aria-label="Back to Matches"
+              >
+                <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+              </button>
+            ) : null}
+          </div>
 
           <h1 className="gamezone-header-title">
             {effectiveCategoryName}
           </h1>
 
-          <button
-            type="button"
-            onClick={() => setIsLeaveModalOpen(true)}
-            className="gamezone-leave-btn"
-            aria-label="Leave Game"
-          >
-            Leave
-          </button>
+          <div className="gamezone-header-actions">
+            <button
+              type="button"
+              onClick={() => setIsRulesModalOpen(true)}
+              className="gamezone-help-btn"
+              aria-label="Game rules and help"
+              title="Game Rules"
+            >
+              <HelpCircleIcon className="size-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsLeaveModalOpen(true)}
+              className="gamezone-leave-btn"
+              aria-label="Leave Game"
+            >
+              Leave
+            </button>
+          </div>
         </header>
 
         {/* Real-time Guess Event Notification Tooltip */}
@@ -1283,6 +1297,12 @@ export default function GameZoneScreen({
           </div>
         </div>
       )}
+
+      {/* Game Rules / Help Modal */}
+      <GameRulesModal
+        isOpen={isRulesModalOpen}
+        onClose={() => setIsRulesModalOpen(false)}
+      />
 
       {/* Guess Result Feedback Modal */}
       {!outcome.isFinished && guessFeedback.isOpen && (
