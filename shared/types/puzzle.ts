@@ -1,6 +1,13 @@
+export interface PuzzleInformationItem {
+  label: string;
+  value: string;
+}
+
 export interface PuzzleItem {
   id: string;
   name: string;
+  img_url?: string | null;
+  information?: PuzzleInformationItem[];
 }
 
 export interface CategoryDetails {
