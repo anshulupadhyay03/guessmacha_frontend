@@ -82,6 +82,38 @@
   opacity: 0.85;
 }
 
+.gamezone-header-left {
+  display: flex;
+  align-items: center;
+  min-width: 68px;
+}
+
+.gamezone-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 68px;
+}
+
+.gamezone-help-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant, #3c494c);
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+}
+
+.gamezone-help-btn:hover {
+  color: var(--color-primary, #006875);
+  background-color: var(--color-surface-container-low, #eff4f7);
+}
+
 /* Players Grid - pinned */
 .gamezone-players-grid {
   flex-shrink: 0;

@@ -26,6 +26,12 @@ import {
   showFacebookPlayerProfileOverlay,
 } from '../platform/facebook/fbInstant';
 import { ensureAuth } from '../platform/supabase/auth';
+import { showFacebookPlayerProfileOverlay } from '../platform/facebook/fbInstant';
+import {
+  FirstTimeTutorialPrompt,
+  HelpCircleIcon,
+  HowToPlayModal,
+} from '../components/howToPlay';
 
 interface HomeScreenProps {
   onCreateGame: () => void;
@@ -56,6 +62,7 @@ export default function HomeScreen({
     refresh: refreshDashboard,
   } = useDashboard();
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
 
   const dialogError = localError || (error ? error.message : null);
   const comingSoonFeatures =
@@ -189,30 +196,44 @@ export default function HomeScreen({
   return (
     <section className="w-full" aria-label="GuessMacha home screen">
       <main className="mx-auto w-full max-w-160 flex-1 px-5.5 pt-2 pb-8 max-[520px]:px-4.5">
-        {/* Profile Card & Rank Badge */}
-        <div className="flex items-center justify-between gap-3 min-h-14 flex-wrap sm:flex-nowrap">
+        {/* Profile Card & Top Actions */}
+        <div className="flex items-center justify-between gap-2.5 min-h-14 flex-wrap sm:flex-nowrap">
           <div
             ref={profileContainerRef}
             id="profile-card-container"
             className="flex items-center h-14 min-w-0 flex-1"
           />
-          {rank ? (
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold uppercase tracking-wider">
-                {rank.name.toLowerCase().includes('tier') || rank.name.toLowerCase().includes('rank')
-                  ? rank.name
-                  : `${rank.name} Tier`}
-              </span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
-                {rank.points} RP
-              </span>
-            </div>
-          ) : dashboardLoading ? (
-            <div className="flex shrink-0 items-center gap-2 animate-pulse">
-              <div className="h-5 w-24 rounded-full bg-surface-container-high" />
-              <div className="h-4 w-12 rounded bg-surface-container-high" />
-            </div>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-2">
+            {rank ? (
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-[11px] sm:text-label-sm font-semibold uppercase tracking-wider">
+                  {rank.name.toLowerCase().includes('tier') || rank.name.toLowerCase().includes('rank')
+                    ? rank.name
+                    : `${rank.name} Tier`}
+                </span>
+                <span className="font-label-sm text-xs sm:text-label-sm text-on-surface-variant font-semibold">
+                  {rank.points} RP
+                </span>
+              </div>
+            ) : dashboardLoading ? (
+              <div className="flex shrink-0 items-center gap-2 animate-pulse">
+                <div className="h-5 w-20 rounded-full bg-surface-container-high" />
+                <div className="h-4 w-10 rounded bg-surface-container-high" />
+              </div>
+            ) : null}
+
+            {/* How to Play Button */}
+            <button
+              type="button"
+              onClick={() => setIsHowToPlayOpen(true)}
+              className="flex items-center gap-1.5 rounded-full border border-[#006875]/25 bg-surface-container-lowest px-3 py-1.5 text-xs font-bold text-[#006875] shadow-2xs transition hover:bg-surface-container-low active:scale-95 cursor-pointer"
+              aria-label="How to play Sift Mates"
+              title="How to Play"
+            >
+              <HelpCircleIcon className="size-3.5" />
+              <span>How to Play</span>
+            </button>
+          </div>
         </div>
 
         {dashboardError && !dashboardLoading && (
@@ -259,6 +280,14 @@ export default function HomeScreen({
               <p className="mt-1 font-body-md text-sm text-on-surface-variant">
                 Create a room or join one with a code to get started.
               </p>
+              <button
+                type="button"
+                onClick={() => setIsHowToPlayOpen(true)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#006875]/20 bg-surface-container-lowest px-3 py-1.5 text-xs font-bold text-primary shadow-2xs transition hover:bg-surface-container-low active:scale-95 cursor-pointer"
+              >
+                <HelpCircleIcon className="size-3.5" />
+                <span>New to Sift Mates? Learn How to Play</span>
+              </button>
             </div>
           )}
 
@@ -592,6 +621,16 @@ export default function HomeScreen({
           </div>
         </div>
       )}
+      {/* First Time Player Tutorial Prompt */}
+      <FirstTimeTutorialPrompt
+        onOpenTutorial={() => setIsHowToPlayOpen(true)}
+      />
+
+      {/* Multi-Step How To Play Modal */}
+      <HowToPlayModal
+        isOpen={isHowToPlayOpen}
+        onClose={() => setIsHowToPlayOpen(false)}
+      />
     </section>
   );
 }
