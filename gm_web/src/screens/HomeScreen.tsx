@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   DashboardActiveMatch,
   JoinGameData,
@@ -19,6 +19,13 @@ import {
 import { mapActiveMatchToMatchItem } from '../features/dashboard/activeMatchMapper';
 import { getActiveMatchPresentation } from '../features/dashboard/activeMatchPresentation';
 import { FALLBACK_COMING_SOON } from '../features/dashboard/comingSoonFallback';
+import {
+  getFacebookEntryPointRoomCode,
+  getFacebookGameRoomCode,
+  isFacebookInstantGames,
+  showFacebookPlayerProfileOverlay,
+} from '../platform/facebook/fbInstant';
+import { ensureAuth } from '../platform/supabase/auth';
 import { showFacebookPlayerProfileOverlay } from '../platform/facebook/fbInstant';
 import {
   FirstTimeTutorialPrompt,
@@ -40,6 +47,8 @@ export default function HomeScreen({
   onViewAllMatches,
 }: HomeScreenProps) {
   const [roomCode, setRoomCode] = useState('');
+  const [isGettingCode, setIsGettingCode] = useState(false);
+  const [isAutoJoining, setIsAutoJoining] = useState(false);
   const { joinGame, loading, error, clearError } = useJoinGame();
   const {
     dashboard,
@@ -80,22 +89,101 @@ export default function HomeScreen({
     };
   }, []);
 
-  async function handleJoinRoom() {
-    const normalizedCode = roomCode.trim().toUpperCase();
+  const autoJoinedCodeRef = useRef<string | null>(null);
 
-    if (!normalizedCode) {
-      setLocalError('Please enter a room code to join a game.');
-      return;
+  const handleJoinRoom = useCallback(
+    async (codeToJoin?: string) => {
+      const rawCode = typeof codeToJoin === 'string' ? codeToJoin : roomCode;
+      const normalizedCode = rawCode.trim().toUpperCase();
+
+      if (!normalizedCode) {
+        setLocalError('Please enter a room code to join a game.');
+        return;
+      }
+
+      setLocalError(null);
+      clearError();
+
+      const data = await joinGame(normalizedCode);
+      if (data) {
+        onGameJoined?.(data);
+      }
+    },
+    [clearError, joinGame, onGameJoined, roomCode],
+  );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function checkAutoJoin() {
+      // If a code is already detectable or in FBInstant, show code retrieval feedback
+      const quickCode = getFacebookGameRoomCode();
+      if (quickCode) {
+        setIsAutoJoining(true);
+      } else if (isFacebookInstantGames()) {
+        setIsGettingCode(true);
+      }
+
+      let entryCode: string | null = null;
+      try {
+        entryCode = await getFacebookEntryPointRoomCode();
+      } catch (err) {
+        console.warn('Failed to retrieve entry point room code:', err);
+      } finally {
+        if (!entryCode || isCancelled) {
+          setIsGettingCode(false);
+        }
+      }
+
+      if (!entryCode || isCancelled) {
+        setIsAutoJoining(false);
+        return;
+      }
+
+      // Avoid re-running auto-join for the same room code
+      if (autoJoinedCodeRef.current === entryCode) {
+        setIsGettingCode(false);
+        setIsAutoJoining(false);
+        return;
+      }
+      autoJoinedCodeRef.current = entryCode;
+
+      // Auto-inject the room code into the input field
+      setRoomCode(entryCode);
+      setIsGettingCode(false);
+      setIsAutoJoining(true);
+
+      // Ensure platform authentication is ready before invoking join
+      try {
+        await ensureAuth();
+      } catch (authError) {
+        console.warn('Auth preparation before auto-joining room encountered an issue:', authError);
+      }
+
+      if (isCancelled) {
+        setIsAutoJoining(false);
+        return;
+      }
+
+      // Automatically join the game room so the user enters MatchLobbyScreen
+      try {
+        await handleJoinRoom(entryCode);
+      } finally {
+        if (!isCancelled) {
+          setIsAutoJoining(false);
+        }
+      }
     }
 
-    setLocalError(null);
-    clearError();
+    void checkAutoJoin();
 
-    const data = await joinGame(normalizedCode);
-    if (data) {
-      onGameJoined?.(data);
-    }
-  }
+    return () => {
+      isCancelled = true;
+    };
+  }, [handleJoinRoom]);
+
+  const isJoinLoading = isGettingCode || isAutoJoining || loading;
+  const displayCode = roomCode.trim();
 
   function handleActiveMatchClick(match: DashboardActiveMatch) {
     onSelectMatch?.(mapActiveMatchToMatchItem(match));
@@ -316,15 +404,15 @@ export default function HomeScreen({
             maxLength={12}
             autoComplete="off"
             spellCheck={false}
-            disabled={loading}
+            disabled={isJoinLoading}
           />
           <button
             type="button"
-            disabled={loading}
+            disabled={isJoinLoading}
             className="mt-3 w-full cursor-pointer rounded-md bg-primary py-2.5 font-title-md text-base font-bold text-on-primary shadow-sm transition-all hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => void handleJoinRoom()}
           >
-            {loading ? 'Joining Room…' : 'Join Room'}
+            {isJoinLoading ? 'Joining Room…' : 'Join Room'}
           </button>
         </div>
 
@@ -461,6 +549,46 @@ export default function HomeScreen({
           </ul>
         </div>
       </main>
+
+      {/* Loading Dialog when getting the code and calling join room API */}
+      {isJoinLoading && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="join-loading-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-outline-variant/20 bg-surface-container-lowest p-6 text-center shadow-2xl animate-in zoom-in-95 duration-150">
+            {/* Spinning Loader Badge */}
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10 shadow-xs">
+              <span
+                className="size-7 animate-spin rounded-full border-3 border-primary border-t-transparent"
+                aria-hidden="true"
+              />
+            </div>
+
+            <h2
+              id="join-loading-title"
+              className="font-title-md text-lg font-bold text-on-background"
+            >
+              {displayCode ? 'Joining Game Room' : 'Getting Room Code'}
+            </h2>
+
+            <p className="mt-2 font-body-md text-sm leading-relaxed text-on-surface-variant">
+              {displayCode
+                ? 'Connecting you to the match…'
+                : 'Retrieving room code from your game invite…'}
+            </p>
+
+            {displayCode && (
+              <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/5 px-3 py-1 font-mono text-xs font-bold tracking-wider text-primary">
+                <span>Room:</span>
+                <span className="text-sm font-extrabold">{displayCode}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Error Dialog / Popup Box */}
       {dialogError && (

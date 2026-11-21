@@ -100,6 +100,8 @@ declare global {
     overlayViews?: FBInstantOverlayViews;
     performHapticFeedbackAsync?(): Promise<void>;
     getSupportedAPIs?(): string[];
+    getEntryPointData?(): Record<string, unknown> | null;
+    getEntryPointAsync?(): Promise<string>;
     shareAsync?(payload: FBInstantSharePayload): Promise<void>;
     inviteAsync?(payload: FBInstantInvitePayload): Promise<void>;
     quit?(): void;

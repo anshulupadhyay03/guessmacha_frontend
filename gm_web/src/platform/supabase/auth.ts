@@ -72,32 +72,54 @@ export async function authenticateFacebookInstant(): Promise<Session | null> {
   return session;
 }
 
+let authInitializationPromise: Promise<Session | null> | null = null;
+
 export async function initializeAuth(): Promise<Session | null> {
-  try {
-    const developmentSession = await initializeDevelopmentSession();
-
-    if (developmentSession) {
-      return developmentSession;
-    }
-
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
-
-    if (error) {
-      console.warn('Supabase getSession warning:', error);
-    }
-
-    if (session) {
-      return session;
-    }
-
-    return await authenticateFacebookInstant();
-  } catch (error) {
-    console.warn('Failed to complete background auth initialization:', error);
-    return null;
+  if (authInitializationPromise) {
+    return authInitializationPromise;
   }
+
+  authInitializationPromise = (async () => {
+    try {
+      const developmentSession = await initializeDevelopmentSession();
+
+      if (developmentSession) {
+        return developmentSession;
+      }
+
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.warn('Supabase getSession warning:', error);
+      }
+
+      if (session) {
+        return session;
+      }
+
+      return await authenticateFacebookInstant();
+    } catch (error) {
+      console.warn('Failed to complete background auth initialization:', error);
+      return null;
+    }
+  })();
+
+  const result = await authInitializationPromise;
+  if (!result) {
+    authInitializationPromise = null;
+  }
+  return result;
+}
+
+export async function ensureAuth(): Promise<Session | null> {
+  const session = await getSession();
+  if (session) {
+    return session;
+  }
+  return initializeAuth();
 }
 
 export async function getSession(): Promise<Session | null> {
