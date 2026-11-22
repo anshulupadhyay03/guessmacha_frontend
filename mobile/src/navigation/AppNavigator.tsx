@@ -1,68 +1,14 @@
 import React from 'react';
-import { NavigationContainer, DarkTheme, Theme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { RootStackParamList } from './types';
-import { colors } from '../constants/colors';
+import { Text } from 'react-native';
+import { HomeScreen, CreateScreen, LobbyScreen, GameScreen, MatchesScreen, HistoryScreen, ReviewScreen, ProfileScreen } from '../screens/Screens';
+import { colors } from '../theme';
 
-import AuthNavigator from './AuthNavigator';
-import MainNavigator from './MainNavigator';
-import MatchNavigator from './MatchNavigator';
-import InterestsScreen from '../screens/Interests/InterestsScreen';
-import SplashScreen from '../screens/Splash/SplashScreen';
-
-// TODO: this hook is expected to live at src/hooks/useAuth.ts and expose:
-//   { initializing: boolean; session: Session | null; hasCompletedInterests: boolean }
-// It should wrap supabase.auth.getSession()/onAuthStateChange and the user's
-// profile.interests length check, and sync results into authSlice/userSlice.
-import { useAuth } from '../hooks/useAuth';
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
-const navTheme: Theme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: colors.bg.base,
-    card: colors.bg.surface,
-    text: colors.text.primary,
-    border: colors.border.subtle,
-    primary: colors.accent.primary,
-  },
-};
-
-export default function AppNavigator() {
-  const { initializing, session, hasCompletedInterests } = useAuth();
-
-  if (initializing) {
-    // Reuse the Splash screen itself as the bootstrap/loading state so there's
-    // no visual seam between native launch screen -> JS boot -> routing decision.
-    return <SplashScreen />;
-  }
-
-  return (
-    <NavigationContainer theme={navTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="MainFlow" component={MainNavigator} />
-        <Stack.Screen
-          name="MatchFlow"
-          component={MatchNavigator}
-          options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
-        />
-        {/* {!session ? (
-          <Stack.Screen name="AuthFlow" component={AuthNavigator} />
-        ) : !hasCompletedInterests ? (
-          <Stack.Screen name="Interests" component={InterestsScreen} />
-        ) : (
-          <>
-            <Stack.Screen name="MainFlow" component={MainNavigator} />
-            <Stack.Screen
-              name="MatchFlow"
-              component={MatchNavigator}
-              options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
-            />
-          </>
-        )} */}
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-}
+type RootParams = { Tabs: undefined; Create: undefined; Lobby: { game: { gameId: string; roomCode: string; categoryId?: string; categoryName?: string } }; Game: { game: { gameId: string; roomCode: string; categoryId?: string; categoryName?: string } }; Review: { gameId: string } };
+const Stack = createNativeStackNavigator<RootParams>();
+const Tab = createBottomTabNavigator();
+const icon = (value: string) => () => <Text style={{ fontSize: 18 }}>{value}</Text>;
+function Tabs() { return <Tab.Navigator screenOptions={({ route }) => ({ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarInactiveTintColor: colors.muted, tabBarStyle: { borderTopColor: colors.border }, tabBarIcon: icon(({ Home: '⌂', Matches: '⚔', History: '◷', Profile: '◉' } as Record<string, string>)[route.name] ?? '•') })}><Tab.Screen name="Home" component={HomeScreen} /><Tab.Screen name="Matches" component={MatchesScreen} /><Tab.Screen name="History" component={HistoryScreen} /><Tab.Screen name="Profile" component={ProfileScreen} /></Tab.Navigator>; }
+export default function AppNavigator() { return <NavigationContainer theme={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.background, primary: colors.teal } }}><Stack.Navigator screenOptions={{ headerShadowVisible: false, headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.ink, contentStyle: { backgroundColor: colors.background } }}><Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} /><Stack.Screen name="Create" component={CreateScreen} options={{ title: 'Create room' }} /><Stack.Screen name="Lobby" component={LobbyScreen} options={{ title: 'Match lobby' }} /><Stack.Screen name="Game" component={GameScreen} options={{ headerShown: false, gestureEnabled: false }} /><Stack.Screen name="Review" component={ReviewScreen} options={{ title: 'Match review' }} /></Stack.Navigator></NavigationContainer>; }
