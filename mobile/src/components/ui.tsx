@@ -1,0 +1,14 @@
+import React from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
+import { colors, radius } from '../theme';
+
+export function Button({ label, onPress, disabled, tone = 'primary', style }: { label: string; onPress: () => void; disabled?: boolean; tone?: 'primary' | 'secondary' | 'danger'; style?: ViewStyle }) {
+  const backgroundColor = tone === 'primary' ? colors.teal : tone === 'danger' ? colors.danger : colors.pale;
+  const color = tone === 'secondary' ? colors.ink : '#fff';
+  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={[styles.button, { backgroundColor, opacity: disabled ? .55 : 1 }, style]}><Text style={[styles.buttonText, { color }]}>{label}</Text></Pressable>;
+}
+export function Field(props: TextInputProps) { return <TextInput placeholderTextColor={colors.muted} style={styles.field} {...props} />; }
+export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) { return <View style={[styles.card, style]}>{children}</View>; }
+export function Loading() { return <View style={styles.center}><ActivityIndicator color={colors.teal} size="large" /></View>; }
+export function ErrorState({ error, retry }: { error: unknown; retry?: () => void }) { return <View style={styles.message}><Text style={styles.error}>{error instanceof Error ? error.message : 'Something went wrong.'}</Text>{retry && <Button label="Try again" onPress={retry} tone="secondary" />}</View>; }
+export const styles = StyleSheet.create({ screen: { flex: 1, backgroundColor: colors.background }, content: { padding: 20, gap: 14 }, title: { fontSize: 30, fontWeight: '800', color: colors.ink, letterSpacing: -.6 }, subtitle: { color: '#3c494c', fontSize: 16, lineHeight: 23 }, eyebrow: { color: colors.teal, fontWeight: '800', fontSize: 12, letterSpacing: 1.1 }, card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.md, padding: 16, gap: 8 }, button: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingHorizontal: 16 }, buttonText: { fontSize: 16, fontWeight: '800' }, field: { minHeight: 52, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 14, color: colors.ink, fontSize: 16 }, label: { color: '#36656e', fontWeight: '800', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }, center: { padding: 36, alignItems: 'center' }, message: { margin: 20, gap: 14, alignItems: 'center' }, error: { color: colors.danger, textAlign: 'center', lineHeight: 20 }, row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, small: { color: colors.muted, fontSize: 13 }, divider: { height: 1, backgroundColor: '#dce5e7', marginVertical: 8 } });

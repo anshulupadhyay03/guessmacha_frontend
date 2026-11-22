@@ -3,16 +3,11 @@
   "compilerOptions": {
     "types": ["jest"],
     "baseUrl": ".",
-    "paths": {
-      "@mobile/*": ["src/*"],
-      "@shared/*": ["../shared/*"]
-    }
+    "paths": { "@mobile/*": ["src/*"] }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    "../shared/**/*.ts",
-    "../shared/**/*.tsx"
+    "**/*.tsx"
   ],
   "exclude": [
     "**/node_modules",
