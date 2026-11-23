@@ -1,5 +1,5 @@
 import { createApiClient } from '../api/client';
-import type { Category, GameDetails, GameRef, GameState, HistoryMatch, Match, Puzzle, Question, Review } from '../types/domain';
+import type { Category, Dashboard, GameDetails, GameRef, GameState, HistoryMatch, Match, ProfileData, Puzzle, Question, Review } from '../types/domain';
 import { config, functionsUrl } from './config';
 import { accessToken, supabase } from './auth';
 
@@ -13,6 +13,8 @@ export const gameApi = {
   puzzles: async (gameId?: string, categoryId?: string) => unwrap<{ category: { id: string; name: string }; puzzles: Puzzle[] }>(await api.get('get_puzzles', gameId ? { gameId } : { categoryId })),
   submitSecret: async (gameId: string, secretPuzzleId: string) => unwrap<{ gameStatus: string; waitingForOpponent: boolean }>(await api.post('submit_secret', { gameId, secretPuzzleId })),
   matches: async () => unwrap<{ activeMatches: Match[]; expiredMatches: Match[] }>(await api.get('get_matches')),
+  dashboard: async () => unwrap<Dashboard>(await api.get('dashboard')),
+  profile: async () => unwrap<ProfileData>(await api.get('get_profile')),
   history: async (filter = 'all', cursor?: string | null) => unwrap<{ matches: HistoryMatch[]; hasMore: boolean; nextCursor: string | null }>(await api.get('history', { filter, limit: 20, cursor: cursor ?? undefined })),
   state: async (gameId: string) => unwrap<GameState>(await api.get('game_state', { gameId })),
   review: async (gameId: string) => unwrap<Review>(await api.get('match_review', { gameId })),
