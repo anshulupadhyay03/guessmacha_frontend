@@ -1,0 +1,68 @@
+/* Replace the existing .profileCard / .avatarRing / .avatar / .playerInfo / .playerName rules
+   in overlays/styles.css with these.
+
+   Rules for this stylesheet:
+   - NO var(--x): custom properties don't exist inside the overlay iframe, so any declaration
+     using one is dropped (that is why the card had no border/background and the name was serif).
+   - One selector per rule, no commas, no calc(), no '+'. */
+
+/* Fills the iframe exactly and centres the card vertically (iframe body has an 8px margin) */
+.profileRoot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: -8px;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.profileCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 16px 4px 4px;
+  background: #ffffff;
+  border: 1px solid #bbc9cc;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(23, 29, 30, 0.08);
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.avatarRing {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 2px;
+  border-radius: 50%;
+  background: #02c2d9;
+  background: linear-gradient(135deg, #02c2d9, #006875);
+  box-sizing: border-box;
+}
+
+.avatar {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffffff;
+  background: #eff4f7;
+  box-sizing: border-box;
+}
+
+.playerName {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Manrope, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #171d1e;
+}

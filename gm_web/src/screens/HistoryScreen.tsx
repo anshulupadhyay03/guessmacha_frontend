@@ -114,9 +114,9 @@ export default function HistoryScreen({ onSelectMatch }: HistoryScreenProps) {
   return (
     <section className="relative mx-auto flex w-full max-w-160 flex-col px-4 pt-3 pb-8 text-left text-[#171d1e]">
       {/* Top Header */}
-      <div className="relative mb-4 flex items-center justify-center border-b border-[#bbc9cc] pb-3">
-        <h1 className="text-xl font-bold tracking-tight text-[#171d1e]">History</h1>
-      </div>
+      <header className="sticky top-0 z-30 -mx-4 -mt-3 px-4 pt-3 pb-2.5 mb-4 flex items-center justify-center bg-[#f5fafc]/95 backdrop-blur-md shadow-xs">
+        <h1 className="text-[22px] font-extrabold tracking-tight text-[#171d1e]">History</h1>
+      </header>
 
       {/* Segmented Filter Control */}
       <div

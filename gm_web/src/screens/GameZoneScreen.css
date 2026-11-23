@@ -30,12 +30,16 @@
 
 /* Header - pinned to top */
 .gamezone-header {
+  position: relative;
+  z-index: 30;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-top: 4px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-outline-variant, #bbc9cc);
+  background-color: var(--color-surface, #f5fafc);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .gamezone-back-btn {
@@ -76,6 +80,38 @@
 
 .gamezone-leave-btn:hover {
   opacity: 0.85;
+}
+
+.gamezone-header-left {
+  display: flex;
+  align-items: center;
+  min-width: 68px;
+}
+
+.gamezone-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 68px;
+}
+
+.gamezone-help-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant, #3c494c);
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+}
+
+.gamezone-help-btn:hover {
+  color: var(--color-primary, #006875);
+  background-color: var(--color-surface-container-low, #eff4f7);
 }
 
 /* Players Grid - pinned */
@@ -188,7 +224,7 @@
 }
 
 .gamezone-player-card--opponent .gamezone-player-secret {
-  justify-content: flex-end;
+  justify-content: space-between;
 }
 
 .gamezone-player-secret--revealed {
@@ -225,6 +261,41 @@
 
 .gamezone-secret-toggle-btn:focus-visible {
   outline: 2px solid var(--color-primary, #006875);
+  outline-offset: 1px;
+}
+
+.gamezone-vibrate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  border-radius: 6px;
+  color: #904d00;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.gamezone-vibrate-btn svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.gamezone-vibrate-btn:hover {
+  background: rgba(144, 77, 0, 0.12);
+  color: #6d3a00;
+}
+
+.gamezone-vibrate-btn:active {
+  transform: scale(0.9);
+}
+
+.gamezone-vibrate-btn:focus-visible {
+  outline: 2px solid #904d00;
   outline-offset: 1px;
 }
 

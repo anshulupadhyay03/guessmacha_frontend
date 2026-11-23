@@ -1,5 +1,6 @@
 export type {
   PuzzleItem,
+  PuzzleInformationItem,
   CategoryDetails,
   GetPuzzlesRequest,
   GetPuzzlesData,
