@@ -26,7 +26,6 @@ import {
   showFacebookPlayerProfileOverlay,
 } from '../platform/facebook/fbInstant';
 import { ensureAuth } from '../platform/supabase/auth';
-import { showFacebookPlayerProfileOverlay } from '../platform/facebook/fbInstant';
 import {
   FirstTimeTutorialPrompt,
   HelpCircleIcon,
